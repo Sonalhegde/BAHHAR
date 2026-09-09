@@ -12,8 +12,7 @@ import '../../features/my_catch/presentation/add_catch_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/hotspot/presentation/hotspot_details_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
+import '../../shared/polymorphic/floating_nav_bar.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,7 +58,7 @@ class AppRouter {
         builder: (context, state) => const NotificationsScreen(),
       ),
 
-      // Main shell with bottom navigation
+      // Main Shell with Floating Glass Navigation Bar
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
@@ -122,46 +121,42 @@ class _BahharShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.borderHairline, width: 1)),
-        ),
-        child: NavigationBar(
-          backgroundColor: AppColors.surfacePure,
-          elevation: 0,
-          indicatorColor: AppColors.accentNavy.withValues(alpha: 0.08),
-          selectedIndex: _calculateSelectedIndex(context),
-          onDestinationSelected: (idx) => _onItemTapped(idx, context),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home, color: AppColors.accentNavy),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.map_outlined),
-              selectedIcon: Icon(Icons.map, color: AppColors.accentNavy),
-              label: 'Map',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.explore_outlined),
-              selectedIcon: Icon(Icons.explore, color: AppColors.accentNavy),
-              label: 'Smart Trip',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.phishing_outlined),
-              selectedIcon: Icon(Icons.phishing, color: AppColors.accentNavy),
-              label: 'My Catch',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: AppColors.accentNavy),
-              label: 'Profile',
-            ),
-          ],
-        ),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          Positioned.fill(child: child),
+          FloatingGlassNavBar(
+            selectedIndex: _calculateSelectedIndex(context),
+            onDestinationSelected: (idx) => _onItemTapped(idx, context),
+            items: const [
+              NavDestinationItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: 'Command',
+              ),
+              NavDestinationItem(
+                icon: Icons.map_outlined,
+                selectedIcon: Icons.map_rounded,
+                label: 'Chart',
+              ),
+              NavDestinationItem(
+                icon: Icons.explore_outlined,
+                selectedIcon: Icons.explore_rounded,
+                label: 'Trip',
+              ),
+              NavDestinationItem(
+                icon: Icons.phishing_outlined,
+                selectedIcon: Icons.phishing_rounded,
+                label: 'Logbook',
+              ),
+              NavDestinationItem(
+                icon: Icons.person_outline_rounded,
+                selectedIcon: Icons.person_rounded,
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

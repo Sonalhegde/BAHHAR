@@ -3,10 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/glass_tokens.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/preferences_provider.dart';
-import '../../../../shared/widgets/bahhar_logo_widget.dart';
-import '../../../../shared/widgets/custom_buttons.dart';
+import '../../../../shared/glass/marine_background.dart';
+import '../../../../shared/glass/glass_container.dart';
+import '../../../../shared/polymorphic/soft_button.dart';
+import '../../../../shared/polymorphic/soft_toggle.dart';
+import '../../../../shared/polymorphic/glass_input.dart';
 
 enum AuthMethod { phone, email }
 
@@ -24,7 +28,6 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
   bool _isLoading = false;
   String _selectedGov = 'Muscat';
 
-  // Controllers
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   final _emailController = TextEditingController();
@@ -52,10 +55,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
   }
 
   void _sendPhoneOtp() async {
-    if (_phoneController.text.trim().isEmpty) {
-      _showError('Please enter your Oman phone number');
-      return;
-    }
+    if (_phoneController.text.trim().isEmpty) return;
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
@@ -66,10 +66,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
   }
 
   void _verifyPhoneOtp() async {
-    if (_otpController.text.trim().isEmpty) {
-      _showError('Please enter the 6-digit verification code');
-      return;
-    }
+    if (_otpController.text.trim().isEmpty) return;
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
@@ -82,15 +79,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
 
   void _handleEmailAuth() async {
     final email = _emailController.text.trim();
-    final pass = _passwordController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      _showError('Please enter a valid email address');
-      return;
-    }
-    if (pass.length < 6) {
-      _showError('Password must be at least 6 characters');
-      return;
-    }
+    if (email.isEmpty || !email.contains('@')) return;
     setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
@@ -123,440 +112,313 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
     context.go('/home');
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.signalAlert,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isArabic = ref.watch(isArabicProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.surfacePure,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfacePure,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          TextButton(
-            onPressed: () {
-              ref.read(isArabicProvider.notifier).toggleLanguage();
-            },
-            child: Text(
-              isArabic ? 'English' : 'عربي',
-              style: AppTextStyles.labelMedium.copyWith(color: AppColors.accentNavy),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Introductory Logo & Brand Header
-                  Center(
-                    child: Column(
-                      children: [
-                        const BahharLogoWidget(
-                          size: 72,
-                          showWordmark: true,
-                          showSubtitle: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // Mode Toggle: Sign In vs Register
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderHairline),
-                    ),
-                    padding: const EdgeInsets.all(3),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() { _isRegister = false; _otpSent = false; }),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 9),
-                              decoration: BoxDecoration(
-                                color: !_isRegister ? AppColors.surfacePure : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: !_isRegister ? Border.all(color: AppColors.borderHairline) : null,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                isArabic ? 'تسجيل الدخول' : 'Sign In',
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: !_isRegister ? AppColors.textPrimary : AppColors.textSecondary,
-                                  fontWeight: !_isRegister ? FontWeight.w600 : FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() { _isRegister = true; _otpSent = false; }),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(vertical: 9),
-                              decoration: BoxDecoration(
-                                color: _isRegister ? AppColors.surfacePure : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: _isRegister ? Border.all(color: AppColors.borderHairline) : null,
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                isArabic ? 'حساب جديد' : 'Register',
-                                style: AppTextStyles.labelMedium.copyWith(
-                                  color: _isRegister ? AppColors.textPrimary : AppColors.textSecondary,
-                                  fontWeight: _isRegister ? FontWeight.w600 : FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Method Switcher: Phone vs Email
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() { _selectedMethod = AuthMethod.phone; _otpSent = false; }),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: _selectedMethod == AuthMethod.phone ? AppColors.accentNavy : AppColors.borderHairline,
-                                  width: _selectedMethod == AuthMethod.phone ? 2.0 : 1.0,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.phone_iphone_rounded,
-                                  size: 16,
-                                  color: _selectedMethod == AuthMethod.phone ? AppColors.accentNavy : AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isArabic ? 'رقم الهاتف' : 'Phone Number',
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: _selectedMethod == AuthMethod.phone ? AppColors.accentNavy : AppColors.textSecondary,
-                                    fontWeight: _selectedMethod == AuthMethod.phone ? FontWeight.w600 : FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedMethod = AuthMethod.email),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: _selectedMethod == AuthMethod.email ? AppColors.accentNavy : AppColors.borderHairline,
-                                  width: _selectedMethod == AuthMethod.email ? 2.0 : 1.0,
-                                ),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.mail_outline_rounded,
-                                  size: 16,
-                                  color: _selectedMethod == AuthMethod.email ? AppColors.accentNavy : AppColors.textSecondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  isArabic ? 'البريد الإلكتروني' : 'Email',
-                                  style: AppTextStyles.labelMedium.copyWith(
-                                    color: _selectedMethod == AuthMethod.email ? AppColors.accentNavy : AppColors.textSecondary,
-                                    fontWeight: _selectedMethod == AuthMethod.email ? FontWeight.w600 : FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Registration Full Name (If register mode)
-                  if (_isRegister) ...[
-                    Text(
-                      isArabic ? 'الاسم الكامل' : 'CAPTAIN / FULL NAME',
-                      style: AppTextStyles.sectionHeader,
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        hintText: isArabic ? 'مثال: سالم الريامي' : 'e.g. Salim Al-Riyami',
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Text(
-                      isArabic ? 'المحافظة الساحلية الرئيسية' : 'HOME GOVERNORATE',
-                      style: AppTextStyles.sectionHeader,
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+    return MarineBackground(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Language Switcher in subtle glass pill
+                Align(
+                  alignment: Alignment.topRight,
+                  child: GestureDetector(
+                    onTap: () => ref.read(isArabicProvider.notifier).toggleLanguage(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppColors.surfacePure,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderHairline),
+                        color: const Color(0xFF0F263D).withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedGov,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: AppColors.textSecondary),
-                          items: _governorates.map((g) => DropdownMenuItem(
-                            value: g,
-                            child: Text(g, style: AppTextStyles.bodyMedium),
-                          )).toList(),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedGov = val);
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // METHOD 1: PHONE NUMBER + OTP
-                  if (_selectedMethod == AuthMethod.phone) ...[
-                    Text(
-                      isArabic ? 'رقم الهاتف العُماني' : 'OMAN MOBILE NUMBER',
-                      style: AppTextStyles.sectionHeader,
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        prefixIcon: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          alignment: Alignment.centerLeft,
-                          width: 76,
-                          child: Text('+968', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-                        ),
-                        hintText: '9123 4567',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
-                      ),
-                    ),
-
-                    if (_otpSent) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        isArabic ? 'رمز التحقق (OTP)' : 'VERIFICATION CODE (OTP)',
-                        style: AppTextStyles.sectionHeader,
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _otpController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.subhead.copyWith(letterSpacing: 8),
-                        decoration: const InputDecoration(
-                          hintText: '••••••',
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 20),
-                    PrimaryButton(
-                      label: _otpSent
-                          ? (isArabic ? 'تأكيد ودخول' : 'Verify & Continue')
-                          : (isArabic ? 'إرسال رمز التحقق' : 'Send Verification Code'),
-                      isLoading: _isLoading,
-                      onPressed: _otpSent ? _verifyPhoneOtp : _sendPhoneOtp,
-                    ),
-                  ],
-
-                  // METHOD 2: EMAIL & PASSWORD
-                  if (_selectedMethod == AuthMethod.email) ...[
-                    Text(
-                      isArabic ? 'البريد الإلكتروني' : 'EMAIL ADDRESS',
-                      style: AppTextStyles.sectionHeader,
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.email_outlined, size: 20, color: AppColors.textSecondary),
-                        hintText: isArabic ? 'captain@bahhar.om' : 'captain@bahhar.om',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    Text(
-                      isArabic ? 'كلمة المرور' : 'PASSWORD',
-                      style: AppTextStyles.sectionHeader,
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.lock_outline_rounded, size: 20, color: AppColors.textSecondary),
-                        hintText: '••••••••',
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-                    PrimaryButton(
-                      label: _isRegister
-                          ? (isArabic ? 'إنشاء حساب' : 'Create Account')
-                          : (isArabic ? 'تسجيل الدخول' : 'Sign In with Email'),
-                      isLoading: _isLoading,
-                      onPressed: _handleEmailAuth,
-                    ),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Divider with "OR"
-                  Row(
-                    children: [
-                      const Expanded(child: Divider(color: AppColors.borderHairline)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          isArabic ? 'أو' : 'OR',
-                          style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary, fontSize: 11),
-                        ),
-                      ),
-                      const Expanded(child: Divider(color: AppColors.borderHairline)),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-
-                  // SOCIAL / NATIVE PROVIDERS: APPLE ID & GOOGLE
-                  // Sign in with Apple (Mandatory for iOS with Social Auth)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: _isLoading ? null : _handleAppleSignIn,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.apple, size: 22, color: Colors.white),
-                          const SizedBox(width: 8),
-                          Text(
-                            isArabic ? 'المتابعة باستخدام Apple' : 'Sign in with Apple',
-                            style: AppTextStyles.labelMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Sign in with Google
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: AppColors.surfacePure,
-                        foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.borderHairline, width: 1.0),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: _isLoading ? null : _handleGoogleSignIn,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Google G Icon representation
-                          Container(
-                            width: 18,
-                            height: 18,
-                            alignment: Alignment.center,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Text('G', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF4285F4))),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isArabic ? 'المتابعة باستخدام Google' : 'Sign in with Google',
-                            style: AppTextStyles.labelMedium.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Continue as Guest / Explore
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        ref.read(authNotifierProvider.notifier).mockSignIn();
-                        context.go('/home');
-                      },
                       child: Text(
-                        isArabic ? 'تصفح التطبيق كزائر' : 'Continue as Guest',
-                        style: AppTextStyles.labelMedium.copyWith(color: AppColors.accentNavy),
+                        isArabic ? 'English' : 'عربي',
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.cyanAccent),
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 12),
 
-                  const SizedBox(height: 24),
-                  Center(
-                    child: Text(
-                      isArabic
-                          ? 'بالمتابعة فإنك توافق على لوائح حماية الثروة السمكية في سلطنة عُمان'
-                          : 'By continuing, you agree to Oman Marine & Fishery Regulations.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary, fontSize: 11),
-                    ),
+                // Floating Brand Header
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.cyanAccent.withValues(alpha: 0.2),
+                              blurRadius: 24,
+                            ),
+                          ],
+                        ),
+                        child: GlassContainer(
+                          level: GlassLevel.prominent,
+                          borderRadius: 22,
+                          padding: const EdgeInsets.all(16),
+                          child: const Icon(Icons.sailing_rounded, size: 40, color: AppColors.cyanAccent),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'BAHHAR • بَحّار',
+                        style: AppTextStyles.screenTitle.copyWith(
+                          fontSize: 22,
+                          letterSpacing: 2.0,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isArabic ? 'الرفيق الذكي للصيد في عُمان' : 'Oman Smart Marine & Fishing Companion',
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 24),
+
+                // Main Floating Auth Glass Card
+                GlassContainer(
+                  level: GlassLevel.prominent,
+                  borderRadius: GlassTokens.radiusLarge,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Mode Selector: Sign In vs Register
+                      PolymorphicSegmentedBar(
+                        options: [
+                          isArabic ? 'تسجيل الدخول' : 'Sign In',
+                          isArabic ? 'حساب جديد' : 'Register',
+                        ],
+                        selectedIndex: _isRegister ? 1 : 0,
+                        onSelected: (idx) {
+                          setState(() {
+                            _isRegister = (idx == 1);
+                            _otpSent = false;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 18),
+
+                      // Method Selector: Phone vs Email
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PolymorphicChip(
+                              label: isArabic ? 'رقم الهاتف' : 'Phone (OTP)',
+                              icon: Icons.phone_iphone_rounded,
+                              isSelected: _selectedMethod == AuthMethod.phone,
+                              onTap: () => setState(() => _selectedMethod = AuthMethod.phone),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: PolymorphicChip(
+                              label: isArabic ? 'البريد' : 'Email',
+                              icon: Icons.mail_outline_rounded,
+                              isSelected: _selectedMethod == AuthMethod.email,
+                              onTap: () => setState(() => _selectedMethod = AuthMethod.email),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+
+                      // If Register Mode: Name & Governorate
+                      if (_isRegister) ...[
+                        GlassInput(
+                          controller: _nameController,
+                          labelText: isArabic ? 'الاسم الكامل' : 'CAPTAIN / FULL NAME',
+                          hintText: 'e.g. Salim Al-Riyami',
+                          prefixIcon: const Icon(Icons.person_outline_rounded, size: 18, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 14),
+
+                        Text(
+                          isArabic ? 'المحافظة الساحلية' : 'HOME GOVERNORATE',
+                          style: AppTextStyles.sectionHeader,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A1D31).withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _selectedGov,
+                              isExpanded: true,
+                              dropdownColor: const Color(0xFF0A1D31),
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.cyanAccent),
+                              items: _governorates.map((g) => DropdownMenuItem(
+                                value: g,
+                                child: Text(g, style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+                              )).toList(),
+                              onChanged: (val) {
+                                if (val != null) setState(() => _selectedGov = val);
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // Method 1: Phone OTP
+                      if (_selectedMethod == AuthMethod.phone) ...[
+                        Text(
+                          isArabic ? 'رقم الهاتف العُماني' : 'OMAN MOBILE NUMBER',
+                          style: AppTextStyles.sectionHeader,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0A1D31).withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                              ),
+                              child: Text(
+                                '+968',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.cyanBright,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: GlassInput(
+                                controller: _phoneController,
+                                keyboardType: TextInputType.phone,
+                                hintText: '9123 4567',
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        if (_otpSent) ...[
+                          const SizedBox(height: 14),
+                          GlassInput(
+                            controller: _otpController,
+                            labelText: isArabic ? 'رمز التحقق (OTP)' : 'VERIFICATION CODE (OTP)',
+                            hintText: '••••••',
+                            keyboardType: TextInputType.number,
+                          ),
+                        ],
+
+                        const SizedBox(height: 20),
+                        SoftButton(
+                          label: _otpSent
+                              ? (isArabic ? 'تأكيد ودخول' : 'Verify & Continue')
+                              : (isArabic ? 'إرسال الرمز' : 'Send Verification Code'),
+                          isLoading: _isLoading,
+                          onPressed: _otpSent ? _verifyPhoneOtp : _sendPhoneOtp,
+                        ),
+                      ],
+
+                      // Method 2: Email & Password
+                      if (_selectedMethod == AuthMethod.email) ...[
+                        GlassInput(
+                          controller: _emailController,
+                          labelText: isArabic ? 'البريد الإلكتروني' : 'EMAIL ADDRESS',
+                          hintText: 'captain@bahhar.om',
+                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: const Icon(Icons.mail_outline_rounded, size: 18, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 14),
+                        GlassInput(
+                          controller: _passwordController,
+                          labelText: isArabic ? 'كلمة المرور' : 'PASSWORD',
+                          hintText: '••••••••',
+                          obscureText: true,
+                          prefixIcon: const Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 20),
+                        SoftButton(
+                          label: _isRegister
+                              ? (isArabic ? 'إنشاء حساب' : 'Create Account')
+                              : (isArabic ? 'تسجيل الدخول' : 'Sign In with Email'),
+                          isLoading: _isLoading,
+                          onPressed: _handleEmailAuth,
+                        ),
+                      ],
+
+                      const SizedBox(height: 18),
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(child: Container(height: 1, color: Colors.white.withValues(alpha: 0.1))),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: Text(
+                              isArabic ? 'أو' : 'OR',
+                              style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary, fontSize: 10),
+                            ),
+                          ),
+                          Expanded(child: Container(height: 1, color: Colors.white.withValues(alpha: 0.1))),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Social Providers
+                      SoftButton(
+                        label: isArabic ? 'المتابعة باستخدام Apple' : 'Sign in with Apple',
+                        icon: Icons.apple,
+                        style: SoftButtonStyle.glass,
+                        onPressed: _handleAppleSignIn,
+                      ),
+                      const SizedBox(height: 10),
+
+                      SoftButton(
+                        label: isArabic ? 'المتابعة باستخدام Google' : 'Sign in with Google',
+                        icon: Icons.g_mobiledata_rounded,
+                        style: SoftButtonStyle.secondary,
+                        onPressed: _handleGoogleSignIn,
+                      ),
+
+                      const SizedBox(height: 14),
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            ref.read(authNotifierProvider.notifier).mockSignIn();
+                            context.go('/home');
+                          },
+                          child: Text(
+                            isArabic ? 'الدخول كزائر / استكشاف' : 'Continue as Guest (Explore)',
+                            style: AppTextStyles.labelMedium.copyWith(color: AppColors.cyanAccent),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 22),
+                Center(
+                  child: Text(
+                    isArabic
+                        ? 'بالمتابعة فإنك توافق على لوائح حماية الثروة السمكية في سلطنة عُمان'
+                        : 'By continuing, you agree to Oman Marine & Fishery Regulations.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary, fontSize: 11),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/catches_provider.dart';
 import '../../../core/models/catch_model.dart';
-import '../../../shared/widgets/custom_buttons.dart';
+import '../../../shared/glass/marine_background.dart';
+import '../../../shared/glass/glass_container.dart';
+import '../../../shared/polymorphic/soft_button.dart';
+import '../../../shared/polymorphic/glass_input.dart';
 
 class AddCatchScreen extends ConsumerStatefulWidget {
   const AddCatchScreen({super.key});
@@ -77,156 +81,151 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfacePure,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfacePure,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text('Log New Catch', style: AppTextStyles.subhead),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppColors.borderHairline, height: 1.0),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Photo Upload Placeholder
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: double.infinity,
-                height: 140,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderHairline),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt_outlined, size: 32, color: AppColors.textSecondary),
-                    const SizedBox(height: 8),
-                    Text('Tap to add photo of catch', style: AppTextStyles.caption),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            Text('SPECIES', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: AppColors.surfacePure,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.borderHairline),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedSpecies,
-                  isExpanded: true,
-                  items: _species.map((s) => DropdownMenuItem(value: s, child: Text(s, style: AppTextStyles.bodyMedium))).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedSpecies = val);
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            Row(
+    return MarineBackground(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  onPressed: () => context.pop(),
+                ),
+                Text('Log New Catch', style: AppTextStyles.subhead.copyWith(color: Colors.white)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Photo Upload Dropzone in Glass
+                  GestureDetector(
+                    onTap: () {},
+                    child: GlassContainer(
+                      level: GlassLevel.standard,
+                      borderRadius: GlassTokens.radiusMedium,
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.camera_alt_outlined, size: 36, color: AppColors.cyanAccent),
+                            const SizedBox(height: 8),
+                            Text('Tap to capture photo of catch', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  Text('SPECIES', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A1D31).withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedSpecies,
+                        isExpanded: true,
+                        dropdownColor: const Color(0xFF0A1D31),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.cyanAccent),
+                        items: _species.map((s) => DropdownMenuItem(value: s, child: Text(s, style: const TextStyle(color: Colors.white)))).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedSpecies = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
                     children: [
-                      Text('WEIGHT (KG)', style: AppTextStyles.sectionHeader),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _weightController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(hintText: 'e.g. 6.2'),
+                      Expanded(
+                        child: GlassInput(
+                          controller: _weightController,
+                          labelText: 'WEIGHT (KG)',
+                          hintText: 'e.g. 7.5',
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GlassInput(
+                          controller: _lengthController,
+                          labelText: 'LENGTH (CM)',
+                          hintText: 'e.g. 88',
+                          keyboardType: TextInputType.number,
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 16),
+
+                  Text('FISHING GEAR / METHOD', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A1D31).withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _gearUsed,
+                        isExpanded: true,
+                        dropdownColor: const Color(0xFF0A1D31),
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.cyanAccent),
+                        items: _gearTypes.map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(color: Colors.white)))).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _gearUsed = val);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('LENGTH (CM)', style: AppTextStyles.sectionHeader),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _lengthController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(hintText: 'e.g. 78'),
+                      Text('Catch & Released', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+                      Switch(
+                        value: _released,
+                        activeColor: AppColors.cyanAccent,
+                        onChanged: (v) => setState(() => _released = v),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-            Text('FISHING GEAR / METHOD', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: AppColors.surfacePure,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.borderHairline),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _gearUsed,
-                  isExpanded: true,
-                  items: _gearTypes.map((g) => DropdownMenuItem(value: g, child: Text(g, style: AppTextStyles.bodyMedium))).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _gearUsed = val);
-                  },
-                ),
+                  GlassInput(
+                    controller: _notesController,
+                    labelText: 'OBSERVATIONS & CONDITIONS',
+                    hintText: 'Water clarity, sea birds, surface action...',
+                    maxLines: 3,
+                  ),
+
+                  const SizedBox(height: 28),
+                  SoftButton(
+                    label: 'Save Catch Record',
+                    icon: Icons.check_circle_rounded,
+                    onPressed: _saveCatch,
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Catch & Released', style: AppTextStyles.bodyMedium),
-                Switch(
-                  value: _released,
-                  activeColor: AppColors.accentNavy,
-                  onChanged: (v) => setState(() => _released = v),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            Text('NOTES & OBSERVATIONS', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _notesController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'Water clarity, sea bird activity, bait schools...',
-              ),
-            ),
-
-            const SizedBox(height: 32),
-            PrimaryButton(
-              label: 'Save Catch Record',
-              onPressed: _saveCatch,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}\n
+}

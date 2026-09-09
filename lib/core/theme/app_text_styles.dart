@@ -1,65 +1,66 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Typography scale — Bahhar AI v2 (Section 4.2)
-/// Clean normal sans-serif, lining tabular figures, restrained weight ladder.
+/// BAHHAR Modernized Typography Scale
+/// Optimized for maximum legibility over translucent glass surfaces.
 class AppTextStyles {
-  // ── Display / Hero numeral ──
+  // ── Hero & Display ──
   static const TextStyle display = TextStyle(
-    fontSize: 30,
-    height: 38 / 30,
-    fontWeight: FontWeight.w600,
+    fontSize: 32,
+    height: 40 / 32,
+    fontWeight: FontWeight.w700,
     fontFeatures: [FontFeature.tabularFigures()],
-    letterSpacing: -0.5,
-    color: AppColors.inkPrimary,
+    letterSpacing: -0.6,
+    color: AppColors.textPrimary,
   );
 
-  // ── Screen title (large heading) ──
+  // ── Screen Title ──
   static const TextStyle screenTitle = TextStyle(
     fontSize: 22,
     height: 30 / 22,
     fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
     letterSpacing: -0.3,
-    color: AppColors.inkPrimary,
+    color: AppColors.textPrimary,
   );
 
-  // ── Subhead (AppBar / section heading) ──
+  // ── Subhead ──
   static const TextStyle subhead = TextStyle(
-    fontSize: 18,
-    height: 26 / 18,
+    fontSize: 17,
+    height: 24 / 17,
     fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
     letterSpacing: -0.2,
-    color: AppColors.inkPrimary,
+    color: AppColors.textPrimary,
   );
 
-  // ── Section header (uppercase micro label) ──
+  // ── Section Header (Uppercase micro label) ──
   static const TextStyle sectionHeader = TextStyle(
     fontSize: 11,
     height: 14 / 11,
     fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
-    letterSpacing: 1.0,
-    color: AppColors.inkSecondary,
+    letterSpacing: 1.2,
+    color: AppColors.cyanAccent,
   );
 
-  // ── Card title ──
+  // ── Card Title ──
   static const TextStyle cardTitle = TextStyle(
     fontSize: 15,
     height: 22 / 15,
     fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkPrimary,
+    letterSpacing: -0.1,
+    color: AppColors.textPrimary,
   );
 
-  // ── Body / body medium ──
+  // ── Body & Body Medium ──
   static const TextStyle body = TextStyle(
     fontSize: 15,
     height: 22 / 15,
     fontWeight: FontWeight.w400,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkPrimary,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -67,16 +68,16 @@ class AppTextStyles {
     height: 22 / 15,
     fontWeight: FontWeight.w500,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkPrimary,
+    color: AppColors.textPrimary,
   );
 
-  // ── Label medium / small ──
+  // ── Labels ──
   static const TextStyle labelMedium = TextStyle(
     fontSize: 14,
     height: 20 / 14,
     fontWeight: FontWeight.w500,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkPrimary,
+    color: AppColors.textPrimary,
   );
 
   static const TextStyle labelSmall = TextStyle(
@@ -84,7 +85,7 @@ class AppTextStyles {
     height: 16 / 12,
     fontWeight: FontWeight.w500,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkPrimary,
+    color: AppColors.textSecondary,
   );
 
   // ── Caption ──
@@ -93,7 +94,7 @@ class AppTextStyles {
     height: 16 / 12,
     fontWeight: FontWeight.w400,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkSecondary,
+    color: AppColors.textSecondary,
   );
 
   static const TextStyle captionMedium = TextStyle(
@@ -101,7 +102,7 @@ class AppTextStyles {
     height: 16 / 12,
     fontWeight: FontWeight.w500,
     fontFeatures: [FontFeature.tabularFigures()],
-    color: AppColors.inkSecondary,
+    color: AppColors.textSecondary,
   );
 
   // ── Micro ──
@@ -110,8 +111,8 @@ class AppTextStyles {
     height: 14 / 11,
     fontWeight: FontWeight.w500,
     fontFeatures: [FontFeature.tabularFigures()],
-    letterSpacing: 0.2,
-    color: AppColors.inkSecondary,
+    letterSpacing: 0.3,
+    color: AppColors.textTertiary,
   );
 
   // Legacy aliases

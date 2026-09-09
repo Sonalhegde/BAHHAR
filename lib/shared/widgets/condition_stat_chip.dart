@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/glass_tokens.dart';
+import '../glass/glass_container.dart';
 
 class ConditionStatChip extends StatelessWidget {
   final String label;
@@ -18,34 +20,42 @@ class ConditionStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isWarning
-            ? AppColors.signalAlert.withValues(alpha: 0.06)
-            : AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isWarning
-              ? AppColors.signalAlert.withValues(alpha: 0.2)
-              : AppColors.borderHairline,
-        ),
-      ),
+    final accent = isWarning ? AppColors.signalAlert : AppColors.cyanAccent;
+
+    return GlassContainer(
+      level: GlassLevel.standard,
+      borderRadius: GlassTokens.radiusMedium,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTextStyles.caption.copyWith(fontSize: 10, letterSpacing: 0.8)),
+          Text(
+            label,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 10,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w600,
+              color: isWarning ? AppColors.signalAlert : AppColors.cyanAccent,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
             style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w700,
-              color: isWarning ? AppColors.signalAlert : AppColors.textPrimary,
+              fontSize: 16,
+              color: isWarning ? AppColors.signalAlert : Colors.white,
             ),
           ),
           if (subtext != null) ...[
             const SizedBox(height: 2),
-            Text(subtext!, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+            Text(
+              subtext!,
+              style: AppTextStyles.caption.copyWith(
+                fontSize: 10,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
         ],
       ),

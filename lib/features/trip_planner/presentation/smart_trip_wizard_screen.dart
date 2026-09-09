@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/providers/trip_provider.dart';
-import '../../../core/providers/hotspots_provider.dart';
-import '../../../shared/widgets/custom_buttons.dart';
+import '../../../core/theme/glass_tokens.dart';
+import '../../../shared/glass/marine_background.dart';
+import '../../../shared/glass/glass_container.dart';
+import '../../../shared/polymorphic/soft_button.dart';
 
 class SmartTripWizardScreen extends ConsumerStatefulWidget {
   const SmartTripWizardScreen({super.key});
@@ -38,84 +39,99 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.surfacePure,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfacePure,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text('Smart Trip Planner', style: AppTextStyles.subhead),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppColors.borderHairline, height: 1.0),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Minimal step indicator
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.borderHairline)),
-              ),
-              child: Row(
-                children: List.generate(3, (idx) {
-                  final isActive = idx == _currentStep;
-                  final isPassed = idx < _currentStep;
-                  return Expanded(
-                    child: Container(
-                      height: 3,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      color: isPassed || isActive ? AppColors.accentNavy : AppColors.borderHairline,
-                    ),
-                  );
-                }),
-              ),
+    return MarineBackground(
+      child: Column(
+        children: [
+          // Glass App Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  onPressed: () {
+                    if (_currentStep > 0) {
+                      setState(() => _currentStep--);
+                    } else {
+                      context.pop();
+                    }
+                  },
+                ),
+                Text('Smart Trip Planner', style: AppTextStyles.subhead.copyWith(color: Colors.white)),
+              ],
             ),
+          ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: _buildStepContent(),
-              ),
-            ),
-
-            // Bottom action footer
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: AppColors.surfacePure,
-                border: Border(top: BorderSide(color: AppColors.borderHairline)),
-              ),
-              child: Row(
-                children: [
-                  if (_currentStep > 0)
-                    Expanded(
-                      child: SecondaryButton(
-                        label: 'Previous',
-                        onPressed: () => setState(() => _currentStep--),
-                      ),
-                    ),
-                  if (_currentStep > 0) const SizedBox(width: 12),
-                  Expanded(
-                    child: PrimaryButton(
-                      label: _currentStep == 2 ? 'Generate Plan' : 'Next Step',
-                      onPressed: () {
-                        if (_currentStep < 2) {
-                          setState(() => _currentStep++);
-                        } else {
-                          // Complete wizard
-                          context.push('/trip-recommendation');
-                        }
-                      },
+          // Glass Step Progress Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Row(
+              children: List.generate(3, (idx) {
+                final isActive = idx == _currentStep;
+                final isPassed = idx < _currentStep;
+                return Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    decoration: BoxDecoration(
+                      color: isPassed || isActive
+                          ? AppColors.cyanAccent
+                          : Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: AppColors.cyanAccent.withValues(alpha: 0.6),
+                                blurRadius: 6,
+                              ),
+                            ]
+                          : null,
                     ),
                   ),
-                ],
-              ),
+                );
+              }),
             ),
-          ],
-        ),
+          ),
+
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: _buildStepContent(),
+            ),
+          ),
+
+          // Bottom Action Footer
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Row(
+              children: [
+                if (_currentStep > 0) ...[
+                  Expanded(
+                    child: SoftButton(
+                      label: 'Previous',
+                      style: SoftButtonStyle.glass,
+                      onPressed: () => setState(() => _currentStep--),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: SoftButton(
+                    label: _currentStep == 2 ? 'Generate Calibrated Route' : 'Next Step',
+                    onPressed: () {
+                      if (_currentStep < 2) {
+                        setState(() => _currentStep++);
+                      } else {
+                        context.push('/trip-recommendation');
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -126,36 +142,39 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('STEP 1 OF 3', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+            Text('STEP 1 OF 3', style: AppTextStyles.sectionHeader),
             const SizedBox(height: 4),
-            Text('Select Target Species', style: AppTextStyles.screenTitle.copyWith(fontSize: 24)),
-            const SizedBox(height: 8),
-            Text('Bahhar uses species-specific thermal and depth profiles to calculate optimal routes.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 24),
+            Text('Select Target Species', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
+            const SizedBox(height: 6),
+            Text(
+              'Route bathymetry and launch timing calibrate to the species thermal and feeding envelope.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
             ..._speciesOptions.map((s) {
               final isSelected = _selectedSpecies == s;
-              return GestureDetector(
-                onTap: () => setState(() => _selectedSpecies = s),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassContainer(
+                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
+                  borderRadius: GlassTokens.radiusMedium,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.surfaceSubtle : AppColors.surfacePure,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? AppColors.accentNavy : AppColors.borderHairline,
-                      width: isSelected ? 1.5 : 1.0,
-                    ),
-                  ),
+                  onTap: () => setState(() => _selectedSpecies = s),
                   child: Row(
                     children: [
                       Icon(
                         isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
                         size: 20,
-                        color: isSelected ? AppColors.accentNavy : AppColors.textTertiary,
+                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 14),
-                      Text(s, style: AppTextStyles.bodyMedium.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
+                      Text(
+                        s,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -163,42 +182,44 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
             }),
           ],
         );
+
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('STEP 2 OF 3', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+            Text('STEP 2 OF 3', style: AppTextStyles.sectionHeader),
             const SizedBox(height: 4),
-            Text('Vessel & Distance Range', style: AppTextStyles.screenTitle.copyWith(fontSize: 24)),
-            const SizedBox(height: 8),
-            Text('Ensures fuel burn estimates and safety warnings match your hull capabilities.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 24),
-            Text('VESSEL CLASSIFICATION', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 10),
+            Text('Vessel & Cruising Range', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
+            const SizedBox(height: 6),
+            Text(
+              'Ensures fuel burn estimates and seaworthiness match your boat profile.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
             ..._boatOptions.map((b) {
               final isSelected = _boatType == b;
-              return GestureDetector(
-                onTap: () => setState(() => _boatType = b),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassContainer(
+                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
+                  borderRadius: GlassTokens.radiusMedium,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.surfaceSubtle : AppColors.surfacePure,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? AppColors.accentNavy : AppColors.borderHairline,
-                      width: isSelected ? 1.5 : 1.0,
-                    ),
-                  ),
+                  onTap: () => setState(() => _boatType = b),
                   child: Row(
                     children: [
                       Icon(
                         isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
                         size: 20,
-                        color: isSelected ? AppColors.accentNavy : AppColors.textTertiary,
+                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 14),
-                      Text(b, style: AppTextStyles.bodyMedium.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
+                      Text(
+                        b,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -208,8 +229,8 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('MAX CRUISE DISTANCE', style: AppTextStyles.sectionHeader),
-                Text('$_maxDistanceNmi nmi', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                Text('MAX CRUISE RADIUS', style: AppTextStyles.sectionHeader),
+                Text('$_maxDistanceNmi nmi', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.cyanAccent)),
               ],
             ),
             Slider(
@@ -217,47 +238,51 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
               min: 5,
               max: 50,
               divisions: 9,
-              activeColor: AppColors.accentNavy,
-              inactiveColor: AppColors.borderHairline,
+              activeColor: AppColors.cyanAccent,
+              inactiveColor: Colors.white.withValues(alpha: 0.15),
               onChanged: (v) => setState(() => _maxDistanceNmi = v.round()),
             ),
           ],
         );
+
       case 2:
       default:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('STEP 3 OF 3', style: AppTextStyles.caption.copyWith(letterSpacing: 1.2, fontWeight: FontWeight.w600)),
+            Text('STEP 3 OF 3', style: AppTextStyles.sectionHeader),
             const SizedBox(height: 4),
-            Text('Departure Time', style: AppTextStyles.screenTitle.copyWith(fontSize: 24)),
-            const SizedBox(height: 8),
-            Text('Tidal phase calculations will calibrate around this planned launch window.', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 24),
-            ...['04:30 AM (Pre-dawn)', '05:00 AM (Dawn)', '02:30 PM (Afternoon tide)', '05:30 PM (Dusk)'].map((t) {
+            Text('Departure Time', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
+            const SizedBox(height: 6),
+            Text(
+              'Tidal phases and surface wind calm periods will calibrate to this launch window.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 20),
+            ...['04:30 AM (Pre-dawn)', '05:00 AM (Dawn Slack)', '02:30 PM (Afternoon Tide)', '05:30 PM (Dusk)'].map((t) {
               final isSelected = _departureTime == t;
-              return GestureDetector(
-                onTap: () => setState(() => _departureTime = t),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: GlassContainer(
+                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
+                  borderRadius: GlassTokens.radiusMedium,
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.surfaceSubtle : AppColors.surfacePure,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isSelected ? AppColors.accentNavy : AppColors.borderHairline,
-                      width: isSelected ? 1.5 : 1.0,
-                    ),
-                  ),
+                  onTap: () => setState(() => _departureTime = t),
                   child: Row(
                     children: [
                       Icon(
-                        isSelected ? Icons.access_time_rounded : Icons.access_time,
+                        Icons.access_time_rounded,
                         size: 20,
-                        color: isSelected ? AppColors.accentNavy : AppColors.textTertiary,
+                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
                       ),
                       const SizedBox(width: 14),
-                      Text(t, style: AppTextStyles.bodyMedium.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400)),
+                      Text(
+                        t,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? Colors.white : AppColors.textSecondary,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -267,4 +292,4 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
         );
     }
   }
-}\n
+}

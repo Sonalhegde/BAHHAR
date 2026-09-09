@@ -11,9 +11,9 @@ class BahharApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Bahhar AI',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      theme: AppTheme.marineDarkTheme,
+      darkTheme: AppTheme.marineDarkTheme,
+      themeMode: ThemeMode.dark,
       routerConfig: AppRouter.router,
     );
   }

@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/providers/marine_provider.dart';
+import '../../../shared/glass/marine_background.dart';
+import '../../../shared/glass/glass_container.dart';
+import '../../../shared/glass/glass_card.dart';
 import '../../../shared/widgets/fishing_score_gauge.dart';
 import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
+import '../../../shared/polymorphic/soft_button.dart';
 
 class HotspotDetailsScreen extends ConsumerWidget {
   final String hotspotId;
@@ -19,55 +24,50 @@ class HotspotDetailsScreen extends ConsumerWidget {
     final marineAsync = ref.watch(currentMarineConditionsProvider);
 
     if (hotspot == null) {
-      return Scaffold(
-        backgroundColor: AppColors.surfacePure,
-        appBar: AppBar(title: const Text('Spot Details')),
-        body: const Center(child: Text('Hotspot not found')),
+      return MarineBackground(
+        child: Center(
+          child: Text('Hotspot not found', style: AppTextStyles.body.copyWith(color: Colors.white)),
+        ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.surfacePure,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfacePure,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Text(hotspot.name, style: AppTextStyles.subhead),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppColors.borderHairline, height: 1.0),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.bookmark_border_rounded, size: 20),
-            onPressed: () {},
+    return MarineBackground(
+      child: CustomScrollView(
+        slivers: [
+          // Glass App Bar
+          SliverAppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              onPressed: () => context.pop(),
+            ),
+            title: Text(hotspot.name, style: AppTextStyles.subhead.copyWith(color: Colors.white)),
+            actions: [
+              IconButton(icon: const Icon(Icons.bookmark_border_rounded, color: Colors.white), onPressed: () {}),
+              IconButton(icon: const Icon(Icons.share_outlined, color: Colors.white), onPressed: () {}),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.share_outlined, size: 20),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Overview
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.borderHairline)),
-              ),
+
+          // Overview Glass Card
+          SliverToBoxAdapter(
+            child: ElevatedGlassCard(
+              margin: const EdgeInsets.all(16),
+              glowColor: AppColors.cyanAccent,
               child: Row(
                 children: [
-                  FishingScoreGauge(score: hotspot.rating, size: 90),
-                  const SizedBox(width: 20),
+                  FishingScoreGauge(score: hotspot.rating, size: 88),
+                  const SizedBox(width: 18),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(hotspot.name, style: AppTextStyles.screenTitle.copyWith(fontSize: 22)),
-                        Text('${hotspot.nameArabic} • ${hotspot.governorate}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                        Text(hotspot.name, style: AppTextStyles.screenTitle.copyWith(fontSize: 20, color: Colors.white)),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${hotspot.nameArabic} • ${hotspot.governorate}',
+                          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                        ),
                         const SizedBox(height: 8),
                         LegalStatusBadge(isRestricted: hotspot.isProtectedReserve),
                       ],
@@ -76,110 +76,97 @@ class HotspotDetailsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
 
-            // Live Conditions Grid
-            Padding(
-              padding: const EdgeInsets.all(20),
+          // Live Marine Conditions Readouts
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('REAL-TIME CONDITIONS', style: AppTextStyles.sectionHeader),
-                  const SizedBox(height: 12),
+                  Text('COASTAL MARINE METRICS', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 8),
                   marineAsync.when(
                     data: (marine) => Row(
                       children: [
                         Expanded(
                           child: ConditionStatChip(
-                            label: 'WAVE HEIGHT',
+                            label: 'WAVE',
                             value: '${marine.waveHeightMeters}m',
                             subtext: marine.waveDirection,
-                            isWarning: marine.waveHeightMeters > 1.8,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: ConditionStatChip(
-                            label: 'WIND SPEED',
+                            label: 'WIND',
                             value: '${marine.windSpeedKnots}kt',
                             subtext: marine.windDirection,
-                            isWarning: marine.windSpeedKnots > 20,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: ConditionStatChip(
-                            label: 'WATER TEMP',
+                            label: 'WATER',
                             value: '${marine.waterTempCelsius}°C',
                             subtext: 'SST Normal',
                           ),
                         ),
                       ],
                     ),
-                    loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    loading: () => const SizedBox(),
                     error: (_, __) => const SizedBox(),
                   ),
+                  const SizedBox(height: 20),
 
-                  const SizedBox(height: 28),
+                  // Target Species
                   Text('KEY TARGET SPECIES', style: AppTextStyles.sectionHeader),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: hotspot.primarySpecies.map((s) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceSubtle,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.borderHairline),
-                      ),
-                      child: Text(s, style: AppTextStyles.labelMedium),
+                    children: hotspot.primarySpecies.map((s) => GlassContainer(
+                      level: GlassLevel.standard,
+                      borderRadius: GlassTokens.radiusSmall,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      child: Text(s, style: AppTextStyles.labelSmall.copyWith(color: AppColors.cyanAccent)),
                     )).toList(),
                   ),
+                  const SizedBox(height: 20),
 
-                  const SizedBox(height: 28),
-                  Text('NAVIGATION & BATHYMETRY', style: AppTextStyles.sectionHeader),
-                  const SizedBox(height: 12),
-                  Container(
+                  // Bathymetric & Nav Specs
+                  Text('BATHYMETRY & NAVIGATION SPECS', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 8),
+                  GlassContainer(
+                    level: GlassLevel.standard,
+                    borderRadius: GlassTokens.radiusMedium,
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfacePure,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderHairline),
-                    ),
                     child: Column(
                       children: [
-                        _buildNavRow('Coordinates', '${hotspot.latitude.toStringAsFixed(4)}° N, ${hotspot.longitude.toStringAsFixed(4)}° E'),
-                        const Divider(height: 16, color: AppColors.borderHairline),
-                        _buildNavRow('Depth', '${hotspot.depthMeters} meters'),
-                        const Divider(height: 16, color: AppColors.borderHairline),
-                        _buildNavRow('Distance from Port', '${hotspot.distanceNmi} nautical miles'),
-                        const Divider(height: 16, color: AppColors.borderHairline),
-                        _buildNavRow('Bottom Type', 'Rocky coral drop-off / gravel'),
+                        _buildNavRow('GPS Coordinates', '${hotspot.latitude.toStringAsFixed(4)}° N, ${hotspot.longitude.toStringAsFixed(4)}° E'),
+                        const Divider(color: Colors.white10, height: 16),
+                        _buildNavRow('Contour Depth', '${hotspot.depthMeters} meters'),
+                        const Divider(color: Colors.white10, height: 16),
+                        _buildNavRow('Distance to Port', '${hotspot.distanceNmi} nautical miles'),
+                        const Divider(color: Colors.white10, height: 16),
+                        _buildNavRow('Substrate Structure', 'Rocky coral drop-off / gravel'),
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.accentNavy,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      onPressed: () {
-                        context.push('/trip-planner');
-                      },
-                      child: Text('Plan Smart Trip Here', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
-                    ),
+                  const SizedBox(height: 28),
+                  SoftButton(
+                    label: 'Plan Smart Trip to this Hotspot',
+                    icon: Icons.navigation_rounded,
+                    onPressed: () => context.push('/trip-planner'),
                   ),
+                  const SizedBox(height: 36),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -188,9 +175,9 @@ class HotspotDetailsScreen extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+        Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.white)),
       ],
     );
   }
-}\n
+}
