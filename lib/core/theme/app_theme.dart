@@ -25,4 +25,6 @@ class AppTheme {
 
   static ThemeData get lightTheme => coastalLightTheme;
   static ThemeData get darkTheme => coastalLightTheme;
+  // backward-compat alias kept so old references don't break
+  static ThemeData get marineDarkTheme => coastalLightTheme;
 }

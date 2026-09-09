@@ -10,6 +10,16 @@ import '../../features/trip_planner/presentation/trip_recommendation_screen.dart
 import '../../features/my_catch/presentation/catch_history_screen.dart';
 import '../../features/my_catch/presentation/add_catch_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/profile/presentation/licences_screen.dart';
+import '../../features/profile/presentation/vessels_screen.dart';
+import '../../features/profile/presentation/crew_screen.dart';
+import '../../features/profile/presentation/documents_wallet_screen.dart';
+import '../../features/profile/presentation/safety_center_screen.dart';
+import '../../features/profile/presentation/help_instructions_screen.dart';
+import '../../features/profile/presentation/report_issue_screen.dart';
+import '../../features/profile/presentation/official_info_screen.dart';
+import '../../features/profile/presentation/edit_personal_info_screen.dart';
+import '../../features/profile/presentation/profile_settings_screen.dart';
 import '../../features/hotspot/presentation/hotspot_details_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../shared/polymorphic/floating_nav_bar.dart';
@@ -58,7 +68,53 @@ class AppRouter {
         builder: (context, state) => const NotificationsScreen(),
       ),
 
-      // Main Shell with Floating Glass Navigation Bar
+      // ── Profile sub-screens (outside shell — full screen) ─────────────────
+      GoRoute(
+        path: '/profile/licences',
+        builder: (context, state) => const LicencesScreen(),
+      ),
+      GoRoute(
+        path: '/profile/vessels',
+        builder: (context, state) => const VesselsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/crew',
+        builder: (context, state) => const CrewScreen(),
+      ),
+      GoRoute(
+        path: '/profile/gear',
+        builder: (context, state) => const DocumentsWalletScreen(), // gear handled inside documents for now
+      ),
+      GoRoute(
+        path: '/profile/documents',
+        builder: (context, state) => const DocumentsWalletScreen(),
+      ),
+      GoRoute(
+        path: '/profile/safety',
+        builder: (context, state) => const SafetyCenterScreen(),
+      ),
+      GoRoute(
+        path: '/profile/help',
+        builder: (context, state) => const HelpInstructionsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/report',
+        builder: (context, state) => const ReportIssueScreen(),
+      ),
+      GoRoute(
+        path: '/profile/official-info',
+        builder: (context, state) => const OfficialInfoScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit-personal',
+        builder: (context, state) => const EditPersonalInfoScreen(),
+      ),
+      GoRoute(
+        path: '/profile/settings',
+        builder: (context, state) => const ProfileSettingsScreen(),
+      ),
+
+      // ── Main Shell with Bottom Navigation ─────────────────────────────────
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
