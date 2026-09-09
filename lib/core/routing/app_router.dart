@@ -6,14 +6,16 @@ import '../../features/auth/presentation/login_register_screen.dart';
 import '../../features/home/presentation/home_dashboard_screen.dart';
 import '../../features/map/presentation/fishing_map_screen.dart';
 import '../../features/smart_trip/presentation/smart_trip_wizard_screen.dart';
+import '../../features/smart_trip/presentation/trip_recommendation_screen.dart';
 import '../../features/my_catch/presentation/catch_history_screen.dart';
+import '../../features/my_catch/presentation/add_catch_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/hotspot/presentation/hotspot_details_screen.dart';
+import '../../features/notifications/presentation/notifications_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
 
-/// Declarative GoRouter configuration for Bahhar AI
 class AppRouter {
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -34,6 +36,18 @@ class AppRouter {
       GoRoute(
         path: '/hotspot/:id',
         builder: (context, state) => const HotspotDetailsScreen(),
+      ),
+      GoRoute(
+        path: '/smart-trip-results',
+        builder: (context, state) => const TripRecommendationScreen(),
+      ),
+      GoRoute(
+        path: '/add-catch',
+        builder: (context, state) => const AddCatchScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
