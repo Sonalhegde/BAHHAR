@@ -24,9 +24,9 @@ class FishingScoreGauge extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: probColor.withValues(alpha: 0.28),
-            blurRadius: 18,
-            spreadRadius: -2,
+            color: probColor.withValues(alpha: 0.18),
+            blurRadius: 16,
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -38,10 +38,10 @@ class FishingScoreGauge extends StatelessWidget {
             children: [
               Text(
                 '$score',
-                style: AppTextStyles.display.copyWith(
-                  fontSize: size * 0.34,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
+                style: TextStyle(
+                  fontSize: size * 0.35,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.oceanNavy,
                   height: 1.0,
                 ),
               ),
@@ -50,9 +50,9 @@ class FishingScoreGauge extends StatelessWidget {
                 AppColors.getProbabilityLabel(score),
                 style: TextStyle(
                   fontSize: size * 0.11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: probColor,
-                  letterSpacing: 0.4,
+                  letterSpacing: 0.3,
                 ),
               ),
             ],
@@ -74,11 +74,11 @@ class _ModernGaugePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 5;
 
-    // Track arc
+    // Track
     final trackPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.12)
+      ..color = const Color(0xFFE2EDF8)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.5
+      ..strokeWidth = 5.0
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
@@ -94,7 +94,7 @@ class _ModernGaugePainter extends CustomPainter {
     final activePaint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 4.5
+      ..strokeWidth = 5.0
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(

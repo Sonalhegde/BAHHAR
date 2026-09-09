@@ -1,148 +1,95 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/providers/preferences_provider.dart';
 import '../../../shared/glass/marine_background.dart';
-import '../../../shared/glass/glass_container.dart';
-import '../../../core/theme/glass_tokens.dart';
+import '../../../shared/widgets/bahhar_logo_widget.dart';
+import '../../../shared/polymorphic/soft_button.dart';
+import '../../../shared/polymorphic/soft_toggle.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1100),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0.0, 0.85, curve: Curves.easeIn),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.90, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.9, curve: Curves.easeOutCubic),
-      ),
-    );
-    _controller.forward();
-
-    Future.delayed(const Duration(milliseconds: 2400), () {
-      if (mounted) {
-        context.go('/onboarding');
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
+    final isArabic = ref.watch(isArabicProvider);
+
     return MarineBackground(
-      child: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Floating Glass Logo Emblem
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.cyanAccent.withValues(alpha: 0.28),
-                        blurRadius: 32,
-                        spreadRadius: 2,
+      showHeadlandSilhouettes: true,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+          child: Column(
+            children: [
+              // Top Header Bar: Language Capsule + Location Dropdown
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  LanguageCapsuleToggle(
+                    isArabic: isArabic,
+                    onToggle: () => ref.read(isArabicProvider.notifier).toggleLanguage(),
+                  ),
+                  Row(
+                    children: const [
+                      Icon(Icons.location_on_outlined, size: 18, color: AppColors.oceanNavy),
+                      SizedBox(width: 4),
+                      Text(
+                        'Oman',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.oceanNavy,
+                        ),
                       ),
+                      Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.oceanNavy),
                     ],
                   ),
-                  child: GlassContainer(
-                    level: GlassLevel.prominent,
-                    borderRadius: 32,
-                    padding: const EdgeInsets.all(22),
-                    child: Icon(
-                      Icons.sailing_rounded,
-                      size: 64,
-                      color: AppColors.cyanAccent,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 28),
+                ],
+              ),
+              const Spacer(flex: 2),
 
-                // Luminous Brand Wordmarks
-                Text(
-                  'BAHHAR',
-                  style: AppTextStyles.screenTitle.copyWith(
-                    fontSize: 28,
-                    letterSpacing: 4.0,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'بَحّار',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.cyanBright,
-                    fontFamily: 'sans-serif',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Oman Smart Marine Companion',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
-                    letterSpacing: 0.8,
-                    fontSize: 13,
-                  ),
-                ),
+              // Central Bahhar Sail Emblem + Wordmark + Arabic Calligraphy
+              const BahharLogoWidget(
+                size: 88,
+                showWordmark: true,
+                showSubtitle: true,
+                showArabic: true,
+              ),
 
-                const SizedBox(height: 38),
-                Container(
-                  width: 38,
-                  height: 2.5,
-                  decoration: BoxDecoration(
-                    color: AppColors.cyanAccent,
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.cyanAccent.withValues(alpha: 0.6),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
+              const Spacer(flex: 2),
+
+              // Enter Command Button
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 240),
+                child: SoftButton(
+                  label: isArabic ? 'دخول التطبيق' : 'Enter Command',
+                  icon: Icons.arrow_forward_rounded,
+                  style: SoftButtonStyle.primary,
+                  onPressed: () => context.go('/home'),
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  'سلطنة عُمان • Sultanate of Oman',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textTertiary,
-                    letterSpacing: 1.2,
-                    fontSize: 11,
-                  ),
+              ),
+              const SizedBox(height: 14),
+
+              // Tagline
+              Text(
+                'Navigate  •  Explore  •  Stay Safe',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary.withValues(alpha: 0.8),
+                  letterSpacing: 0.5,
                 ),
-              ],
-            ),
+              ),
+
+              const Spacer(flex: 3),
+            ],
           ),
         ),
       ),

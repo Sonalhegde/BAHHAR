@@ -4,16 +4,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/glass_tokens.dart';
 
 enum SoftButtonStyle {
-  /// Primary filled oceanic button with subtle glow and tactile press
   primary,
-
-  /// Frosted glass action button with translucent depth
   glass,
-
-  /// Subtle secondary recessed button
   secondary,
-
-  /// Dangerous / warning action button
   danger,
 }
 
@@ -33,7 +26,7 @@ class SoftButton extends StatefulWidget {
     this.icon,
     this.style = SoftButtonStyle.primary,
     this.isLoading = false,
-    this.height = 50.0,
+    this.height = 52.0,
     this.width = double.infinity,
   });
 
@@ -55,55 +48,56 @@ class _SoftButtonState extends State<SoftButton> {
 
     switch (widget.style) {
       case SoftButtonStyle.primary:
-        bg = isDisabled ? const Color(0xFF1B3854) : AppColors.oceanNavy;
-        border = Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.4), width: 1.2);
+        bg = isDisabled ? const Color(0xFF93C5FD) : AppColors.primaryBlue;
+        border = Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.0);
         shadows = _isPressed
             ? [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  offset: const Offset(0, 1),
-                  blurRadius: 4,
+                  color: AppColors.primaryBlue.withValues(alpha: 0.25),
+                  offset: const Offset(0, 2),
+                  blurRadius: 6,
                 ),
               ]
             : [
                 BoxShadow(
-                  color: AppColors.cyanAccent.withValues(alpha: 0.22),
-                  offset: const Offset(0, 4),
-                  blurRadius: 14,
+                  color: AppColors.primaryBlue.withValues(alpha: 0.38),
+                  offset: const Offset(0, 8),
+                  blurRadius: 20,
                   spreadRadius: -2,
                 ),
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  offset: const Offset(0, 6),
-                  blurRadius: 12,
-                ),
-              ];
-        break;
-
-      case SoftButtonStyle.glass:
-        bg = const Color(0xFF0F2C49).withValues(alpha: 0.55);
-        border = Border.all(color: Colors.white.withValues(alpha: 0.22), width: 1.0);
-        shadows = _isPressed
-            ? []
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
                   offset: const Offset(0, 4),
                   blurRadius: 10,
                 ),
               ];
         break;
 
+      case SoftButtonStyle.glass:
+        bg = Colors.white.withValues(alpha: 0.85);
+        border = Border.all(color: const Color(0xFFBFDBFE), width: 1.0);
+        textColor = AppColors.oceanNavy;
+        shadows = _isPressed
+            ? []
+            : [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                  offset: const Offset(0, 4),
+                  blurRadius: 12,
+                ),
+              ];
+        break;
+
       case SoftButtonStyle.secondary:
-        bg = Colors.transparent;
-        border = Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.0);
-        textColor = AppColors.textSecondary;
+        bg = AppColors.primaryBlueLight;
+        border = Border.all(color: const Color(0xFFD6E6F7), width: 1.0);
+        textColor = AppColors.primaryBlue;
         shadows = [];
         break;
 
       case SoftButtonStyle.danger:
-        bg = AppColors.signalAlert.withValues(alpha: 0.16);
-        border = Border.all(color: AppColors.signalAlert.withValues(alpha: 0.45), width: 1.0);
+        bg = AppColors.signalAlert.withValues(alpha: 0.12);
+        border = Border.all(color: AppColors.signalAlert.withValues(alpha: 0.35), width: 1.0);
         textColor = AppColors.signalAlert;
         shadows = [];
         break;
@@ -123,7 +117,7 @@ class _SoftButtonState extends State<SoftButton> {
           height: widget.height,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+            borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
             border: border,
             boxShadow: shadows,
           ),
@@ -132,24 +126,25 @@ class _SoftButtonState extends State<SoftButton> {
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyanAccent),
+                  child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (widget.icon != null) ...[
-                      Icon(widget.icon, size: 18, color: textColor),
-                      const SizedBox(width: 8),
-                    ],
                     Text(
                       widget.label,
                       style: AppTextStyles.labelMedium.copyWith(
                         color: textColor,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        letterSpacing: 0.3,
                       ),
                     ),
+                    if (widget.icon != null) ...[
+                      const SizedBox(width: 8),
+                      Icon(widget.icon, size: 18, color: textColor),
+                    ],
                   ],
                 ),
         ),

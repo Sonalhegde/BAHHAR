@@ -1,9 +1,90 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/glass_tokens.dart';
 
-/// Polymorphic Tactile Filter Chip
+/// Language Capsule Pill Toggle as shown in the reference: [ EN | عربي ]
+class LanguageCapsuleToggle extends StatelessWidget {
+  final bool isArabic;
+  final VoidCallback onToggle;
+
+  const LanguageCapsuleToggle({
+    super.key,
+    required this.isArabic,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFE8F1FC),
+          borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+          border: Border.all(color: const Color(0xFFD3E4F8), width: 1.0),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // English Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: !isArabic ? AppColors.primaryBlue : Colors.transparent,
+                borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+                boxShadow: !isArabic
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                'EN',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: !isArabic ? Colors.white : AppColors.textSecondary,
+                ),
+              ),
+            ),
+            // Arabic Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isArabic ? AppColors.primaryBlue : Colors.transparent,
+                borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+                boxShadow: isArabic
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                'عربي',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isArabic ? Colors.white : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Polymorphic Filter Chip
 class PolymorphicChip extends StatelessWidget {
   final String label;
   final bool isSelected;
@@ -27,22 +108,28 @@ class PolymorphicChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.cyanAccent.withValues(alpha: 0.18)
-              : const Color(0xFF0F263D).withValues(alpha: 0.45),
+              ? AppColors.primaryBlue
+              : Colors.white.withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
           border: Border.all(
-            color: isSelected ? AppColors.cyanAccent : Colors.white.withValues(alpha: 0.12),
-            width: isSelected ? 1.4 : 1.0,
+            color: isSelected ? AppColors.primaryBlue : const Color(0xFFD6E5F5),
+            width: 1.0,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.cyanAccent.withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: AppColors.primaryBlue.withValues(alpha: 0.28),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ]
-              : null,
+              : [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -51,15 +138,16 @@ class PolymorphicChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
               ),
               const SizedBox(width: 6),
             ],
             Text(
               label,
-              style: AppTextStyles.labelSmall.copyWith(
+              style: TextStyle(
+                fontSize: 12,
                 color: isSelected ? Colors.white : AppColors.textSecondary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -69,7 +157,6 @@ class PolymorphicChip extends StatelessWidget {
   }
 }
 
-/// Polymorphic Segmented Control Bar
 class PolymorphicSegmentedBar extends StatelessWidget {
   final List<String> options;
   final int selectedIndex;
@@ -85,11 +172,11 @@ class PolymorphicSegmentedBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFF071828).withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        color: const Color(0xFFEAF2FB),
+        borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+        border: Border.all(color: const Color(0xFFD6E6F7)),
       ),
       child: Row(
         children: List.generate(options.length, (idx) {
@@ -99,19 +186,14 @@ class PolymorphicSegmentedBar extends StatelessWidget {
               onTap: () => onSelected(idx),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(vertical: 9),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.oceanNavy.withValues(alpha: 0.85)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(GlassTokens.radiusMedium - 3),
-                  border: isSelected
-                      ? Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.4), width: 1)
-                      : null,
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.25),
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -121,9 +203,10 @@ class PolymorphicSegmentedBar extends StatelessWidget {
                 alignment: Alignment.center,
                 child: Text(
                   options[idx],
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isSelected ? Colors.white : AppColors.textSecondary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
               ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/glass_tokens.dart';
-import '../glass/glass_container.dart';
 
 class ConditionStatChip extends StatelessWidget {
   final String label;
@@ -20,31 +18,44 @@ class ConditionStatChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = isWarning ? AppColors.signalAlert : AppColors.cyanAccent;
-
-    return GlassContainer(
-      level: GlassLevel.standard,
-      borderRadius: GlassTokens.radiusMedium,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.90),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isWarning
+              ? AppColors.signalAlert.withValues(alpha: 0.4)
+              : const Color(0xFFD3E4F8),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: AppTextStyles.caption.copyWith(
-              fontSize: 10,
+            style: TextStyle(
+              fontSize: 9.5,
               letterSpacing: 0.8,
-              fontWeight: FontWeight.w600,
-              color: isWarning ? AppColors.signalAlert : AppColors.cyanAccent,
+              fontWeight: FontWeight.w700,
+              color: isWarning ? AppColors.signalAlert : AppColors.primaryBlue,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.w700,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
               fontSize: 16,
-              color: isWarning ? AppColors.signalAlert : Colors.white,
+              color: isWarning ? AppColors.signalAlert : AppColors.oceanNavy,
             ),
           ),
           if (subtext != null) ...[
@@ -52,7 +63,7 @@ class ConditionStatChip extends StatelessWidget {
             Text(
               subtext!,
               style: AppTextStyles.caption.copyWith(
-                fontSize: 10,
+                fontSize: 10.5,
                 color: AppColors.textSecondary,
               ),
             ),

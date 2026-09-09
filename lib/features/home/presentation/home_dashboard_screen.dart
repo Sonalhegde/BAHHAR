@@ -25,12 +25,13 @@ class HomeDashboardScreen extends ConsumerWidget {
     final isArabic = ref.watch(isArabicProvider);
 
     return MarineBackground(
+      showHeadlandSilhouettes: true,
       child: CustomScrollView(
         slivers: [
-          // Glass Command Header
+          // Coastal Header Bar
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -39,31 +40,42 @@ class HomeDashboardScreen extends ConsumerWidget {
                     children: [
                       Text(
                         isArabic ? 'محافظة مسقط • سلطنة عُمان' : '$selectedRegion Governorate'.toUpperCase(),
-                        style: AppTextStyles.sectionHeader,
+                        style: AppTextStyles.sectionHeader.copyWith(color: AppColors.primaryBlue),
                       ),
                       const SizedBox(height: 2),
                       Row(
-                        children: [
+                        children: const [
+                          Icon(Icons.location_on, size: 16, color: AppColors.primaryBlue),
+                          SizedBox(width: 4),
                           Text(
-                            isArabic ? 'ميناء مطرح (مطرح)' : 'Mutrah Harbor',
-                            style: AppTextStyles.subhead.copyWith(fontSize: 19, color: Colors.white),
+                            'Mutrah Harbor (مطرح)',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.oceanNavy),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.cyanAccent),
+                          Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: AppColors.oceanNavy),
                         ],
                       ),
                     ],
                   ),
                   GestureDetector(
                     onTap: () => context.push('/notifications'),
-                    child: GlassContainer(
-                      level: GlassLevel.standard,
-                      borderRadius: GlassTokens.radiusSmall,
+                    child: Container(
                       padding: const EdgeInsets.all(9),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
+                        border: Border.all(color: const Color(0xFFD6E6F7)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          const Icon(Icons.notifications_outlined, size: 20, color: Colors.white),
+                          const Icon(Icons.notifications_outlined, size: 20, color: AppColors.oceanNavy),
                           Positioned(
                             top: -2,
                             right: -2,
@@ -85,33 +97,45 @@ class HomeDashboardScreen extends ConsumerWidget {
             ),
           ),
 
-          // Hero Score Command Panel (Glassmorphic Gauge)
+          // Hero Score Command Panel
           SliverToBoxAdapter(
-            child: ElevatedGlassCard(
-              margin: const EdgeInsets.fromLTRB(16, 6, 16, 14),
-              glowColor: AppColors.cyanAccent,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
                   const FishingScoreGauge(score: 87, size: 86),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 18),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           isArabic ? 'مؤشر الصيد اليومي' : 'DAILY FISHING INDEX',
-                          style: AppTextStyles.sectionHeader,
+                          style: AppTextStyles.sectionHeader.copyWith(color: AppColors.primaryBlue),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           isArabic ? 'نافذة مدية استثنائية' : 'Exceptional Solunar Window',
-                          style: AppTextStyles.bodyMedium.copyWith(
+                          style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.oceanNavy,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           isArabic
                               ? 'ذروة نشاط الصيد: 05:15 - 08:30 ص'
@@ -135,7 +159,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 children: [
                   Text(
                     isArabic ? 'بيانات الأرصاد البحرية المباشرة' : 'LIVE MARINE CONDITIONS',
-                    style: AppTextStyles.sectionHeader,
+                    style: AppTextStyles.sectionHeader.copyWith(color: AppColors.primaryBlue),
                   ),
                   const SizedBox(height: 8),
                   marineAsync.when(
@@ -169,7 +193,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                       ],
                     ),
                     loading: () => const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyanAccent),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
                     ),
                     error: (_, __) => const SizedBox(),
                   ),
@@ -178,24 +202,25 @@ class HomeDashboardScreen extends ConsumerWidget {
             ),
           ),
 
-          // Hotspots Header
+          // Hotspots Section Header
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     isArabic ? 'أبرز المواقع المصنفة اليوم' : 'TOP RANKED SPOTS TODAY',
-                    style: AppTextStyles.sectionHeader,
+                    style: AppTextStyles.sectionHeader.copyWith(color: AppColors.primaryBlue),
                   ),
                   GestureDetector(
                     onTap: () => context.go('/map'),
                     child: Text(
-                      isArabic ? 'عرض الخريطة ←' : 'View Nautical Chart →',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.cyanAccent,
-                        fontWeight: FontWeight.w600,
+                      isArabic ? 'عرض الخريطة ←' : 'Nautical Chart →',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
@@ -204,7 +229,7 @@ class HomeDashboardScreen extends ConsumerWidget {
             ),
           ),
 
-          // Hotspots List
+          // Hotspot List
           hotspotsAsync.when(
             data: (hotspots) => SliverList(
               delegate: SliverChildBuilderDelegate(
@@ -222,16 +247,13 @@ class HomeDashboardScreen extends ConsumerWidget {
               child: Center(
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyanAccent),
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
                 ),
               ),
             ),
-            error: (_, __) => const SliverToBoxAdapter(
-              child: Center(child: Text('Failed to load hotspots', style: TextStyle(color: Colors.white70))),
-            ),
+            error: (_, __) => const SliverToBoxAdapter(child: SizedBox()),
           ),
 
-          // Extra bottom padding for floating navigation bar
           const SliverToBoxAdapter(child: SizedBox(height: 96)),
         ],
       ),

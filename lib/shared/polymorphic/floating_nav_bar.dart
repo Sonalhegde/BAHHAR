@@ -30,85 +30,64 @@ class FloatingGlassNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(GlassTokens.radiusLarge),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(
-              sigmaX: GlassTokens.blurProminent,
-              sigmaY: GlassTokens.blurProminent,
+      child: Container(
+        height: 72,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.92),
+          border: const Border(
+            top: BorderSide(color: Color(0xFFE2EDF8), width: 1.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F2644).withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
             ),
-            child: Container(
-              height: 68,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF071A2C).withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(GlassTokens.radiusLarge),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(items.length, (idx) {
-                  final item = items[idx];
-                  final isSelected = idx == selectedIndex;
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(items.length, (idx) {
+            final item = items[idx];
+            final isSelected = idx == selectedIndex;
 
-                  return Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => onDestinationSelected(idx),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.cyanAccent.withValues(alpha: 0.16)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
-                          border: isSelected
-                              ? Border.all(
-                                  color: AppColors.cyanAccent.withValues(alpha: 0.35),
-                                  width: 1.0,
-                                )
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              isSelected ? item.selectedIcon : item.icon,
-                              size: 21,
-                              color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              item.label,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                color: isSelected ? Colors.white : AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+            return Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onDestinationSelected(idx),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isSelected ? item.selectedIcon : item.icon,
+                      size: 22,
+                      color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
                       ),
                     ),
-                  );
-                }),
+                    const SizedBox(height: 3),
+                    // Active indicator dot from reference image
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       ),
     );
