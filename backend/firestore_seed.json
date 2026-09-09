@@ -1,0 +1,267 @@
+{
+  "regions": [
+    {
+      "id": "muscat",
+      "name": "Muscat",
+      "nameAr": "????",
+      "center": [
+        23.6143,
+        58.5453
+      ]
+    },
+    {
+      "id": "musandam",
+      "name": "Musandam",
+      "nameAr": "?????",
+      "center": [
+        26.1989,
+        56.2486
+      ]
+    },
+    {
+      "id": "al_batinah_south",
+      "name": "Al Batinah South",
+      "nameAr": "???? ???????",
+      "center": [
+        23.7,
+        57.8
+      ]
+    },
+    {
+      "id": "al_batinah_north",
+      "name": "Al Batinah North",
+      "nameAr": "???? ???????",
+      "center": [
+        24.3667,
+        56.7333
+      ]
+    },
+    {
+      "id": "ash_sharqiyah_south",
+      "name": "Ash Sharqiyah South",
+      "nameAr": "???? ???????",
+      "center": [
+        22.5667,
+        59.5289
+      ]
+    },
+    {
+      "id": "al_wusta",
+      "name": "Al Wusta",
+      "nameAr": "??????",
+      "center": [
+        20.45,
+        58.75
+      ]
+    },
+    {
+      "id": "dhofar",
+      "name": "Dhofar",
+      "nameAr": "????",
+      "center": [
+        16.9833,
+        54.7
+      ]
+    }
+  ],
+  "species": [
+    {
+      "id": "kingfish",
+      "nameEn": "Kingfish (Narrow-barred Spanish Mackerel)",
+      "nameAr": "??????",
+      "seasonalMonths": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3,
+        4
+      ],
+      "minLegalSizeCm": 65
+    },
+    {
+      "id": "yellowfin_tuna",
+      "nameEn": "Yellowfin Tuna",
+      "nameAr": "?????",
+      "seasonalMonths": [
+        9,
+        10,
+        11,
+        3,
+        4,
+        5
+      ],
+      "minLegalSizeCm": 70
+    },
+    {
+      "id": "hammour",
+      "nameEn": "Orange-spotted Grouper",
+      "nameAr": "???????",
+      "seasonalMonths": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "minLegalSizeCm": 45
+    },
+    {
+      "id": "queenfish",
+      "nameEn": "Talang Queenfish",
+      "nameAr": "?????? / ??????",
+      "seasonalMonths": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "minLegalSizeCm": 50
+    },
+    {
+      "id": "mahi_mahi",
+      "nameEn": "Mahi-Mahi (Dorado)",
+      "nameAr": "????????",
+      "seasonalMonths": [
+        4,
+        5,
+        9,
+        10,
+        11
+      ],
+      "minLegalSizeCm": 55
+    },
+    {
+      "id": "giant_trevally",
+      "nameEn": "Giant Trevally",
+      "nameAr": "??????",
+      "seasonalMonths": [
+        10,
+        11,
+        12,
+        1,
+        2,
+        3
+      ],
+      "minLegalSizeCm": 60
+    }
+  ],
+  "hotspots": [
+    {
+      "id": "fahal_island",
+      "name": "Fahal Island (Shark Island)",
+      "nameAr": "????? ?????",
+      "region": "Muscat",
+      "lat": 23.6811,
+      "lon": 58.5028,
+      "depthM": 38,
+      "status": "Permitted",
+      "species": [
+        "Kingfish",
+        "Yellowfin Tuna",
+        "Queenfish"
+      ]
+    },
+    {
+      "id": "daymaniyat_islands",
+      "name": "Daymaniyat Marine Nature Reserve",
+      "nameAr": "????? ??? ??????????",
+      "region": "Al Batinah South",
+      "lat": 23.8617,
+      "lon": 58.0933,
+      "depthM": 55,
+      "status": "Protected",
+      "species": [
+        "Hammour",
+        "Sailfish",
+        "Yellowfin Tuna"
+      ],
+      "decree": "Royal Decree 23/96"
+    },
+    {
+      "id": "bandar_khayran",
+      "name": "Bandar Khayran Coves",
+      "nameAr": "???? ???????",
+      "region": "Muscat",
+      "lat": 23.5186,
+      "lon": 58.7364,
+      "depthM": 28,
+      "status": "Permitted",
+      "species": [
+        "Hammour",
+        "Queenfish",
+        "Barracuda"
+      ]
+    },
+    {
+      "id": "ras_al_hadd",
+      "name": "Ras Al Hadd Deep Trench",
+      "nameAr": "???? ??? ????",
+      "region": "Ash Sharqiyah South",
+      "lat": 22.5367,
+      "lon": 59.8153,
+      "depthM": 90,
+      "status": "Permitted",
+      "species": [
+        "Yellowfin Tuna",
+        "Mahi-Mahi",
+        "Sailfish"
+      ]
+    },
+    {
+      "id": "kumzar_passage",
+      "name": "Kumzar Deep Passage",
+      "nameAr": "??? ????? ??????",
+      "region": "Musandam",
+      "lat": 26.3314,
+      "lon": 56.4178,
+      "depthM": 75,
+      "status": "Permitted",
+      "species": [
+        "Kingfish",
+        "Giant Trevally",
+        "Hammour"
+      ]
+    },
+    {
+      "id": "masirah_channel",
+      "name": "Masirah Island Channel",
+      "nameAr": "???? ????? ?????",
+      "region": "Al Wusta",
+      "lat": 20.45,
+      "lon": 58.75,
+      "depthM": 45,
+      "status": "Permitted",
+      "species": [
+        "Queenfish",
+        "Kingfish",
+        "Barracuda"
+      ]
+    },
+    {
+      "id": "mirbat_dropoff",
+      "name": "Mirbat Pelagic Drop-off",
+      "nameAr": "??? ????? ??????",
+      "region": "Dhofar",
+      "lat": 16.9833,
+      "lon": 54.7,
+      "depthM": 110,
+      "status": "Permitted",
+      "species": [
+        "Yellowfin Tuna",
+        "Amberjack",
+        "Grouper"
+      ]
+    }
+  ]
+}
