@@ -1,0 +1,31 @@
+{
+  "@@locale": "en",
+  "appTitle": "BAHHAR",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "fishingOpportunity": "Fishing Opportunity",
+  "@fishingOpportunity": {
+    "description": "Fishing opportunity gauge title on home dashboard"
+  },
+  "targetSpecies": "Target Species",
+  "@targetSpecies": {
+    "description": "Label for target species filter and selection"
+  },
+  "bestTime": "Best Time",
+  "@bestTime": {
+    "description": "Label for the optimal fishing window"
+  },
+  "seaTemperature": "Sea Temperature",
+  "@seaTemperature": {
+    "description": "Label for sea surface temperature"
+  },
+  "waveHeight": "Wave Height",
+  "@waveHeight": {
+    "description": "Label for significant wave height"
+  },
+  "wind": "Wind",
+  "@wind": {
+    "description": "Label for wind speed and direction"
+  }
+}

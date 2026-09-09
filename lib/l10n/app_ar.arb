@@ -1,0 +1,10 @@
+{
+  "@@locale": "ar",
+  "appTitle": "بحّار",
+  "fishingOpportunity": "فرصة الصيد",
+  "targetSpecies": "الأنواع المستهدفة",
+  "bestTime": "أفضل وقت",
+  "seaTemperature": "درجة حرارة البحر",
+  "waveHeight": "ارتفاع الموج",
+  "wind": "الرياح"
+}
