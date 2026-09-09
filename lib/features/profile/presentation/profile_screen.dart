@@ -26,43 +26,41 @@ class ProfileScreen extends ConsumerWidget {
     String t(String k) => AppTranslations.t(k, isArabic);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: AppColors.surfaceCanvas,
       body: CustomScrollView(
         slivers: [
-          // ── Government-Grade Header ──────────────────────────────────────────
+          // ── LinkedIn/GCC Institutional Header ─────────────────────────────
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 168,
             floating: false,
             pinned: true,
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              background: _GovernmentProfileHeader(profile: profile, isArabic: isArabic),
+              background: _LinkedInProfileHeader(profile: profile, isArabic: isArabic),
             ),
           ),
 
-          // ── Profile Completion Status ──────────────────────────────────────
+          // ── Registry Completeness Status ──────────────────────────────────
           SliverToBoxAdapter(
-            child: _InstitutionalCompletionBanner(
+            child: _RegistryCompletionCard(
               percentage: profile.completionPercentage,
               isArabic: isArabic,
             ),
           ),
 
-          // ── Grouped Inset Sections (GCC Government Style) ──────────────────
+          // ── Uniform Professional Grouped Sections ─────────────────────────
           SliverList(
             delegate: SliverChildListDelegate([
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // 1. Personal Identity & Civil Registry
-              _SectionHeader(isArabic ? 'الهوية والسجل المدني' : 'CIVIL IDENTITY & CONTACT'),
+              // 1. Personal Identity & Contact
+              _SectionHeader(isArabic ? 'الهوية ومعلومات الاتصال' : 'CIVIL IDENTITY & CONTACT'),
               _CardGroup(
                 children: [
                   _ProfileTile(
-                    icon: Icons.badge_outlined,
-                    iconBg: const Color(0xFFEEF4FB),
-                    iconColor: AppColors.primaryBlue,
+                    icon: Icons.person_outline_rounded,
                     label: t('full_name'),
                     value: isArabic && profile.fullNameArabic.isNotEmpty
                         ? profile.fullNameArabic
@@ -71,8 +69,6 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _ProfileTile(
                     icon: Icons.fingerprint_rounded,
-                    iconBg: const Color(0xFFEEF4FB),
-                    iconColor: AppColors.primaryBlue,
                     label: t('civil_id'),
                     value: LocaleUtils.maskId(profile.civilId),
                     trailingWidget: _RevealButton(isArabic: isArabic),
@@ -80,24 +76,18 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                   _ProfileTile(
                     icon: Icons.phone_android_rounded,
-                    iconBg: const Color(0xFFEEF4FB),
-                    iconColor: AppColors.primaryBlue,
                     label: t('phone_number'),
                     value: LocaleUtils.maskPhone(profile.phoneNumber),
                     onTap: () => context.push('/profile/edit-personal'),
                   ),
                   _ProfileTile(
-                    icon: Icons.location_city_rounded,
-                    iconBg: const Color(0xFFEEF4FB),
-                    iconColor: AppColors.primaryBlue,
+                    icon: Icons.location_on_outlined,
                     label: t('governorate'),
                     value: '${profile.governorate}${profile.wilayat != null ? " • ${profile.wilayat}" : ""}',
                     onTap: () => context.push('/profile/edit-personal'),
                   ),
                   _ProfileTile(
                     icon: Icons.contact_emergency_outlined,
-                    iconBg: const Color(0xFFFEF2F2),
-                    iconColor: const Color(0xFFDC2626),
                     label: t('emergency_contact'),
                     value: profile.emergencyContact?.name ?? '—',
                     hint: profile.emergencyContact?.phoneNumber != null
@@ -108,176 +98,144 @@ class ProfileScreen extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 2. Official Fishing Licences & Marine Assets
-              _SectionHeader(isArabic ? 'السجلات والتراخيص البحرية' : 'MARINE LICENCES & ASSETS'),
+              // 2. Official Marine Licences & Craft
+              _SectionHeader(isArabic ? 'التراخيص والسفن البحرية' : 'MARINE LICENCES & ASSETS'),
               _CardGroup(
                 children: [
                   _NavTile(
-                    icon: Icons.card_membership_rounded,
-                    iconBg: const Color(0xFFEEF4FB),
-                    iconColor: AppColors.primaryBlue,
+                    icon: Icons.badge_outlined,
                     label: t('fishing_licences'),
                     hint: isArabic ? 'تصاريح الصيد الحرفي والتجاري' : 'Artisanal & commercial permits',
                     badge: '${licences.length}',
-                    badgeColor: AppColors.primaryBlue,
                     onTap: () => context.push('/profile/licences'),
                   ),
                   _NavTile(
                     icon: Icons.directions_boat_outlined,
-                    iconBg: const Color(0xFFE8F6F8),
-                    iconColor: const Color(0xFF007A8C),
                     label: t('my_boats'),
                     hint: isArabic ? 'السفن والقوارب المسجلة' : 'Registered vessels & inspection',
                     badge: '${vessels.length}',
-                    badgeColor: const Color(0xFF007A8C),
                     onTap: () => context.push('/profile/vessels'),
                   ),
                   _NavTile(
                     icon: Icons.group_outlined,
-                    iconBg: const Color(0xFFF0EDF9),
-                    iconColor: const Color(0xFF4F46E5),
                     label: t('crew'),
-                    hint: isArabic ? 'سجل الطاقم والبحارة' : 'Authorized crew & deckhands',
+                    hint: isArabic ? 'سجل الطاقم والبحارة' : 'Authorized crew manifest',
                     badge: '${crew.length}',
-                    badgeColor: const Color(0xFF4F46E5),
                     onTap: () => context.push('/profile/crew'),
                   ),
                   _NavTile(
-                    icon: Icons.inventory_2_outlined,
-                    iconBg: const Color(0xFFF5F3FF),
-                    iconColor: const Color(0xFF6366F1),
+                    icon: Icons.tune_rounded,
                     label: t('fishing_gear'),
-                    hint: isArabic ? 'تصاريح الشباك والمعدات' : 'Permits for nets & traps',
+                    hint: isArabic ? 'تصاريح الشباك والمعدات' : 'Permits for specialized gear',
                     badge: '${gear.length}',
-                    badgeColor: const Color(0xFF6366F1),
                     onTap: () => context.push('/profile/gear'),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 3. Digital Documents Wallet
-              _SectionHeader(isArabic ? 'محفظة الوثائق الرقمية' : 'DOCUMENTS WALLET'),
+              // 3. Digital Documents Vault
+              _SectionHeader(isArabic ? 'محفظة الوثائق' : 'DOCUMENTS WALLET'),
               _CardGroup(
                 children: [
                   _NavTile(
-                    icon: Icons.folder_shared_outlined,
-                    iconBg: const Color(0xFFEFF6FF),
-                    iconColor: const Color(0xFF1D4ED8),
+                    icon: Icons.folder_open_rounded,
                     label: t('documents_wallet'),
-                    hint: isArabic ? 'التراخيص، الفحص السنوي، التأمين' : 'Licences, registration, insurance',
+                    hint: isArabic ? 'التراخيص، شهادات الفحص، التأمين' : 'Permits, inspection, insurance records',
                     onTap: () => context.push('/profile/documents'),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 4. Maritime Safety Center
-              _SectionHeader(isArabic ? 'مركز السلامة البحرية' : 'MARITIME SAFETY'),
+              // 4. Safety Center
+              _SectionHeader(isArabic ? 'السلامة والجاهزية البحرية' : 'MARITIME SAFETY & PROTOCOLS'),
               _CardGroup(
                 children: [
                   _NavTile(
-                    icon: Icons.verified_user_outlined,
-                    iconBg: checklist.isComplete ? const Color(0xFFECFDF5) : const Color(0xFFFFFBEB),
-                    iconColor: checklist.isComplete ? const Color(0xFF059669) : const Color(0xFFD97706),
+                    icon: Icons.shield_outlined,
                     label: t('pre_departure_checklist'),
                     hint: checklist.isComplete
-                        ? (isArabic ? 'جميع الفحوصات مكتملة' : 'Ready for voyage')
-                        : (isArabic ? 'فحص سترات النجاة والوقود والأجهزة' : '10 vital pre-sail checks'),
+                        ? (isArabic ? 'جميع الفحوصات مكتملة — إبحار آمن' : 'All 10 checks verified — ready')
+                        : (isArabic ? 'فحص سترات النجاة والوقود والأجهزة' : 'Life jackets, fuel buffer & comms'),
                     badge: '${checklist.checkedCount}/${checklist.totalCount}',
-                    badgeColor: checklist.isComplete ? const Color(0xFF059669) : const Color(0xFFD97706),
+                    badgeColor: checklist.isComplete ? AppColors.signalGood : AppColors.primaryBlue,
                     onTap: () => context.push('/profile/safety'),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 5. System Preferences & Compliance
-              _SectionHeader(isArabic ? 'الإعدادات والخصوصية' : 'SETTINGS & PREFERENCES'),
+              // 5. System Settings
+              _SectionHeader(isArabic ? 'الإعدادات والتفضيلات' : 'SETTINGS & PREFERENCES'),
               _CardGroup(
                 children: [
                   _NavTile(
                     icon: Icons.language_rounded,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconColor: const Color(0xFF334155),
                     label: t('settings_language'),
                     hint: isArabic ? 'العربية (Arabic)' : 'English',
                     onTap: () => context.push('/profile/settings'),
                   ),
                   _NavTile(
                     icon: Icons.straighten_rounded,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconColor: const Color(0xFF334155),
                     label: t('settings_units'),
                     hint: prefs.isMetric ? t('settings_units_metric') : t('settings_units_imperial'),
                     onTap: () => context.push('/profile/settings'),
                   ),
                   _NavTile(
                     icon: Icons.notifications_none_rounded,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconColor: const Color(0xFF334155),
                     label: t('settings_notifications'),
-                    hint: isArabic ? 'تنبيهات الطقس وانتهاء الرخص' : 'Marine alerts & licence reminders',
+                    hint: isArabic ? 'تنبيهات الطقس وانتهاء الصلاحية' : 'Severe weather & licence expiry',
                     onTap: () => context.push('/profile/settings'),
                   ),
                   _NavTile(
-                    icon: Icons.location_on_outlined,
-                    iconBg: const Color(0xFFF1F5F9),
-                    iconColor: const Color(0xFF334155),
+                    icon: Icons.navigation_outlined,
                     label: t('location_privacy'),
-                    hint: isArabic ? 'تحديد إذن التتبع البحري' : 'Granular GPS permissions',
+                    hint: isArabic ? 'أذونات تتبع الموقع' : 'Granular marine GPS permissions',
                     onTap: () => context.push('/profile/settings'),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 6. Support, Help & Official Decrees
-              _SectionHeader(isArabic ? 'الدعم والمعلومات الرسمية' : 'SUPPORT & OFFICIAL INFORMATION'),
+              // 6. Support & Official Guidelines
+              _SectionHeader(isArabic ? 'المساعدة والأنظمة الرسمية' : 'SUPPORT & OFFICIAL INFORMATION'),
               _CardGroup(
                 children: [
                   _NavTile(
-                    icon: Icons.menu_book_rounded,
-                    iconBg: const Color(0xFFFFFBEB),
-                    iconColor: const Color(0xFFB45309),
+                    icon: Icons.help_outline_rounded,
                     label: t('help'),
-                    hint: isArabic ? 'أدلة الاستخدام والاستخدام بدون إنترنت' : 'Step-by-step guides & offline use',
+                    hint: isArabic ? 'أدلة الاستخدام والاستخدام في البحر' : 'Step-by-step guides & offline advice',
                     onTap: () => context.push('/profile/help'),
                   ),
                   _NavTile(
-                    icon: Icons.report_problem_outlined,
-                    iconBg: const Color(0xFFFEF2F2),
-                    iconColor: const Color(0xFFDC2626),
+                    icon: Icons.outlined_flag_rounded,
                     label: t('report_issue'),
-                    hint: isArabic ? 'إرسال بلاغ فني أو بيئي' : 'Submit technical or safety report',
+                    hint: isArabic ? 'إرسال بلاغ فني أو ملاحي' : 'Report technical or mapping issue',
                     onTap: () => context.push('/profile/report'),
                   ),
                   _NavTile(
                     icon: Icons.account_balance_outlined,
-                    iconBg: const Color(0xFFEFF6FF),
-                    iconColor: const Color(0xFF0284C7),
                     label: t('official_info'),
-                    hint: isArabic ? 'لوائح وزارة الثروة الزراعية والسمكية' : 'MAFWR regulations & decrees',
+                    hint: isArabic ? 'لوائح وزارة الثروة الزراعية والسمكية' : 'MAFWR regulations & royal decrees',
                     onTap: () => context.push('/profile/official-info'),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
-              // 7. Account Session
+              // 7. Session Management
               _CardGroup(
                 children: [
                   _NavTile(
-                    icon: Icons.power_settings_new_rounded,
-                    iconBg: const Color(0xFFFEF2F2),
-                    iconColor: const Color(0xFFDC2626),
+                    icon: Icons.logout_rounded,
                     label: t('settings_sign_out'),
                     isDestructive: true,
                     onTap: () => _confirmSignOut(context, isArabic),
@@ -297,14 +255,17 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppTranslations.t('settings_sign_out', isArabic)),
-        content: Text(isArabic
-            ? 'هل تريد تسجيل الخروج من بَحّار؟ ستبقى بياناتك محفوظة ومحمية.'
-            : 'Are you sure you want to sign out of BAHHAR? Your data remains securely backed up.'),
+        title: Text(AppTranslations.t('settings_sign_out', isArabic), style: AppTextStyles.subhead),
+        content: Text(
+          isArabic
+              ? 'هل تريد تسجيل الخروج من بَحّار؟ ستبقى بياناتك وسجلاتك محفوظة بأمان.'
+              : 'Are you sure you want to sign out of BAHHAR? Your records remain securely backed up.',
+          style: AppTextStyles.body,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(AppTranslations.t('cancel', isArabic)),
+            child: Text(AppTranslations.t('cancel', isArabic), style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () {
@@ -313,7 +274,7 @@ class ProfileScreen extends ConsumerWidget {
             },
             child: Text(
               AppTranslations.t('settings_sign_out', isArabic),
-              style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600),
+              style: const TextStyle(color: AppColors.signalAlert, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -322,12 +283,12 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-// ── Government Profile Header ──────────────────────────────────────────────────
+// ── LinkedIn Institutional Header ─────────────────────────────────────────────
 
-class _GovernmentProfileHeader extends StatelessWidget {
+class _LinkedInProfileHeader extends StatelessWidget {
   final dynamic profile;
   final bool isArabic;
-  const _GovernmentProfileHeader({required this.profile, required this.isArabic});
+  const _LinkedInProfileHeader({required this.profile, required this.isArabic});
 
   @override
   Widget build(BuildContext context) {
@@ -337,33 +298,31 @@ class _GovernmentProfileHeader extends StatelessWidget {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(20, 52, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          // National Fisher Header Banner
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  color: AppColors.iconBoxNeutral,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: AppColors.borderHairline),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.shield_outlined, size: 13, color: AppColors.primaryBlue),
+                    const Icon(Icons.shield_outlined, size: 12, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
                     Text(
-                      isArabic ? 'سلطنة عُمان • سجل الصيادين' : 'SULTANATE OF OMAN • FISHER REGISTRY',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                        color: Color(0xFF334155),
+                      isArabic ? 'سلطنة عُمان • سجل الصيادين' : 'SULTANATE OF OMAN • REGISTRY',
+                      style: AppTextStyles.micro.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ],
@@ -372,63 +331,60 @@ class _GovernmentProfileHeader extends StatelessWidget {
               const Spacer(),
               if (profile.fishermanId != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEF4FB),
-                    borderRadius: BorderRadius.circular(6),
+                    color: AppColors.primaryBlueLight,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     profile.fishermanId!,
                     style: const TextStyle(
                       fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.primaryBlue,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // Avatar + User Identity Details
+          const SizedBox(height: 10),
           Row(
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 54,
+                height: 54,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: AppColors.iconBoxNeutral,
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+                  border: Border.all(color: AppColors.borderHairline),
                 ),
                 child: const Center(
-                  child: Icon(Icons.person_rounded, size: 36, color: Color(0xFF475569)),
+                  child: Icon(Icons.person_rounded, size: 30, color: AppColors.iconForeground),
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.oceanNavy,
+                      style: AppTextStyles.subhead.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF059669)),
+                        const Icon(Icons.verified_rounded, size: 13, color: AppColors.signalGood),
                         const SizedBox(width: 4),
                         Text(
                           isArabic ? 'صياد معتمد • وزارة الثروة الزراعية والسمكية' : 'Verified Fisher • MAFWR Oman',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF059669),
+                            color: AppColors.signalGood,
                           ),
                         ),
                       ],
@@ -444,29 +400,22 @@ class _GovernmentProfileHeader extends StatelessWidget {
   }
 }
 
-// ── Institutional Completion Banner ───────────────────────────────────────────
+// ── Registry Completion Card ──────────────────────────────────────────────────
 
-class _InstitutionalCompletionBanner extends StatelessWidget {
+class _RegistryCompletionCard extends StatelessWidget {
   final int percentage;
   final bool isArabic;
-  const _InstitutionalCompletionBanner({required this.percentage, required this.isArabic});
+  const _RegistryCompletionCard({required this.percentage, required this.isArabic});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2EDF8)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,37 +424,26 @@ class _InstitutionalCompletionBanner extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                isArabic ? 'اكتمال الملف الشخصي والسجلات' : 'Profile & Registry Completeness',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.oceanNavy,
-                ),
+                isArabic ? 'اكتمال الملف والسجلات' : 'Registry Profile Status',
+                style: AppTextStyles.captionMedium.copyWith(color: AppColors.textPrimary),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEEF4FB),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${LocaleUtils.formatInt(percentage, isArabic)}%',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryBlue,
-                  ),
+              Text(
+                '${LocaleUtils.formatInt(percentage, isArabic)}%',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryBlue,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(3),
             child: LinearProgressIndicator(
               value: percentage / 100,
-              minHeight: 6,
-              backgroundColor: const Color(0xFFE2EDF8),
+              minHeight: 5,
+              backgroundColor: AppColors.borderHairline,
               valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
             ),
           ),
@@ -527,15 +465,8 @@ class _CardGroup extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2EDF8)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.borderHairline),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -543,7 +474,7 @@ class _CardGroup extends StatelessWidget {
           for (int i = 0; i < children.length; i++) ...[
             children[i],
             if (i < children.length - 1)
-              const Divider(height: 1, indent: 68, color: Color(0xFFF1F5F9)),
+              const Divider(height: 1, indent: 56, color: AppColors.dividerColor),
           ],
         ],
       ),
@@ -551,7 +482,7 @@ class _CardGroup extends StatelessWidget {
   }
 }
 
-// ── Section Header ─────────────────────────────────────────────────────────────
+// ── Section Header (LinkedIn Styled) ──────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String label;
@@ -560,26 +491,19 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-          color: Color(0xFF64748B),
-        ),
+        style: AppTextStyles.sectionHeader,
       ),
     );
   }
 }
 
-// ── Institutional Profile Tile ─────────────────────────────────────────────────
+// ── Profile Data Tile (Clean Monochrome Icons) ────────────────────────────────
 
 class _ProfileTile extends StatelessWidget {
   final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
   final String label;
   final String value;
   final String? hint;
@@ -588,8 +512,6 @@ class _ProfileTile extends StatelessWidget {
 
   const _ProfileTile({
     required this.icon,
-    required this.iconBg,
-    required this.iconColor,
     required this.label,
     required this.value,
     this.hint,
@@ -602,34 +524,34 @@ class _ProfileTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.iconBoxNeutral,
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: 18, color: AppColors.iconForeground),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 2),
-                  Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.oceanNavy)),
+                  Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                  const SizedBox(height: 1),
+                  Text(value, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary)),
                   if (hint != null)
-                    Text(hint!, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                    Text(hint!, style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary)),
                 ],
               ),
             ),
-            trailingWidget ?? const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCBD5E1)),
+            trailingWidget ?? const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textTertiary),
           ],
         ),
       ),
@@ -637,12 +559,10 @@ class _ProfileTile extends StatelessWidget {
   }
 }
 
-// ── Institutional Navigation Tile ──────────────────────────────────────────────
+// ── Navigation Menu Tile (LinkedIn Consistent Layout) ─────────────────────────
 
 class _NavTile extends StatelessWidget {
   final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
   final String label;
   final String? hint;
   final String? badge;
@@ -652,8 +572,6 @@ class _NavTile extends StatelessWidget {
 
   const _NavTile({
     required this.icon,
-    required this.iconBg,
-    required this.iconColor,
     required this.label,
     this.hint,
     this.badge,
@@ -664,42 +582,42 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = isDestructive ? AppColors.signalAlert : AppColors.textPrimary;
+    final iconColor = isDestructive ? AppColors.signalAlert : AppColors.iconForeground;
+    final iconBoxColor = isDestructive ? AppColors.signalAlertBg : AppColors.iconBoxNeutral;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(10),
+                color: iconBoxColor,
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Center(
-                child: Icon(icon, size: 20, color: iconColor),
+                child: Icon(icon, size: 18, color: iconColor),
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDestructive ? const Color(0xFFDC2626) : AppColors.oceanNavy,
-                    ),
+                    style: AppTextStyles.bodyMedium.copyWith(color: textColor),
                   ),
                   if (hint != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 1),
                       child: Text(
                         hint!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                       ),
                     ),
                 ],
@@ -707,22 +625,22 @@ class _NavTile extends StatelessWidget {
             ),
             if (badge != null)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                margin: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+                margin: const EdgeInsets.only(right: 4),
                 decoration: BoxDecoration(
                   color: (badgeColor ?? AppColors.primaryBlue).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   badge!,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: badgeColor ?? AppColors.primaryBlue,
                   ),
                 ),
               ),
-            const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCBD5E1)),
+            const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textTertiary),
           ],
         ),
       ),
@@ -746,6 +664,11 @@ class _RevealButtonState extends State<_RevealButton> {
   @override
   Widget build(BuildContext context) {
     return TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
       onPressed: () => setState(() => _revealed = !_revealed),
       child: Text(
         _revealed

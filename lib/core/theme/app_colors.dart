@@ -1,55 +1,69 @@
 import 'package:flutter/material.dart';
 
-/// BAHHAR Modern Marine-Tech Design System (Reference Direction)
+/// BAHHAR Professional Marine Design System
+/// Calibrated to human-designed institutional & enterprise standards (LinkedIn/GCC corporate palette).
+/// Restrained ink tones, neutral icon backgrounds, zero AI hyper-saturation.
 class AppColors {
-  // ── Primary Brand & Oceanic Palette ──
-  static const Color primaryBlue = Color(0xFF0066CC);      // Vibrant royal ocean blue from reference
-  static const Color primaryBlueDark = Color(0xFF0052A3);  // Pressed state
-  static const Color primaryBlueLight = Color(0xFFE8F1FC); // Soft blue tint for chips/toggles
-  static const Color oceanNavy = Color(0xFF0F2644);        // Deep coastal navy for text & structure
-  static const Color cyanAccent = Color(0xFF0284C7);       // Cyan highlight / secondary
-  static const Color skyBlue = Color(0xFF38BDF8);          // Light sky accent
+  // ── Primary Brand & Corporate Marine Palette ──
+  static const Color primaryBlue = Color(0xFF0A66C2);      // LinkedIn corporate blue / Trustworthy marine
+  static const Color primaryBlueDark = Color(0xFF004182);  // Pressed / active deep state
+  static const Color primaryBlueLight = Color(0xFFEBF3FA); // Soft refined blue tint for chips
+  static const Color oceanNavy = Color(0xFF181818);        // Deep charcoal primary ink (LinkedIn standard)
+  static const Color cyanAccent = Color(0xFF0073B1);       // Subdued accent
+  static const Color skyBlue = Color(0xFF70B5F9);          // Light accent
 
-  // ── Background & Coastal Atmospheric Canvas ──
-  static const Color bgGradientTop = Color(0xFFF8FAFD);    // Crisp light mist sky
-  static const Color bgGradientMid = Color(0xFFEFF5FC);    // Mid coastal air
-  static const Color bgGradientBottom = Color(0xFFDCEBFA); // Bottom ocean swell
-  static const Color mountainSilhouette = Color(0xFFC7DEFA);// Layered coastal mountain headlands
-  static const Color waveLayer = Color(0xFFB9D8F7);        // Foreground ocean waves
+  // ── Professional Canvas & Backgrounds (LinkedIn Warm Neutral) ──
+  static const Color bgGradientTop = Color(0xFFF3F4F6);    // Clean professional background canvas
+  static const Color bgGradientMid = Color(0xFFF1F3F5);    // Mid neutral
+  static const Color bgGradientBottom = Color(0xFFE8ECEF); // Soft transition
+  static const Color surfaceCanvas = Color(0xFFF3F4F6);    // Main scaffold background
+  static const Color cardBackground = Color(0xFFFFFFFF);   // Pure white card container
+  static const Color mountainSilhouette = Color(0xFFDDE3EA);// Muted coastal headlands
+  static const Color waveLayer = Color(0xFFD0DBE5);        // Low-contrast wave layer
 
-  // ── Glassmorphism Surfaces ──
-  static const Color glassSurface = Color(0xE6FFFFFF);     // 90% white frosted glass
-  static const Color glassSurfaceLight = Color(0x99FFFFFF);// 60% translucent glass
-  static const Color glassSurfaceDense = Color(0xF5FFFFFF);// 96% high-contrast glass
-  static const Color glassBorder = Color(0x66FFFFFF);      // Crisp translucent border
-  static const Color glassBorderSubtle = Color(0x33B4D3F2);// Soft oceanic border outline
+  // ── Neutral Icon Box Palette (Unified, Non-AI) ──
+  static const Color iconBoxNeutral = Color(0xFFF3F6F8);   // Uniform institutional neutral box
+  static const Color iconForeground = Color(0xFF374151);   // Slate-charcoal icon color (unified)
+  static const Color iconBrandForeground = Color(0xFF0A66C2);// Corporate brand icon color
 
-  // ── Typography & Ink ──
-  static const Color textPrimary = Color(0xFF0F172A);      // Deep slate black
-  static const Color textSecondary = Color(0xFF475569);    // Nautical slate gray
-  static const Color textTertiary = Color(0xFF94A3B8);     // Muted micro metadata
-  static const Color textBlue = Color(0xFF0066CC);         // Brand accent text
+  // ── Surfaces & Borders ──
+  static const Color surfacePure = Color(0xFFFFFFFF);
+  static const Color borderHairline = Color(0xFFE0E5EA);   // LinkedIn 1px hairline border
+  static const Color dividerColor = Color(0xFFF1F3F5);     // Subtle item divider
+  static const Color glassSurface = Color(0xF8FFFFFF);     // Subdued high-contrast white
+  static const Color glassSurfaceDense = Color(0xFFFFFFFF);
+  static const Color glassBorder = Color(0xFFE0E5EA);
+  static const Color glassBorderSubtle = Color(0xFFE8ECEF);
 
-  // ── Semantic Signals ──
-  static const Color signalGood = Color(0xFF10B981);       // Emerald Green: Favorable / High Bite
-  static const Color signalCaution = Color(0xFFF59E0B);    // Warm Amber: Moderate Opportunity
-  static const Color signalAlert = Color(0xFFEF4444);      // Coral Red: Danger / Restricted
-  static const Color legalRestricted = Color(0xFF8B5CF6);  // Desaturated Violet: Nature Reserves (Daymaniyat)
-  static const Color legalPermitted = Color(0xFF10B981);   // Open Waters
+  // ── Typography & Ink (Calibrated to LinkedIn Specifications) ──
+  static const Color textPrimary = Color(0xFF181818);      // rgba(0, 0, 0, 0.9) - deep charcoal
+  static const Color textSecondary = Color(0xFF5E5E5E);    // rgba(0, 0, 0, 0.6) - secondary subtitle
+  static const Color textTertiary = Color(0xFF757575);     // rgba(0, 0, 0, 0.45) - metadata / captions
+  static const Color textBlue = Color(0xFF0A66C2);         // Action / link ink
+  static const Color textDisabled = Color(0xFF9E9E9E);     // Inactive text
+
+  // ── Semantic Signals (Calibrated Corporate Tones) ──
+  static const Color signalGood = Color(0xFF057642);       // LinkedIn emerald: Verified / Favorable
+  static const Color signalGoodBg = Color(0xFFE6F4EA);     // Soft green tint
+  static const Color signalCaution = Color(0xFFB25E00);    // Warm amber: Warning / Expiring
+  static const Color signalCautionBg = Color(0xFFFEF7E0);  // Soft amber tint
+  static const Color signalAlert = Color(0xFFC5221F);      // Formal alert crimson: Destructive
+  static const Color signalAlertBg = Color(0xFFFCE8E6);    // Soft red tint
+  static const Color legalRestricted = Color(0xFF6B46C1);  // Subdued purple: Marine Reserve
+  static const Color legalPermitted = Color(0xFF057642);   // Open Waters
 
   // ── Chart & Map Colors ──
-  static const Color mapWater = Color(0xFFE0EDFB);         // Soft nautical chart water
-  static const Color mapLand = Color(0xFFF0F4F8);          // Landmass
-  static const Color mapContour = Color(0xFFBED8F3);       // Bathymetric depth lines
+  static const Color mapWater = Color(0xFFE5EEF7);
+  static const Color mapLand = Color(0xFFF0F3F6);
+  static const Color mapContour = Color(0xFFC8D9E8);
 
-  // ── Backwards Compatibility Aliases ──
+  // ── Compatibility Aliases ──
   static const Color bgPrimary = bgGradientTop;
   static const Color bgSecondary = bgGradientMid;
-  static const Color cardWhite = glassSurface;
-  static const Color hairline = glassBorderSubtle;
-  static const Color surfacePure = glassSurfaceDense;
+  static const Color cardWhite = cardBackground;
+  static const Color hairline = borderHairline;
   static const Color surfaceSubtle = primaryBlueLight;
-  static const Color borderHairline = glassBorderSubtle;
+  static const Color borderGray = borderHairline;
   static const Color inkPrimary = textPrimary;
   static const Color inkSecondary = textSecondary;
   static const Color inkTertiary = textTertiary;
@@ -61,21 +75,20 @@ class AppColors {
   static const Color coralRed = signalAlert;
   static const Color deepNavyText = textPrimary;
   static const Color mistGray = bgGradientMid;
-  static const Color borderGray = glassBorderSubtle;
   static const Color protectedArea = legalRestricted;
   static const Color restrictedZone = legalRestricted;
   static const Color permittedZone = legalPermitted;
-  static const Color nightModeBg = Color(0xFF081524);
-  static const Color nightSurface = Color(0xFF0F243B);
-  static const Color nightBorder = Color(0xFF1F3A58);
-  static const Color oceanAbyss = Color(0xFF061423);
-  static const Color oceanDeep = Color(0xFF0A1D31);
+  static const Color nightModeBg = Color(0xFF1B1F23);
+  static const Color nightSurface = Color(0xFF24292E);
+  static const Color nightBorder = Color(0xFF383E45);
+  static const Color oceanAbyss = Color(0xFF181818);
+  static const Color oceanDeep = Color(0xFF21262D);
   static const Color cyanBright = primaryBlue;
-  static const Color seafoam = Color(0xFFBAE6FD);
-  static const Color glassSubtle = Color(0x40FFFFFF);
-  static const Color glassStandard = Color(0xCCFFFFFF);
-  static const Color glassProminent = Color(0xF2FFFFFF);
-  static const Color glassBorderGlow = Color(0x660066CC);
+  static const Color seafoam = Color(0xFFDDF0FF);
+  static const Color glassSubtle = Color(0x60FFFFFF);
+  static const Color glassStandard = Color(0xE0FFFFFF);
+  static const Color glassProminent = Color(0xFFFFFFFF);
+  static const Color glassBorderGlow = Color(0x330A66C2);
 
   // ── Probability Helpers ──
   static Color getProbabilityColor(int probability) {
