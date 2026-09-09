@@ -9,7 +9,6 @@ import '../../../core/providers/hotspots_provider.dart';
 import '../../../shared/widgets/fishing_score_gauge.dart';
 import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/hotspot_card.dart';
-import '../../../shared/widgets/alert_banner.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
   const HomeDashboardScreen({super.key});
@@ -23,85 +22,75 @@ class HomeDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.location_on, size: 18, color: AppColors.aquaTeal),
-            const SizedBox(width: 6),
             Text(
               '${user?.homeRegion ?? "Muscat"}, Oman',
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              style: AppTextStyles.h2.copyWith(fontSize: 16),
+            ),
+            const Text(
+              'Coastal Waters',
+              style: AppTextStyles.caption,
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: const Icon(Icons.notifications_none, size: 20),
             onPressed: () => context.push('/notifications'),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(marineConditionsProvider.future),
-        color: AppColors.oceanBlue,
+        color: AppColors.accentNavy,
         child: ListView(
           padding: const EdgeInsetsDirectional.all(16.0),
           children: [
-            // Marine Alert Banner
-            AlertBanner(
-              title: 'Prime Morning Window Active',
-              message: 'Current conditions off Muscat show 88% strike probability for Kingfish.',
-              severity: AlertSeverity.info,
-            ),
-            const SizedBox(height: 16),
-
-            // Hero Fishing Opportunity Gauge Card
+            // Quiet Editorial Hero Card
             Container(
-              padding: const EdgeInsetsDirectional.all(20),
+              padding: const EdgeInsetsDirectional.all(16),
               decoration: BoxDecoration(
                 color: isDark ? AppColors.nightSurface : AppColors.cardWhite,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark ? AppColors.nightBorder : AppColors.borderGray,
+                  color: isDark ? AppColors.nightBorder : AppColors.hairline,
+                  width: 1,
                 ),
               ),
               child: Column(
                 children: [
                   const FishingScoreGauge(
                     probability: 88,
-                    size: 200,
-                    label: 'Overall Strike Probability',
+                    size: 180,
+                    label: 'Overall Probability',
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.aquaTeal.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.aquaTeal),
-                    ),
-                    child: const Text(
-                      'Optimal Conditions: Target Kingfish & Tuna',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF059669),
-                      ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Target: Kingfish (كنعد) & Yellowfin Tuna',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.signalGood,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Live Marine Conditions Strip (Section 6.3)
-            Text(
-              'Marine Conditions',
-              style: AppTextStyles.h2.copyWith(fontSize: 18),
+            // Conditions Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Marine Conditions', style: AppTextStyles.h2),
+                Text('Updated 5m ago', style: AppTextStyles.caption),
+              ],
             ),
             const SizedBox(height: 10),
             marineAsync.when(
               data: (marine) => SizedBox(
-                height: 84,
+                height: 76,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
@@ -109,94 +98,82 @@ class HomeDashboardScreen extends ConsumerWidget {
                       icon: Icons.air,
                       value: '${marine.windSpeedKts.round()} kts',
                       label: 'Wind (${marine.windDirectionCompass})',
-                      subLabel: 'Moderate',
                     ),
                     const SizedBox(width: 8),
                     ConditionStatChip(
                       icon: Icons.waves,
                       value: '${marine.waveHeightM} m',
                       label: 'Wave Height',
-                      subLabel: '${marine.wavePeriodS}s swell',
                     ),
                     const SizedBox(width: 8),
                     ConditionStatChip(
-                      icon: Icons.thermostat,
+                      icon: Icons.thermostat_outlined,
                       value: '${marine.seaTemperatureC}°C',
-                      label: 'Sea Temp',
-                      subLabel: 'Optimal',
+                      label: 'Sea Surface',
                     ),
                     const SizedBox(width: 8),
                     ConditionStatChip(
-                      icon: Icons.water,
+                      icon: Icons.water_outlined,
                       value: marine.tideState,
                       label: 'Tide State',
-                      subLabel: '${marine.tideHeightM}m peak',
                     ),
                   ],
                 ),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('Error loading marine data: $err'),
+              error: (err, _) => Text('Error: $err', style: AppTextStyles.caption),
             ),
             const SizedBox(height: 20),
 
-            // Best Fishing Window Card
+            // Best Fishing Window
             Container(
-              padding: const EdgeInsetsDirectional.all(16),
+              padding: const EdgeInsetsDirectional.all(14),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.nightSurface : AppColors.cardWhite,
-                borderRadius: BorderRadius.circular(16),
+                color: isDark ? AppColors.nightSurface : AppColors.bgSecondary,
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark ? AppColors.nightBorder : AppColors.borderGray,
+                  color: isDark ? AppColors.nightBorder : AppColors.hairline,
+                  width: 1,
                 ),
               ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsetsDirectional.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.sandGold.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.wb_sunny_outlined, color: AppColors.sandGold),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Best Bite Window Today', style: AppTextStyles.captionMedium),
-                        SizedBox(height: 2),
-                        Text(
-                          '05:30 AM – 09:15 AM (Dawn Slack Tide)',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                  const Icon(Icons.access_time, size: 18, color: AppColors.inkSecondary),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Optimal Bite Window Today', style: AppTextStyles.captionMedium),
+                      SizedBox(height: 2),
+                      Text(
+                        '05:30 AM – 09:15 AM (Slack Flood Tide)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Nearby Hotspots Carousel
+            // Hotspots Carousel
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Top Ranked Hotspots', style: AppTextStyles.h2.copyWith(fontSize: 18)),
+                const Text('Ranked Hotspots', style: AppTextStyles.h2),
                 TextButton(
                   onPressed: () => context.go('/map'),
-                  child: const Text('View Map', style: TextStyle(color: AppColors.oceanBlue)),
+                  child: const Text('View All', style: TextStyle(color: AppColors.inkPrimary)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             SizedBox(
-              height: 180,
+              height: 125,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: hotspots.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final h = hotspots[index];
                   return HotspotCard(
@@ -215,45 +192,41 @@ class HomeDashboardScreen extends ConsumerWidget {
             // Primary CTAs
             SizedBox(
               height: 48,
-              child: ElevatedButton.icon(
+              child: ElevatedButton(
                 onPressed: () => context.go('/map'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.deepSea,
+                  backgroundColor: AppColors.accentNavy,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                icon: const Icon(Icons.map_outlined),
-                label: const Text('Explore Interactive Fishing Map', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text('Open Fishing Map', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: () => context.go('/smart-trip'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.oceanBlue,
-                      side: const BorderSide(color: AppColors.oceanBlue),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      minimumSize: const Size.fromHeight(46),
+                      foregroundColor: AppColors.inkPrimary,
+                      side: const BorderSide(color: AppColors.hairline),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.explore_outlined, size: 18),
-                    label: const Text('Smart Trip'),
+                    child: const Text('Plan Smart Trip'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: OutlinedButton(
                     onPressed: () => context.go('/catch'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.aquaTeal,
-                      side: const BorderSide(color: AppColors.aquaTeal),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      minimumSize: const Size.fromHeight(46),
+                      foregroundColor: AppColors.inkPrimary,
+                      side: const BorderSide(color: AppColors.hairline),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.add_circle_outline, size: 18),
-                    label: const Text('Log Catch'),
+                    child: const Text('Log Catch'),
                   ),
                 ),
               ],

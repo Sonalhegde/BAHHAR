@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/providers/hotspots_provider.dart';
-import '../../../shared/widgets/hotspot_card.dart';
+import '../../../core/models/hotspot_model.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
 
 class FishingMapScreen extends ConsumerStatefulWidget {
@@ -15,148 +15,228 @@ class FishingMapScreen extends ConsumerStatefulWidget {
 }
 
 class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
-  bool _showHeatmap = true;
-  bool _showProtectedAreas = true;
-  String? _selectedHotspotId;
-
-  final List<String> _regions = ['All Regions', 'Muscat', 'Musandam', 'Al Batinah South', 'Ash Sharqiyah South', 'Dhofar'];
+  String _activeLayer = 'all'; // all, pelagic, bottom, protected
+  HotspotModel? _selectedHotspot;
 
   @override
   Widget build(BuildContext context) {
-    final hotspots = ref.watch(filteredHotspotsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hotspotsAsync = ref.watch(hotspotsListProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.mapWater,
       appBar: AppBar(
-        title: const Text('Oman Fishing Map'),
+        backgroundColor: AppColors.surfacePure,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text('Oman Marine Chart', style: AppTextStyles.subhead),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: AppColors.borderHairline, height: 1.0),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.layers_outlined),
-            onPressed: () => _openLayerBottomSheet(context),
+            icon: const Icon(Icons.filter_list_rounded, size: 20, color: AppColors.textPrimary),
+            onPressed: () {},
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Simulated Marine Chart / Google Maps View
-          Container(
-            color: isDark ? const Color(0xFF031625) : const Color(0xFFE3F2FD),
-            child: Stack(
-              children: [
-                // Stylized Coastline Water Gradient
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _MarineChartPainter(isDark: isDark),
-                  ),
+          // Muted editorial nautical map view simulation
+          Positioned.fill(
+            child: Container(
+              color: const Color(0xFFE5E9EC), // soft nautical gray-water
+              child: CustomPaint(
+                painter: _EditorialChartPainter(),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedHotspot = null);
+                  },
                 ),
-                // Hotspot Markers placed across Omani Coastline
-                ...hotspots.map((h) {
-                  // Coordinate normalization onto screen bounds
-                  final x = ((h.longitude - 54.0) / 6.0) * MediaQuery.of(context).size.width;
-                  final y = (1.0 - (h.latitude - 16.5) / 10.0) * (MediaQuery.of(context).size.height * 0.7);
+              ),
+            ),
+          ),
 
-                  final probColor = AppColors.getProbabilityColor(h.probability);
-                  final isProtected = h.legalStatus == LegalStatus.protected;
+          // Layer selector bar
+          Positioned(
+            top: 16,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.surfacePure,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderHairline),
+              ),
+              child: Row(
+                children: [
+                  _buildLayerFilter('all', 'All Spots'),
+                  _buildLayerFilter('pelagic', 'Pelagic'),
+                  _buildLayerFilter('bottom', 'Bottom/Reef'),
+                  _buildLayerFilter('reserves', 'Reserves'),
+                ],
+              ),
+            ),
+          ),
 
-                  return Positioned(
-                    left: x.clamp(30.0, MediaQuery.of(context).size.width - 70.0),
-                    top: y.clamp(80.0, MediaQuery.of(context).size.height - 240.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => _selectedHotspotId = h.id);
-                      },
+          // Interactive Map Markers (simulated accurate coordinates projection)
+          hotspotsAsync.when(
+            data: (hotspots) {
+              return Stack(
+                children: [
+                  // Dimaniyat Reserve boundary overlay
+                  Positioned(
+                    left: 90,
+                    top: 170,
+                    child: Container(
+                      width: 140,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        color: AppColors.legalRestricted.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.legalRestricted, width: 1.5),
+                      ),
+                      alignment: Alignment.center,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsetsDirectional.all(6),
-                            decoration: BoxDecoration(
-                              color: isProtected ? AppColors.protectedArea : probColor,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (isProtected ? AppColors.protectedArea : probColor).withOpacity(0.4),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              isProtected ? Icons.shield : Icons.phishing,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsetsDirectional.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black87,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '${h.name.split(" ").first} (${h.probability}%)',
-                              style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
+                          Icon(Icons.shield_outlined, size: 16, color: AppColors.legalRestricted),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Daymaniyat Marine Reserve\nPermit Required',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.caption.copyWith(
+                              fontSize: 9,
+                              color: AppColors.legalRestricted,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  );
-                }),
-              ],
-            ),
+                  ),
+
+                  // Hotspot pins
+                  ...hotspots.map((h) {
+                    final isSelected = _selectedHotspot?.id == h.id;
+                    return Positioned(
+                      left: h.longitude > 58 ? 240 : (h.longitude > 57 ? 160 : 70),
+                      top: h.latitude > 23.8 ? 220 : (h.latitude > 23 ? 310 : 420),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() => _selectedHotspot = h);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.accentNavy : AppColors.surfacePure,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isSelected ? AppColors.accentNavy : AppColors.borderHairline,
+                              width: 1.2,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: h.isProtectedReserve
+                                      ? AppColors.legalRestricted
+                                      : (h.rating >= 85 ? AppColors.signalGood : AppColors.signalCaution),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '${h.name} (${h.rating})',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            error: (_, __) => const SizedBox(),
           ),
 
-          // Top Region Filter Bar
-          Positioned(
-            top: 12,
-            left: 12,
-            right: 12,
-            child: SizedBox(
-              height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _regions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) {
-                  final region = _regions[index];
-                  final isSelected = (region == 'All Regions' && ref.watch(selectedRegionFilterProvider) == null) ||
-                      (ref.watch(selectedRegionFilterProvider) == region);
-
-                  return ChoiceChip(
-                    label: Text(region, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
-                    selected: isSelected,
-                    selectedColor: AppColors.deepSea,
-                    backgroundColor: Colors.white.withOpacity(0.9),
-                    onSelected: (_) {
-                      ref.read(selectedRegionFilterProvider.notifier).state =
-                          region == 'All Regions' ? null : region;
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-
-          // Bottom Selected Hotspot Preview Card
-          if (_selectedHotspotId != null)
+          // Bottom Detail Card if selected
+          if (_selectedHotspot != null)
             Positioned(
-              bottom: 20,
               left: 16,
               right: 16,
-              child: Builder(
-                builder: (context) {
-                  final selected = hotspots.firstWhere((h) => h.id == _selectedHotspotId);
-                  return HotspotCard(
-                    name: selected.name,
-                    probability: selected.probability,
-                    distanceNm: selected.distanceNm,
-                    primarySpecies: selected.targetSpecies.first,
-                    legalStatus: selected.legalStatus,
-                    onTap: () => context.push('/hotspot/${selected.id}'),
-                  );
-                },
+              bottom: 24,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfacePure,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderHairline),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_selectedHotspot!.name, style: AppTextStyles.cardTitle),
+                              Text(
+                                '${_selectedHotspot!.nameArabic} • ${_selectedHotspot!.governorate}',
+                                style: AppTextStyles.caption,
+                              ),
+                            ],
+                          ),
+                        ),
+                        LegalStatusBadge(isRestricted: _selectedHotspot!.isProtectedReserve),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1, color: AppColors.borderHairline),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildInfoColumn('DEPTH', '${_selectedHotspot!.depthMeters} m'),
+                        _buildInfoColumn('DISTANCE', '${_selectedHotspot!.distanceNmi} nmi'),
+                        _buildInfoColumn('SCORE', '${_selectedHotspot!.rating}/100'),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: AppColors.accentNavy,
+                          foregroundColor: Colors.white,
+                          side: BorderSide.none,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () {
+                          context.push('/hotspots/${_selectedHotspot!.id}');
+                        },
+                        child: Text('Inspect Hotspot Details', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -164,77 +244,79 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     );
   }
 
-  void _openLayerBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildLayerFilter(String id, String label) {
+    final isSelected = _activeLayer == id;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _activeLayer = id),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.accentNavy : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: AppTextStyles.labelSmall.copyWith(
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            ),
+          ),
+        ),
       ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsetsDirectional.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Map Layers', style: AppTextStyles.h2),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    title: const Text('Fishing Probability Heatmap'),
-                    value: _showHeatmap,
-                    activeColor: AppColors.aquaTeal,
-                    onChanged: (val) {
-                      setModalState(() => _showHeatmap = val);
-                      setState(() => _showHeatmap = val);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: const Text('Protected Marine Reserves (Violet Overlay)'),
-                    subtitle: const Text('Nature reserves & sanctuary boundaries'),
-                    value: _showProtectedAreas,
-                    activeColor: AppColors.protectedArea,
-                    onChanged: (val) {
-                      setModalState(() => _showProtectedAreas = val);
-                      setState(() => _showProtectedAreas = val);
-                    },
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    );
+  }
+
+  Widget _buildInfoColumn(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.caption.copyWith(letterSpacing: 0.8, fontSize: 10)),
+        const SizedBox(height: 2),
+        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }
 
-class _MarineChartPainter extends CustomPainter {
-  final bool isDark;
-  _MarineChartPainter({required this.isDark});
-
+class _EditorialChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final bathymetryPaint = Paint()
-      ..color = (isDark ? const Color(0xFF0F3652) : const Color(0xFFBBDEFB)).withOpacity(0.4)
+    final landPaint = Paint()
+      ..color = const Color(0xFFF4F2EC) // muted editorial landmass
+      ..style = PaintingStyle.fill;
+
+    final coastlinePaint = Paint()
+      ..color = const Color(0xFFD6D3C9)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
 
-    // Draw depth contour lines
-    for (int i = 1; i <= 5; i++) {
-      final path = Path();
-      path.moveTo(0, size.height * (0.2 * i));
-      path.quadraticBezierTo(
-        size.width * 0.4,
-        size.height * (0.2 * i - 0.05),
-        size.width,
-        size.height * (0.2 * i + 0.05),
-      );
-      canvas.drawPath(path, bathymetryPaint);
+    final gridPaint = Paint()
+      ..color = const Color(0xFFD5DBDF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+
+    // Bathymetry grid
+    for (double x = 0; x < size.width; x += 60) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
     }
+    for (double y = 0; y < size.height; y += 60) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    // Oman coastline polygon simulation
+    final path = Path();
+    path.moveTo(0, size.height * 0.2);
+    path.quadraticBezierTo(size.width * 0.4, size.height * 0.25, size.width * 0.6, size.height * 0.5);
+    path.quadraticBezierTo(size.width * 0.7, size.height * 0.7, size.width * 0.5, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, landPaint);
+    canvas.drawPath(path, coastlinePaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+}\n

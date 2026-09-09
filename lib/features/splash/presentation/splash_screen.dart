@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../shared/widgets/bahhar_logo_widget.dart';
 
-/// Screen 1: Splash Screen
-/// Displays the Dhow Sail + Wave brand mark centered on deepSea background.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -22,13 +21,12 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 900),
     );
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
 
-    // Navigate to onboarding after splash presentation
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    Future.delayed(const Duration(milliseconds: 1600), () {
       if (mounted) {
         context.go('/onboarding');
       }
@@ -44,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.deepSea,
+      backgroundColor: AppColors.bgPrimary,
       body: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -52,24 +50,18 @@ class _SplashScreenState extends State<SplashScreen>
             mainAxisSize: MainAxisSize.min,
             children: const [
               BahharLogoWidget(
-                size: 110,
-                color: Colors.white,
+                size: 90,
+                color: AppColors.accentNavy,
                 showWordmark: true,
-                wordmarkStyle: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2.0,
-                ),
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 12),
               Text(
-                'Oman Marine & Fishing Intelligence',
+                'Oman Marine Intelligence',
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.aquaTeal,
-                  letterSpacing: 0.5,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.inkSecondary,
+                  letterSpacing: 0.4,
                 ),
               ),
             ],

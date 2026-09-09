@@ -1,40 +1,70 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens from Bahhar AI Master Specification Section 4.1
+/// Design tokens — Bahhar AI v2 (Premium White Direction)
 class AppColors {
-  // Brand & Nav
-  static const Color deepSea = Color(0xFF0B3D5C);       // Primary brand color, headers, primary buttons
-  static const Color oceanBlue = Color(0xFF1C7293);     // Secondary actions, links, active nav states
-  static const Color deepNavyText = Color(0xFF10222E);  // Primary text on light backgrounds
-  static const Color mistGray = Color(0xFFF4F7F9);      // App background (light)
-  static const Color cardWhite = Color(0xFFFFFFFF);     // Card surfaces
-  static const Color borderGray = Color(0xFFDCE4E8);    // Dividers, card borders
+  // ── Surfaces & Backgrounds (White-first, editorial) ──
+  static const Color bgPrimary = Color(0xFFFFFFFF);
+  static const Color bgSecondary = Color(0xFFF7F7F5);
+  static const Color cardWhite = Color(0xFFFFFFFF);
+  static const Color hairline = Color(0xFFE7E7E4);
 
-  // Night Mode (Dawn/Dusk for fishermen)
-  static const Color nightModeBg = Color(0xFF071824);   // Dark-mode background
-  static const Color nightSurface = Color(0xFF0F2636);  // Dark-mode card/surface
-  static const Color nightBorder = Color(0xFF1B3B52);   // Dark-mode border
+  // v2 semantic aliases (used throughout screens)
+  static const Color surfacePure = bgPrimary;
+  static const Color surfaceSubtle = bgSecondary;
+  static const Color borderHairline = hairline;
 
-  // Traffic-Light Fishing Probability (RESERVED EXCLUSIVELY for probability indicators)
-  static const Color aquaTeal = Color(0xFF2FBF8F);      // High probability / good conditions (>= 70%)
-  static const Color sandGold = Color(0xFFE8B84B);      // Medium probability / warning (40% - 69%)
-  static const Color coralRed = Color(0xFFE2543B);      // Low probability / danger (< 40%)
+  // ── Typography Inks ──
+  static const Color inkPrimary = Color(0xFF1A1A1A);
+  static const Color inkSecondary = Color(0xFF6B6B6B);
+  static const Color inkTertiary = Color(0xFF9E9E9E);
 
-  // Regulatory & Protected Areas (DISTINCT VIOLET to never confuse with low probability red)
-  static const Color protectedArea = Color(0xFF6A4C93); // Nature reserves / protected marine areas
-  static const Color restrictedZone = Color(0xFF8B5CF6);// Military / restricted anchorage zones
-  static const Color permittedZone = Color(0xFF10B981); // Open recreational/commercial fishing
+  // v2 semantic aliases
+  static const Color textPrimary = inkPrimary;
+  static const Color textSecondary = inkSecondary;
+  static const Color textTertiary = inkTertiary;
 
-  // Utility helpers
+  // ── Single Brand Accent ──
+  static const Color accentNavy = Color(0xFF12263A);
+
+  // ── Signal Colors (muted, desaturated) ──
+  static const Color signalGood = Color(0xFF2E7D5B);
+  static const Color signalCaution = Color(0xFFB8862E);
+  static const Color signalAlert = Color(0xFFB23A2E);
+
+  // ── Regulatory Marine Zones ──
+  static const Color legalRestricted = Color(0xFF6B5B95);
+  static const Color legalPermitted = Color(0xFF2E7D5B);
+
+  // ── Map / Chart ──
+  static const Color mapWater = Color(0xFFE5E9EC);
+
+  // ── Night Mode ──
+  static const Color nightModeBg = Color(0xFF0D0D0D);
+  static const Color nightSurface = Color(0xFF141414);
+  static const Color nightBorder = Color(0xFF222222);
+
+  // Legacy backward-compat aliases
+  static const Color deepSea = accentNavy;
+  static const Color oceanBlue = accentNavy;
+  static const Color aquaTeal = signalGood;
+  static const Color sandGold = signalCaution;
+  static const Color coralRed = signalAlert;
+  static const Color deepNavyText = inkPrimary;
+  static const Color mistGray = bgSecondary;
+  static const Color borderGray = hairline;
+  static const Color protectedArea = legalRestricted;
+  static const Color restrictedZone = legalRestricted;
+  static const Color permittedZone = legalPermitted;
+
   static Color getProbabilityColor(int probability) {
-    if (probability >= 70) return aquaTeal;
-    if (probability >= 40) return sandGold;
-    return coralRed;
+    if (probability >= 70) return signalGood;
+    if (probability >= 40) return signalCaution;
+    return signalAlert;
   }
 
   static String getProbabilityLabel(int probability) {
-    if (probability >= 70) return 'High';
+    if (probability >= 70) return 'Favorable';
     if (probability >= 40) return 'Moderate';
-    return 'Low';
+    return 'Low Opportunity';
   }
 }

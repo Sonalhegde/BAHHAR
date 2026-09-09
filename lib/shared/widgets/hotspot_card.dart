@@ -1,115 +1,80 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/models/hotspot_model.dart';
 import 'legal_status_badge.dart';
 
-/// HotspotCard (Section 4.4)
-/// Displays hotspot name, fishing probability badge, nautical distance,
-/// target species, and regulatory status.
 class HotspotCard extends StatelessWidget {
-  final String name;
-  final int probability;
-  final double distanceNm; // Nautical miles
-  final String primarySpecies;
-  final LegalStatus legalStatus;
+  final HotspotModel hotspot;
   final VoidCallback? onTap;
 
-  const HotspotCard({
-    super.key,
-    required this.name,
-    required this.probability,
-    required this.distanceNm,
-    required this.primarySpecies,
-    this.legalStatus = LegalStatus.permitted,
-    this.onTap,
-  });
+  const HotspotCard({super.key, required this.hotspot, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final probColor = AppColors.getProbabilityColor(probability);
-
-    return InkWell(
+    final probColor = AppColors.getProbabilityColor(hotspot.rating);
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: 260,
-        padding: const EdgeInsetsDirectional.all(16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.nightSurface : AppColors.cardWhite,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark ? AppColors.nightBorder : AppColors.borderGray,
-            width: 1,
-          ),
+          color: AppColors.surfacePure,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderHairline),
         ),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    name,
-                    style: AppTextStyles.h2.copyWith(
-                      fontSize: 17,
-                      color: isDark ? Colors.white : AppColors.deepNavyText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            // Score indicator
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: probColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: probColor.withValues(alpha: 0.25)),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${hotspot.rating}',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: probColor,
                 ),
-                Container(
-                  padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: probColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: probColor, width: 1),
-                  ),
-                  child: Text(
-                    '$probability%',
-                    style: AppTextStyles.captionMedium.copyWith(
-                      color: probColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.navigation_outlined, size: 14, color: AppColors.oceanBlue),
-                const SizedBox(width: 4),
-                Text(
-                  '${distanceNm.toStringAsFixed(1)} nm offshore',
-                  style: AppTextStyles.caption.copyWith(
-                    color: isDark ? Colors.white70 : const Color(0xFF64748B),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(hotspot.name, style: AppTextStyles.cardTitle),
+                      LegalStatusBadge(isRestricted: hotspot.isProtectedReserve),
+                    ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.phishing_outlined, size: 14, color: AppColors.aquaTeal),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    primarySpecies,
-                    style: AppTextStyles.captionMedium.copyWith(
-                      color: isDark ? Colors.white : AppColors.deepNavyText,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${hotspot.governorate} • ${hotspot.depthMeters}m • ${hotspot.distanceNmi} nmi',
+                    style: AppTextStyles.caption,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 4,
+                    children: hotspot.primarySpecies.take(3).map((s) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(s, style: AppTextStyles.caption.copyWith(fontSize: 10)),
+                    )).toList(),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-            LegalStatusBadge(status: legalStatus, compact: true),
           ],
         ),
       ),

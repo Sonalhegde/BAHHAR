@@ -5,136 +5,192 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/providers/marine_provider.dart';
-import '../../../core/providers/trip_provider.dart';
 import '../../../shared/widgets/fishing_score_gauge.dart';
 import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
-import '../../../shared/widgets/custom_buttons.dart';
 
 class HotspotDetailsScreen extends ConsumerWidget {
-  const HotspotDetailsScreen({super.key});
+  final String hotspotId;
+  const HotspotDetailsScreen({super.key, required this.hotspotId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hotspots = ref.watch(hotspotsProvider);
-    // Grab first or route param
-    final hotspot = hotspots.first;
-    final marineAsync = ref.watch(marineConditionsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hotspot = ref.watch(hotspotByIdProvider(hotspotId));
+    final marineAsync = ref.watch(currentMarineConditionsProvider);
+
+    if (hotspot == null) {
+      return Scaffold(
+        backgroundColor: AppColors.surfacePure,
+        appBar: AppBar(title: const Text('Spot Details')),
+        body: const Center(child: Text('Hotspot not found')),
+      );
+    }
 
     return Scaffold(
+      backgroundColor: AppColors.surfacePure,
       appBar: AppBar(
-        title: Text(hotspot.name),
-      ),
-      body: ListView(
-        padding: const EdgeInsetsDirectional.all(16.0),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(hotspot.nameAr, style: AppTextStyles.h1),
-                    const SizedBox(height: 4),
-                    Text('${hotspot.region} Governorate • ${hotspot.depthMeters}m depth',
-                        style: AppTextStyles.caption),
-                  ],
-                ),
-              ),
-              LegalStatusBadge(status: hotspot.legalStatus),
-            ],
+        backgroundColor: AppColors.surfacePure,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(hotspot.name, style: AppTextStyles.subhead),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: AppColors.borderHairline, height: 1.0),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bookmark_border_rounded, size: 20),
+            onPressed: () {},
           ),
-          if (hotspot.legalNotice.isNotEmpty) ...[
-            const SizedBox(height: 12),
+          IconButton(
+            icon: const Icon(Icons.share_outlined, size: 20),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Overview
             Container(
-              padding: const EdgeInsetsDirectional.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.protectedArea.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.protectedArea),
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.borderHairline)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.shield, color: AppColors.protectedArea, size: 20),
-                  const SizedBox(width: 10),
+                  FishingScoreGauge(score: hotspot.rating, size: 90),
+                  const SizedBox(width: 20),
                   Expanded(
-                    child: Text(
-                      hotspot.legalNotice,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.protectedArea),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(hotspot.name, style: AppTextStyles.screenTitle.copyWith(fontSize: 22)),
+                        Text('${hotspot.nameArabic} • ${hotspot.governorate}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                        const SizedBox(height: 8),
+                        LegalStatusBadge(isRestricted: hotspot.isProtectedReserve),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Live Conditions Grid
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('REAL-TIME CONDITIONS', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 12),
+                  marineAsync.when(
+                    data: (marine) => Row(
+                      children: [
+                        Expanded(
+                          child: ConditionStatChip(
+                            label: 'WAVE HEIGHT',
+                            value: '${marine.waveHeightMeters}m',
+                            subtext: marine.waveDirection,
+                            isWarning: marine.waveHeightMeters > 1.8,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ConditionStatChip(
+                            label: 'WIND SPEED',
+                            value: '${marine.windSpeedKnots}kt',
+                            subtext: marine.windDirection,
+                            isWarning: marine.windSpeedKnots > 20,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: ConditionStatChip(
+                            label: 'WATER TEMP',
+                            value: '${marine.waterTempCelsius}°C',
+                            subtext: 'SST Normal',
+                          ),
+                        ),
+                      ],
+                    ),
+                    loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    error: (_, __) => const SizedBox(),
+                  ),
+
+                  const SizedBox(height: 28),
+                  Text('KEY TARGET SPECIES', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: hotspot.primarySpecies.map((s) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.borderHairline),
+                      ),
+                      child: Text(s, style: AppTextStyles.labelMedium),
+                    )).toList(),
+                  ),
+
+                  const SizedBox(height: 28),
+                  Text('NAVIGATION & BATHYMETRY', style: AppTextStyles.sectionHeader),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfacePure,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.borderHairline),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildNavRow('Coordinates', '${hotspot.latitude.toStringAsFixed(4)}° N, ${hotspot.longitude.toStringAsFixed(4)}° E'),
+                        const Divider(height: 16, color: AppColors.borderHairline),
+                        _buildNavRow('Depth', '${hotspot.depthMeters} meters'),
+                        const Divider(height: 16, color: AppColors.borderHairline),
+                        _buildNavRow('Distance from Port', '${hotspot.distanceNmi} nautical miles'),
+                        const Divider(height: 16, color: AppColors.borderHairline),
+                        _buildNavRow('Bottom Type', 'Rocky coral drop-off / gravel'),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentNavy,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        context.push('/trip-planner');
+                      },
+                      child: Text('Plan Smart Trip Here', style: AppTextStyles.labelMedium.copyWith(color: Colors.white)),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          const SizedBox(height: 20),
-          Center(
-            child: FishingScoreGauge(
-              probability: hotspot.probability,
-              size: 190,
-              label: 'Predicted Strike Rate',
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text('Marine Conditions at Hotspot', style: AppTextStyles.h2.copyWith(fontSize: 18)),
-          const SizedBox(height: 10),
-          marineAsync.when(
-            data: (m) => Row(
-              children: [
-                Expanded(
-                  child: ConditionStatChip(
-                    icon: Icons.air,
-                    value: '${m.windSpeedKts} kts',
-                    label: 'Wind',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ConditionStatChip(
-                    icon: Icons.waves,
-                    value: '${m.waveHeightM} m',
-                    label: 'Wave',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ConditionStatChip(
-                    icon: Icons.thermostat,
-                    value: '${m.seaTemperatureC}°C',
-                    label: 'Temp',
-                  ),
-                ),
-              ],
-            ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('$e'),
-          ),
-          const SizedBox(height: 20),
-          Text('Target Species Present', style: AppTextStyles.h2.copyWith(fontSize: 18)),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: hotspot.targetSpecies.map((s) {
-              return Chip(
-                avatar: const Icon(Icons.phishing, size: 16, color: AppColors.oceanBlue),
-                label: Text(s),
-                backgroundColor: isDark ? AppColors.nightSurface : AppColors.cardWhite,
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 24),
-          BahharPrimaryButton(
-            label: 'Plan Smart Trip Here',
-            icon: Icons.explore_outlined,
-            onPressed: () {
-              ref.read(tripPlanProvider.notifier).updateSpecies(hotspot.targetSpecies.first);
-              context.go('/smart-trip');
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
-}
+
+  Widget _buildNavRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}\n

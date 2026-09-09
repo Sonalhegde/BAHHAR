@@ -5,13 +5,15 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/login_register_screen.dart';
 import '../../features/home/presentation/home_dashboard_screen.dart';
 import '../../features/map/presentation/fishing_map_screen.dart';
-import '../../features/smart_trip/presentation/smart_trip_wizard_screen.dart';
-import '../../features/smart_trip/presentation/trip_recommendation_screen.dart';
+import '../../features/trip_planner/presentation/smart_trip_wizard_screen.dart';
+import '../../features/trip_planner/presentation/trip_recommendation_screen.dart';
 import '../../features/my_catch/presentation/catch_history_screen.dart';
 import '../../features/my_catch/presentation/add_catch_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/hotspot/presentation/hotspot_details_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -34,29 +36,42 @@ class AppRouter {
         builder: (context, state) => const LoginRegisterScreen(),
       ),
       GoRoute(
-        path: '/hotspot/:id',
-        builder: (context, state) => const HotspotDetailsScreen(),
+        path: '/login',
+        builder: (context, state) => const LoginRegisterScreen(),
       ),
       GoRoute(
-        path: '/smart-trip-results',
+        path: '/hotspots/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return HotspotDetailsScreen(hotspotId: id);
+        },
+      ),
+      GoRoute(
+        path: '/trip-recommendation',
         builder: (context, state) => const TripRecommendationScreen(),
       ),
       GoRoute(
-        path: '/add-catch',
+        path: '/my-catch/add',
         builder: (context, state) => const AddCatchScreen(),
       ),
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
       ),
+
+      // Main shell with bottom navigation
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
         builder: (context, state, child) {
-          return ScaffoldWithBottomNavBar(child: child);
+          return _BahharShell(child: child);
         },
         routes: [
           GoRoute(
             path: '/',
+            redirect: (_, __) => '/home',
+          ),
+          GoRoute(
+            path: '/home',
             builder: (context, state) => const HomeDashboardScreen(),
           ),
           GoRoute(
@@ -64,7 +79,7 @@ class AppRouter {
             builder: (context, state) => const FishingMapScreen(),
           ),
           GoRoute(
-            path: '/smart-trip',
+            path: '/trip-planner',
             builder: (context, state) => const SmartTripWizardScreen(),
           ),
           GoRoute(
@@ -81,14 +96,14 @@ class AppRouter {
   );
 }
 
-class ScaffoldWithBottomNavBar extends StatelessWidget {
+class _BahharShell extends StatelessWidget {
   final Widget child;
-  const ScaffoldWithBottomNavBar({super.key, required this.child});
+  const _BahharShell({required this.child});
 
   int _calculateSelectedIndex(BuildContext context) {
     final String location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/map')) return 1;
-    if (location.startsWith('/smart-trip')) return 2;
+    if (location.startsWith('/trip-planner')) return 2;
     if (location.startsWith('/catch')) return 3;
     if (location.startsWith('/profile')) return 4;
     return 0;
@@ -96,21 +111,11 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
 
   void _onItemTapped(int index, BuildContext context) {
     switch (index) {
-      case 0:
-        context.go('/');
-        break;
-      case 1:
-        context.go('/map');
-        break;
-      case 2:
-        context.go('/smart-trip');
-        break;
-      case 3:
-        context.go('/catch');
-        break;
-      case 4:
-        context.go('/profile');
-        break;
+      case 0: context.go('/home'); break;
+      case 1: context.go('/map'); break;
+      case 2: context.go('/trip-planner'); break;
+      case 3: context.go('/catch'); break;
+      case 4: context.go('/profile'); break;
     }
   }
 
@@ -118,36 +123,45 @@ class ScaffoldWithBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _calculateSelectedIndex(context),
-        onDestinationSelected: (idx) => _onItemTapped(idx, context),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
-            label: 'Map',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Smart Trip',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.phishing_outlined),
-            selectedIcon: Icon(Icons.phishing),
-            label: 'My Catch',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.borderHairline, width: 1)),
+        ),
+        child: NavigationBar(
+          backgroundColor: AppColors.surfacePure,
+          elevation: 0,
+          indicatorColor: AppColors.accentNavy.withValues(alpha: 0.08),
+          selectedIndex: _calculateSelectedIndex(context),
+          onDestinationSelected: (idx) => _onItemTapped(idx, context),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home, color: AppColors.accentNavy),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.map_outlined),
+              selectedIcon: Icon(Icons.map, color: AppColors.accentNavy),
+              label: 'Map',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore, color: AppColors.accentNavy),
+              label: 'Smart Trip',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.phishing_outlined),
+              selectedIcon: Icon(Icons.phishing, color: AppColors.accentNavy),
+              label: 'My Catch',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person, color: AppColors.accentNavy),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }

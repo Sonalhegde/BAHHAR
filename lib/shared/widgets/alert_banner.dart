@@ -2,14 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
-enum AlertSeverity {
-  info,
-  warning,
-  danger,
-}
+enum AlertSeverity { info, warning, danger }
 
-/// AlertBanner (Section 4.4)
-/// Dismissible banner for weather, marine, or regulatory notifications
 class AlertBanner extends StatelessWidget {
   final String title;
   final String message;
@@ -26,71 +20,57 @@ class AlertBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
-    Color border;
-    Color iconColor;
+    Color bg, border, iconColor;
     IconData icon;
 
     switch (severity) {
-      case AlertSeverity.info:
-        bg = AppColors.oceanBlue.withOpacity(0.12);
-        border = AppColors.oceanBlue;
-        iconColor = AppColors.oceanBlue;
-        icon = Icons.info_outline;
-        break;
-      case AlertSeverity.warning:
-        bg = AppColors.sandGold.withOpacity(0.15);
-        border = AppColors.sandGold;
-        iconColor = const Color(0xFFB45309);
+      case AlertSeverity.danger:
+        bg = AppColors.signalAlert.withValues(alpha: 0.06);
+        border = AppColors.signalAlert.withValues(alpha: 0.2);
+        iconColor = AppColors.signalAlert;
         icon = Icons.warning_amber_rounded;
         break;
-      case AlertSeverity.danger:
-        bg = AppColors.coralRed.withOpacity(0.15);
-        border = AppColors.coralRed;
-        iconColor = AppColors.coralRed;
-        icon = Icons.dangerous_outlined;
+      case AlertSeverity.warning:
+        bg = AppColors.signalCaution.withValues(alpha: 0.08);
+        border = AppColors.signalCaution.withValues(alpha: 0.2);
+        iconColor = AppColors.signalCaution;
+        icon = Icons.info_outline_rounded;
+        break;
+      case AlertSeverity.info:
+      default:
+        bg = AppColors.accentNavy.withValues(alpha: 0.06);
+        border = AppColors.accentNavy.withValues(alpha: 0.15);
+        iconColor = AppColors.accentNavy;
+        icon = Icons.info_outline_rounded;
         break;
     }
 
     return Container(
-      padding: const EdgeInsetsDirectional.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border.withOpacity(0.4), width: 1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: iconColor),
-          const SizedBox(width: 10),
+          Icon(icon, size: 18, color: iconColor),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: AppTextStyles.captionMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: iconColor,
-                  ),
-                ),
+                Text(title, style: AppTextStyles.labelMedium.copyWith(color: iconColor)),
                 const SizedBox(height: 2),
-                Text(
-                  message,
-                  style: AppTextStyles.caption.copyWith(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white70
-                        : AppColors.deepNavyText,
-                  ),
-                ),
+                Text(message, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
               ],
             ),
           ),
           if (onDismiss != null)
             GestureDetector(
               onTap: onDismiss,
-              child: const Icon(Icons.close, size: 16, color: Colors.grey),
+              child: Icon(Icons.close_rounded, size: 16, color: AppColors.textTertiary),
             ),
         ],
       ),
