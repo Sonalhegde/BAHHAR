@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // User preferences
+    match /user_preferences/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Catches: Users can create and manage their own logged catches
+    match /catches/{catchId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Trips: Users can create and manage their own trip plans
+    match /trips/{tripId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Reference data collections: Read-only for authenticated clients, writable only via Admin/Backend
+    match /species/{speciesId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /hotspots/{hotspotId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /regions/{regionId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /regulations/{regulationId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /restricted_zones/{zoneId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /protected_areas/{areaId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Cached marine snapshots: Refreshed only by backend service
+    match /marine_conditions/{recordId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    match /weather/{recordId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}
