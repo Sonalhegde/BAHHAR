@@ -102,7 +102,7 @@ class _CrewCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 22,
-                backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+                backgroundColor: AppColors.primaryBlue.withValues(alpha: 0.1),
                 child: const Icon(Icons.person_rounded, color: AppColors.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),

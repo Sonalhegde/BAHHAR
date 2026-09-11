@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/notifications_provider.dart';
+import '../../../shared/widgets/alert_banner.dart' show AlertSeverity;
 import '../../../shared/glass/marine_background.dart';
 import '../../../shared/glass/glass_container.dart';
 
@@ -13,7 +14,7 @@ class NotificationsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final notificationsAsync = ref.watch(notificationsListProvider);
+    final notifications = ref.watch(notificationsProvider);
 
     return MarineBackground(
       child: CustomScrollView(
@@ -28,15 +29,14 @@ class NotificationsScreen extends ConsumerWidget {
             title: Text('Marine Advisories & Alerts', style: AppTextStyles.subhead.copyWith(color: Colors.white)),
           ),
 
-          notificationsAsync.when(
-            data: (notifications) {
+          (() {
               return SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, idx) {
                       final n = notifications[idx];
-                      final isSafety = n.type == 'safety';
+                      final isSafety = n.severity == AlertSeverity.warning || n.severity == AlertSeverity.danger;
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -89,7 +89,7 @@ class NotificationsScreen extends ConsumerWidget {
                                       ],
                                     ),
                                     const SizedBox(height: 4),
-                                    Text(n.body, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                                    Text(n.message, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
                                   ],
                                 ),
                               ),
@@ -102,14 +102,7 @@ class NotificationsScreen extends ConsumerWidget {
                   ),
                 ),
               );
-            },
-            loading: () => const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyanAccent)),
-            ),
-            error: (_, __) => const SliverFillRemaining(
-              child: Center(child: Text('No advisories available', style: TextStyle(color: Colors.white70))),
-            ),
-          ),
+          })(),
         ],
       ),
     );

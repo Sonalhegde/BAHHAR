@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../../../app.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/providers/preferences_provider.dart';
 
-/// Language switcher widget stub allowing the user to override device locale
-/// between English and Arabic with full RTL support.
-class LanguageSwitcherWidget extends StatelessWidget {
+/// Language switcher toggling the app between English and Arabic with full
+/// RTL support.
+class LanguageSwitcherWidget extends ConsumerWidget {
   const LanguageSwitcherWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final currentLocale = Localizations.localeOf(context);
-    final isArabic = currentLocale.languageCode == 'ar';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isArabic = ref.watch(isArabicProvider);
 
     return SegmentedButton<String>(
       segments: const [
@@ -26,9 +26,9 @@ class LanguageSwitcherWidget extends StatelessWidget {
       ],
       selected: {isArabic ? 'ar' : 'en'},
       onSelectionChanged: (Set<String> newSelection) {
-        final selectedLanguage = newSelection.first;
-        BahharApp.setLocale(context, Locale(selectedLanguage));
-        // TODO: Persist choice locally using shared_preferences / secure_storage
+        ref
+            .read(isArabicProvider.notifier)
+            .setArabic(newSelection.first == 'ar');
       },
     );
   }

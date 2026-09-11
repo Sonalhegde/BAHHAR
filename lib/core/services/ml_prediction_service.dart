@@ -52,11 +52,17 @@ class MLPredictionService {
       factors.add('Moderate surface chop stimulating bite activity');
     }
 
+    // Gale-force winds shut the bite down on top of the swell penalty.
+    if (windSpeedKts > 20) {
+      score -= 10;
+      factors.add('Strong winds suppressing surface feeding');
+    }
+
     final finalScore = score.clamp(15, 95);
     return MLPredictionResult(
       probability: finalScore,
       confidence: 0.84,
-      factors: factors.isEmpty ? ['Stable marine conditions'] : factors,
+      contributingFactors: factors.isEmpty ? ['Stable marine conditions'] : factors,
     );
   }
 }

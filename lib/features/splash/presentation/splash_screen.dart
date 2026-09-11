@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../shared/glass/marine_background.dart';
 import '../../../shared/widgets/bahhar_logo_widget.dart';
@@ -36,8 +35,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     isArabic: isArabic,
                     onToggle: () => ref.read(isArabicProvider.notifier).toggleLanguage(),
                   ),
-                  Row(
-                    children: const [
+                  const Row(
+                    children: [
                       Icon(Icons.location_on_outlined, size: 18, color: AppColors.oceanNavy),
                       SizedBox(width: 4),
                       Text(

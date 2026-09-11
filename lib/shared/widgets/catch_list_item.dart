@@ -38,10 +38,11 @@ class CatchListItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(catchItem.species, style: AppTextStyles.cardTitle),
+                  Text(catchItem.speciesName, style: AppTextStyles.cardTitle),
                   const SizedBox(height: 2),
                   Text(
-                    '${catchItem.weightKg.toStringAsFixed(1)} kg • ${catchItem.lengthCm.toStringAsFixed(0)} cm',
+                    '${catchItem.weightKg.toStringAsFixed(1)} kg'
+                    '${catchItem.lengthCm != null ? ' • ${catchItem.lengthCm!.toStringAsFixed(0)} cm' : ''}',
                     style: AppTextStyles.caption,
                   ),
                   Text(

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 
 class OfficialInfoScreen extends ConsumerWidget {
   const OfficialInfoScreen({super.key});
@@ -75,9 +74,9 @@ class OfficialInfoScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(0.07),
+              color: AppColors.primaryBlue.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryBlue.withOpacity(0.15)),
+              border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.15)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,

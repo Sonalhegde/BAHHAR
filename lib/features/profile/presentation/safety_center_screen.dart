@@ -94,7 +94,7 @@ class _ProgressCard extends StatelessWidget {
         color: isComplete ? const Color(0xFFE8F8EE) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isComplete ? Colors.green.withOpacity(0.3) : const Color(0xFFE2EDF8),
+          color: isComplete ? Colors.green.withValues(alpha: 0.3) : const Color(0xFFE2EDF8),
         ),
       ),
       child: Column(
@@ -221,7 +221,7 @@ class _EmergencyReminder extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

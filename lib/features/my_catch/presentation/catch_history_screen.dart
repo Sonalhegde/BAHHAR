@@ -7,13 +7,14 @@ import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/catches_provider.dart';
 import '../../../shared/glass/marine_background.dart';
 import '../../../shared/glass/glass_container.dart';
+import '../../../shared/widgets/skeleton.dart';
 
 class CatchHistoryScreen extends ConsumerWidget {
   const CatchHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final catchesAsync = ref.watch(catchesListProvider);
+    final catchesAsync = ref.watch(catchesProvider);
 
     return MarineBackground(
       child: CustomScrollView(
@@ -24,21 +25,32 @@ class CatchHistoryScreen extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Catch Log History', style: AppTextStyles.subhead.copyWith(fontSize: 20, color: Colors.white)),
+                  Text('Catch Log History',
+                      style: AppTextStyles.subhead
+                          .copyWith(fontSize: 20, color: Colors.white)),
                   GestureDetector(
                     onTap: () => context.push('/my-catch/add'),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.oceanNavy,
-                        borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
-                        border: Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.4)),
+                        borderRadius:
+                            BorderRadius.circular(GlassTokens.radiusPill),
+                        border: Border.all(
+                            color: AppColors.cyanAccent
+                                .withValues(alpha: 0.4)),
                       ),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.add_rounded, size: 16, color: AppColors.cyanAccent),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.add_rounded,
+                              size: 16, color: AppColors.cyanAccent),
                           SizedBox(width: 4),
-                          Text('Log Catch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                          Text('Log Catch',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white)),
                         ],
                       ),
                     ),
@@ -56,11 +68,16 @@ class CatchHistoryScreen extends ConsumerWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.phishing_rounded, size: 48, color: AppColors.textTertiary),
+                        const Icon(Icons.phishing_rounded,
+                            size: 48, color: AppColors.textTertiary),
                         const SizedBox(height: 12),
-                        Text('No catches logged yet', style: AppTextStyles.bodyMedium.copyWith(color: Colors.white)),
+                        Text('No catches logged yet',
+                            style: AppTextStyles.bodyMedium
+                                .copyWith(color: Colors.white)),
                         const SizedBox(height: 4),
-                        Text('Log catches to calibrate personal ML predictions.', style: AppTextStyles.caption),
+                        const Text(
+                            'Log catches to calibrate personal ML predictions.',
+                            style: AppTextStyles.caption),
                       ],
                     ),
                   ),
@@ -80,52 +97,98 @@ class CatchHistoryScreen extends ConsumerWidget {
                           borderRadius: GlassTokens.radiusMedium,
                           padding: const EdgeInsets.all(16),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: AppColors.cyanAccent.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(GlassTokens.radiusSmall),
-                                  border: Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.3)),
+                              // Photo thumbnail when available
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                    GlassTokens.radiusSmall),
+                                child: SizedBox(
+                                  width: 44,
+                                  height: 44,
+                                  child: item.photoUrl != null
+                                      ? Image.network(item.photoUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (_, __, ___) => _speciesIcon())
+                                      : _speciesIcon(),
                                 ),
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.set_meal_outlined, size: 22, color: AppColors.cyanAccent),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(item.species, style: AppTextStyles.cardTitle.copyWith(color: Colors.white)),
-                                        Text('${item.weightKg.toStringAsFixed(1)} kg', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.cyanBright)),
+                                        Flexible(
+                                          child: Text(item.speciesName,
+                                              overflow:
+                                                  TextOverflow.ellipsis,
+                                              style: AppTextStyles.cardTitle
+                                                  .copyWith(
+                                                      color: Colors.white)),
+                                        ),
+                                        Text(
+                                            '${item.weightKg.toStringAsFixed(1)} kg',
+                                            style: AppTextStyles.bodyMedium.copyWith(
+                                                fontWeight:
+                                                    FontWeight.w700,
+                                                color:
+                                                    AppColors.cyanBright)),
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    Text('${item.locationName} • ${item.lengthCm.toStringAsFixed(0)} cm', style: AppTextStyles.caption),
+                                    Text(
+                                      '${item.locationName}'
+                                      '${item.lengthCm != null ? ' • ${item.lengthCm!.toStringAsFixed(0)} cm' : ''}',
+                                      style: AppTextStyles.caption,
+                                    ),
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withValues(alpha: 0.08),
-                                            borderRadius: BorderRadius.circular(4),
+                                        if (item.baitOrLure != null) ...[
+                                          Container(
+                                            padding: const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 6,
+                                                vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(item.baitOrLure!,
+                                                style: AppTextStyles.caption
+                                                    .copyWith(
+                                                        fontSize: 10,
+                                                        color: AppColors
+                                                            .cyanAccent)),
                                           ),
-                                          child: Text(item.lureOrBait, style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.cyanAccent)),
-                                        ),
+                                        ],
                                         if (item.released) ...[
                                           const SizedBox(width: 6),
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 6,
+                                                vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: AppColors.signalGood.withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: AppColors.signalGood
+                                                  .withValues(alpha: 0.15),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
-                                            child: Text('Released', style: AppTextStyles.caption.copyWith(fontSize: 10, color: AppColors.signalGood)),
+                                            child: Text('Released',
+                                                style: AppTextStyles.caption
+                                                    .copyWith(
+                                                        fontSize: 10,
+                                                        color: AppColors
+                                                            .signalGood)),
                                           ),
                                         ],
                                       ],
@@ -143,15 +206,52 @@ class CatchHistoryScreen extends ConsumerWidget {
                 ),
               );
             },
-            loading: () => const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyanAccent)),
+            loading: () => const SliverPadding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    SkeletonCard(),
+                    SizedBox(height: 10),
+                    SkeletonCard(),
+                    SizedBox(height: 10),
+                    SkeletonCard(),
+                  ],
+                ),
+              ),
             ),
-            error: (_, __) => const SliverFillRemaining(
-              child: Center(child: Text('Failed to load history', style: TextStyle(color: Colors.white70))),
+            error: (e, _) => SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.cloud_off_outlined,
+                        size: 40, color: AppColors.textTertiary),
+                    const SizedBox(height: 10),
+                    Text('Failed to load history',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: Colors.white)),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref.invalidate(catchesProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _speciesIcon() {
+    return Container(
+      color: AppColors.cyanAccent.withValues(alpha: 0.12),
+      alignment: Alignment.center,
+      child: const Icon(Icons.set_meal_outlined,
+          size: 22, color: AppColors.cyanAccent),
     );
   }
 }

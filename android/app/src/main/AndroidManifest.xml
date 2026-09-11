@@ -30,10 +30,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- TODO: Add Google Maps API Key meta-data tag:
+        <!-- Google Maps API key: injected from gradle. Set MAPS_API_KEY in
+             android/gradle.properties or local.properties (never commit it). -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_MAPS_API_KEY_HERE" />
-        -->
+            android:value="${MAPS_API_KEY}" />
     </application>
 </manifest>

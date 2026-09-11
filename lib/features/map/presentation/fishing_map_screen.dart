@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/models/hotspot_model.dart';
 import '../../../shared/glass/glass_container.dart';
-import '../../../shared/polymorphic/soft_toggle.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
 
+/// Real Google Maps fishing chart. Markers are colored by
+/// AppColors.getProbabilityColor(hotspot.probability); the species chips
+/// filter markers through selectedSpeciesFilterProvider. Tapping a marker
+/// opens the same full-screen Hotspot Details push used by the home list.
 class FishingMapScreen extends ConsumerStatefulWidget {
   const FishingMapScreen({super.key});
 
@@ -18,232 +22,252 @@ class FishingMapScreen extends ConsumerStatefulWidget {
 }
 
 class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
-  String _activeFilter = 'all';
+  static const CameraPosition _muscatSeeb = CameraPosition(
+    target: LatLng(23.6143, 58.5453), // Muscat/Seeb coastal waters
+    zoom: 8.2,
+  );
+
+  final Map<String, Marker> _markersById = {};
   HotspotModel? _selectedHotspot;
+
+  /// Kept for future camera animations (e.g. fly-to-hotspot from search);
+  /// referenced on dispose to satisfy the controller lifecycle.
+  GoogleMapController? _mapController;
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Set<Marker> _buildMarkers(List<HotspotModel> hotspots) {
+    _markersById.clear();
+    final bitmapCache = <Color, BitmapDescriptor>{};
+
+    for (final h in hotspots) {
+      final color = h.legalStatus != LegalStatus.permitted
+          ? AppColors.legalRestricted
+          : AppColors.getProbabilityColor(h.probability);
+      final descriptor = bitmapCache.putIfAbsent(
+        color,
+        () => BitmapDescriptor.defaultMarkerWithHue(
+          _hueForColor(color),
+        ),
+      );
+      final marker = Marker(
+        markerId: MarkerId(h.id),
+        position: LatLng(h.latitude, h.longitude),
+        icon: descriptor,
+        infoWindow: InfoWindow(
+          title: h.name,
+          snippet: 'Bite probability ${h.probability}% • ${h.bestWindow}',
+        ),
+        onTap: () => setState(() => _selectedHotspot = h),
+      );
+      _markersById[h.id] = marker;
+    }
+    return _markersById.values.toSet();
+  }
+
+  double _hueForColor(Color c) {
+    final hsv = HSVColor.fromColor(c);
+    return hsv.hue;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final hotspotsAsync = ref.watch(hotspotsListProvider);
+    final hotspotsAsync = ref.watch(filteredHotspotsProvider);
+    final selectedSpecies = ref.watch(selectedSpeciesFilterProvider);
+    final availableSpeciesAsync = ref.watch(availableSpeciesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.mapWater,
-      body: Stack(
-        children: [
-          // Interactive Nautical Bathymetry Simulation
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _MarineChartCanvasPainter(),
-              child: GestureDetector(
-                onTap: () => setState(() => _selectedHotspot = null),
-              ),
+      body: hotspotsAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        error: (e, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off_outlined,
+                    size: 36, color: AppColors.signalAlert),
+                const SizedBox(height: 10),
+                Text(
+                  'Failed to load hotspots.\nCheck your connection.',
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textPrimary),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => ref.invalidate(hotspotsProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
             ),
           ),
+        ),
+        data: (hotspots) {
+          final markers = _buildMarkers(hotspots);
 
-          // Protected Marine Reserve Boundary Overlay (Daymaniyat)
-          Positioned(
-            left: 80,
-            top: 180,
-            child: Container(
-              width: 150,
-              height: 94,
-              decoration: BoxDecoration(
-                color: AppColors.legalRestricted.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.legalRestricted, width: 1.8),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.legalRestricted.withValues(alpha: 0.25),
-                    blurRadius: 14,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.shield_outlined, size: 16, color: AppColors.legalRestricted),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Daymaniyat Marine Reserve\nPermit Required',
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.caption.copyWith(
-                      fontSize: 9.5,
-                      color: AppColors.legalRestricted,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Floating Glass Filter Controls
-          Positioned(
-            top: 50,
-            left: 16,
-            right: 16,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  PolymorphicChip(
-                    label: 'All Spots',
-                    isSelected: _activeFilter == 'all',
-                    onTap: () => setState(() => _activeFilter = 'all'),
-                  ),
-                  const SizedBox(width: 8),
-                  PolymorphicChip(
-                    label: 'Pelagic (Kingfish/Tuna)',
-                    isSelected: _activeFilter == 'pelagic',
-                    onTap: () => setState(() => _activeFilter = 'pelagic'),
-                  ),
-                  const SizedBox(width: 8),
-                  PolymorphicChip(
-                    label: 'Bottom / Reef',
-                    isSelected: _activeFilter == 'bottom',
-                    onTap: () => setState(() => _activeFilter = 'bottom'),
-                  ),
-                  const SizedBox(width: 8),
-                  PolymorphicChip(
-                    label: 'Nature Reserves',
-                    isSelected: _activeFilter == 'reserves',
-                    onTap: () => setState(() => _activeFilter = 'reserves'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Hotspot Map Markers
-          hotspotsAsync.when(
-            data: (hotspots) {
-              return Stack(
-                children: hotspots.map((h) {
-                  final isSelected = _selectedHotspot?.id == h.id;
-                  final left = h.longitude > 58 ? 250.0 : (h.longitude > 57 ? 170.0 : 80.0);
-                  final top = h.latitude > 23.8 ? 230.0 : (h.latitude > 23 ? 320.0 : 440.0);
-
-                  return Positioned(
-                    left: left,
-                    top: top,
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedHotspot = h),
-                      child: AnimatedScale(
-                        scale: isSelected ? 1.08 : 1.0,
-                        duration: const Duration(milliseconds: 180),
-                        child: GlassContainer(
-                          level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
-                          borderRadius: GlassTokens.radiusSmall,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          customColor: isSelected
-                              ? AppColors.oceanNavy.withValues(alpha: 0.9)
-                              : const Color(0xFF071B2D).withValues(alpha: 0.65),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: h.isProtectedReserve
-                                      ? AppColors.legalRestricted
-                                      : AppColors.getProbabilityColor(h.rating),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.getProbabilityColor(h.rating).withValues(alpha: 0.8),
-                                      blurRadius: 6,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${h.name} (${h.rating})',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
-                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-            loading: () => const SizedBox(),
-            error: (_, __) => const SizedBox(),
-          ),
-
-          // Floating Selected Hotspot Inspector Card
-          if (_selectedHotspot != null)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 96,
-              child: GlassContainer(
-                level: GlassLevel.prominent,
-                borderRadius: GlassTokens.radiusLarge,
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_selectedHotspot!.name, style: AppTextStyles.cardTitle.copyWith(fontSize: 16)),
-                              Text(
-                                '${_selectedHotspot!.nameArabic} • ${_selectedHotspot!.governorate}',
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                        LegalStatusBadge(isRestricted: _selectedHotspot!.isProtectedReserve),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildStatCol('DEPTH', '${_selectedHotspot!.depthMeters} m'),
-                        _buildStatCol('DISTANCE', '${_selectedHotspot!.distanceNmi} nmi'),
-                        _buildStatCol('BITE SCORE', '${_selectedHotspot!.rating}/100'),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.oceanNavy,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(GlassTokens.radiusMedium),
-                            side: BorderSide(color: AppColors.cyanAccent.withValues(alpha: 0.5), width: 1.2),
-                          ),
-                        ),
-                        onPressed: () => context.push('/hotspots/${_selectedHotspot!.id}'),
-                        child: Text(
-                          'Inspect Bathymetry & Plan Trip',
-                          style: AppTextStyles.labelMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ),
-                  ],
+          return Stack(
+            children: [
+              // Real interactive Google Map
+              Positioned.fill(
+                child: GoogleMap(
+                  initialCameraPosition: _muscatSeeb,
+                  markers: markers,
+                  myLocationButtonEnabled: false,
+                  mapToolbarEnabled: false,
+                  compassEnabled: true,
+                  onMapCreated: (controller) => _mapController = controller,
+                  onTap: (_) => setState(() => _selectedHotspot = null),
                 ),
               ),
-            ),
-        ],
+
+              // Floating Filter Controls (wired to the filter providers)
+              Positioned(
+                top: 50,
+                left: 16,
+                right: 16,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: availableSpeciesAsync.maybeWhen(
+                    data: (species) => Row(
+                      children: [
+                        _FilterChip(
+                          label: 'All Spots',
+                          isSelected: selectedSpecies == null,
+                          onTap: () => ref
+                              .read(selectedSpeciesFilterProvider.notifier)
+                              .state = null,
+                        ),
+                        const SizedBox(width: 8),
+                        ...species.map((s) {
+                          final isOn = selectedSpecies == s;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _FilterChip(
+                              label: s,
+                              isSelected: isOn,
+                              onTap: () => ref
+                                  .read(selectedSpeciesFilterProvider.notifier)
+                                  .state = isOn ? null : s,
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                    orElse: () => const SizedBox(),
+                  ),
+                ),
+              ),
+
+              // Result count hint
+              Positioned(
+                top: 96,
+                left: 16,
+                child: GlassContainer(
+                  level: GlassLevel.standard,
+                  borderRadius: GlassTokens.radiusPill,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  child: Text(
+                    '${hotspots.length} spots'
+                    '${selectedSpecies != null ? ' • $selectedSpecies' : ''}',
+                    style: AppTextStyles.caption
+                        .copyWith(color: AppColors.textPrimary),
+                  ),
+                ),
+              ),
+
+              // Floating Selected Hotspot Inspector Card
+              if (_selectedHotspot != null)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 96,
+                  child: GlassContainer(
+                    level: GlassLevel.prominent,
+                    borderRadius: GlassTokens.radiusLarge,
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(_selectedHotspot!.name,
+                                      style: AppTextStyles.cardTitle
+                                          .copyWith(fontSize: 16)),
+                                  Text(
+                                    '${_selectedHotspot!.nameAr} • ${_selectedHotspot!.region}',
+                                    style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            LegalStatusBadge(
+                              isRestricted: _selectedHotspot!.legalStatus !=
+                                  LegalStatus.permitted,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildStatCol('DEPTH',
+                                '${_selectedHotspot!.depthMeters} m'),
+                            _buildStatCol('DISTANCE',
+                                '${_selectedHotspot!.distanceNm} nmi'),
+                            _buildStatCol('BITE SCORE',
+                                '${_selectedHotspot!.probability}/100'),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.oceanNavy,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                    GlassTokens.radiusMedium),
+                                side: BorderSide(
+                                    color: AppColors.cyanAccent
+                                        .withValues(alpha: 0.5),
+                                    width: 1.2),
+                              ),
+                            ),
+                            onPressed: () => context
+                                .push('/hotspots/${_selectedHotspot!.id}'),
+                            child: Text(
+                              'Inspect Bathymetry & Plan Trip',
+                              style: AppTextStyles.labelMedium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -252,51 +276,55 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.sectionHeader.copyWith(fontSize: 9.5)),
+        Text(label,
+            style: AppTextStyles.sectionHeader.copyWith(fontSize: 9.5)),
         const SizedBox(height: 2),
-        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: Colors.white)),
+        Text(value,
+            style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: FontWeight.w700, color: Colors.white)),
       ],
     );
   }
 }
 
-class _MarineChartCanvasPainter extends CustomPainter {
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
   @override
-  void paint(Canvas canvas, Size size) {
-    final landPaint = Paint()
-      ..color = const Color(0xFF0C2134)
-      ..style = PaintingStyle.fill;
-
-    final coastlinePaint = Paint()
-      ..color = const Color(0xFF1E4B72)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final gridPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.04)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-
-    // Bathymetry Grid
-    for (double x = 0; x < size.width; x += 50) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (double y = 0; y < size.height; y += 50) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    // Coastal landmass polygon
-    final path = Path();
-    path.moveTo(0, size.height * 0.15);
-    path.quadraticBezierTo(size.width * 0.45, size.height * 0.22, size.width * 0.62, size.height * 0.5);
-    path.quadraticBezierTo(size.width * 0.72, size.height * 0.75, size.width * 0.5, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-
-    canvas.drawPath(path, landPaint);
-    canvas.drawPath(path, coastlinePaint);
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.oceanNavy
+              : Colors.white.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.cyanAccent
+                : const Color(0xFFD6E6F7),
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: isSelected ? Colors.white : AppColors.textPrimary,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

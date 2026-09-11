@@ -12,7 +12,8 @@ class HotspotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final probColor = AppColors.getProbabilityColor(hotspot.rating);
+    final probColor = AppColors.getProbabilityColor(hotspot.probability);
+    final isProtected = hotspot.legalStatus != LegalStatus.permitted;
 
     return GestureDetector(
       onTap: onTap,
@@ -45,7 +46,7 @@ class HotspotCard extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Text(
-                '${hotspot.rating}',
+                '${hotspot.probability}',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
@@ -73,19 +74,19 @@ class HotspotCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      LegalStatusBadge(isRestricted: hotspot.isProtectedReserve),
+                      LegalStatusBadge(isRestricted: isProtected),
                     ],
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '${hotspot.governorate} • ${hotspot.depthMeters}m depth • ${hotspot.distanceNmi} nmi',
+                    '${hotspot.region} • ${hotspot.depthMeters}m depth • ${hotspot.distanceNm} nmi',
                     style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: hotspot.primarySpecies.take(3).map((s) => Container(
+                    children: hotspot.targetSpecies.take(3).map((s) => Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primaryBlueLight,

@@ -6,7 +6,6 @@ import '../../../core/providers/safety_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/localization/locale_utils.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/models/report_issue_model.dart';
 
 class ReportIssueScreen extends ConsumerStatefulWidget {
@@ -60,7 +59,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       selected: selected,
                       label: Text(isArabic ? cat.labelAr : cat.labelEn),
                       onSelected: (_) => setState(() => _category = cat),
-                      selectedColor: AppColors.primaryBlue.withOpacity(0.15),
+                      selectedColor: AppColors.primaryBlue.withValues(alpha: 0.15),
                       checkmarkColor: AppColors.primaryBlue,
                       labelStyle: TextStyle(
                         color: selected ? AppColors.primaryBlue : Colors.grey[600],
@@ -150,7 +149,7 @@ class _SuccessBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F8EE),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -218,7 +217,7 @@ class _IssueStatusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.12),
+                  color: statusColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(statusLabel, style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600)),

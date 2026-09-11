@@ -1,7 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
+
 import '../models/hotspot_model.dart';
+import '../services/firebase_service.dart';
+import '../services/firestore_service.dart';
 import '../../shared/widgets/legal_status_badge.dart';
 
+/// Seed hotspots used when Firebase is not configured, so the app remains
+/// explorable offline. Never used once Firebase is available.
 final omaniHotspotsSeed = [
   const HotspotModel(
     id: 'fahal_island',
@@ -111,15 +117,46 @@ final omaniHotspotsSeed = [
   ),
 ];
 
-final hotspotsProvider = Provider<List<HotspotModel>>((ref) {
-  return omaniHotspotsSeed;
+/// Center used for the initial hotspot fetch — Muscat/Seeb coastal waters.
+const LatLng defaultMapCenter = LatLng(23.6143, 58.5453);
+
+/// True when the data layer fell back to the bundled seed because Firebase
+/// is not configured. UI shows a visible banner while this is set.
+final offlineDataModeProvider = StateProvider<bool>((ref) => false);
+
+/// Hotspots straight from FirestoreService; falls back to seed data only when
+/// Firebase is not configured (offline demo mode). Real Firestore/network
+/// errors propagate to the UI as an error state with retry.
+final hotspotsProvider = FutureProvider<List<HotspotModel>>((ref) async {
+  if (!FirebaseService.isConfigured) {
+    ref.read(offlineDataModeProvider.notifier).state = true;
+    return omaniHotspotsSeed;
+  }
+  final service = FirestoreService();
+  try {
+    // 1200 km covers the full Omani coast from Musandam to Dhofar.
+    final hotspots =
+        await service.fetchHotspots(defaultMapCenter, 1200);
+    ref.read(offlineDataModeProvider.notifier).state = false;
+    if (hotspots.isEmpty) {
+      // Firestore reachable but collection empty (e.g. not seeded yet).
+      ref.read(offlineDataModeProvider.notifier).state = true;
+      return omaniHotspotsSeed;
+    }
+    return hotspots;
+  } on FirebaseUnavailableException {
+    ref.read(offlineDataModeProvider.notifier).state = true;
+    return omaniHotspotsSeed;
+  }
+  // Any other error (permissions, network) intentionally propagates so the
+  // UI can show a retry state instead of silently swapping in fake data.
 });
 
 final selectedRegionFilterProvider = StateProvider<String?>((ref) => null);
 final selectedSpeciesFilterProvider = StateProvider<String?>((ref) => null);
 
-final filteredHotspotsProvider = Provider<List<HotspotModel>>((ref) {
-  final all = ref.watch(hotspotsProvider);
+final filteredHotspotsProvider = FutureProvider<List<HotspotModel>>((ref) async {
+  final all = await ref.watch(hotspotsProvider.future);
   final region = ref.watch(selectedRegionFilterProvider);
   final species = ref.watch(selectedSpeciesFilterProvider);
 
@@ -128,4 +165,26 @@ final filteredHotspotsProvider = Provider<List<HotspotModel>>((ref) {
     if (species != null && !h.targetSpecies.contains(species)) return false;
     return true;
   }).toList();
+});
+
+/// Synchronous lookup for the details screen once hotspots are loaded.
+final hotspotByIdProvider = FutureProvider.family<HotspotModel?, String>(
+  (ref, id) async {
+    final all = await ref.watch(hotspotsProvider.future);
+    try {
+      return all.firstWhere((h) => h.id == id);
+    } on StateError {
+      return null;
+    }
+  },
+);
+
+/// Distinct species across the loaded hotspots, for filter chips.
+final availableSpeciesProvider = FutureProvider<List<String>>((ref) async {
+  final all = await ref.watch(hotspotsProvider.future);
+  final set = <String>{};
+  for (final h in all) {
+    set.addAll(h.targetSpecies);
+  }
+  return set.toList()..sort();
 });

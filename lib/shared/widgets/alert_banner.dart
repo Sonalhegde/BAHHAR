@@ -37,7 +37,6 @@ class AlertBanner extends StatelessWidget {
         icon = Icons.info_outline_rounded;
         break;
       case AlertSeverity.info:
-      default:
         bg = AppColors.accentNavy.withValues(alpha: 0.06);
         border = AppColors.accentNavy.withValues(alpha: 0.15);
         iconColor = AppColors.accentNavy;
@@ -70,7 +69,7 @@ class AlertBanner extends StatelessWidget {
           if (onDismiss != null)
             GestureDetector(
               onTap: onDismiss,
-              child: Icon(Icons.close_rounded, size: 16, color: AppColors.textTertiary),
+              child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textTertiary),
             ),
         ],
       ),

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 
 class HelpInstructionsScreen extends ConsumerWidget {
   const HelpInstructionsScreen({super.key});
@@ -172,7 +171,7 @@ class HelpInstructionsScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primaryBlue.withOpacity(0.07),
+              color: AppColors.primaryBlue.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -258,7 +257,7 @@ class _HelpTopicState extends State<_HelpTopic> {
                       Container(
                         width: 22, height: 22,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryBlue.withOpacity(0.12),
+                          color: AppColors.primaryBlue.withValues(alpha: 0.12),
                           shape: BoxShape.circle,
                         ),
                         child: Center(

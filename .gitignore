@@ -56,3 +56,9 @@ firebase_options.dart
 *.keystore
 *.jks
 key.properties
+
+# Generated plugin registrant (build artifact)
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m

@@ -4,23 +4,24 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
+import '../../../core/providers/trip_provider.dart';
 import '../../../shared/glass/marine_background.dart';
 import '../../../shared/glass/glass_container.dart';
 import '../../../shared/polymorphic/soft_button.dart';
 
+/// 4-step Smart Trip wizard. Every step writes into tripPlanProvider (the
+/// TripRequest object); the final step hands off to TripService.planTrip via
+/// the trip-recommendation route.
 class SmartTripWizardScreen extends ConsumerStatefulWidget {
   const SmartTripWizardScreen({super.key});
 
   @override
-  ConsumerState<SmartTripWizardScreen> createState() => _SmartTripWizardScreenState();
+  ConsumerState<SmartTripWizardScreen> createState() =>
+      _SmartTripWizardScreenState();
 }
 
 class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
   int _currentStep = 0;
-  String _selectedSpecies = 'Kingfish (Kanaad)';
-  String _boatType = 'Fiberglass Skiff 24-28ft';
-  int _maxDistanceNmi = 15;
-  String _departureTime = '05:00 AM (Dawn)';
 
   final _speciesOptions = [
     'Kingfish (Kanaad)',
@@ -30,6 +31,14 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
     'Mahi Mahi (Anfaloos)',
   ];
 
+  // Starting points with real marina/ port coordinates.
+  final _startingPoints = const [
+    ('Marina Bandar Al Rowdha (Muscat)', 23.5786, 58.6083),
+    ('Muscat Hills Marina (Seeb)', 23.6805, 58.4700),
+    ('Sur Port (Ash Sharqiyah)', 22.5619, 59.5297),
+    ('Marina Bander Al Rowdha South', 23.5236, 58.6519),
+  ];
+
   final _boatOptions = [
     'Traditional Wood Dhow',
     'Fiberglass Skiff 24-28ft',
@@ -37,8 +46,24 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
     'Kayak / Shore Casting',
   ];
 
+  final _departureSlots = const [
+    ('04:30 AM (Pre-dawn)', 4),
+    ('05:00 AM (Dawn Slack)', 5),
+    ('02:30 PM (Afternoon Tide)', 14),
+    ('05:30 PM (Dusk)', 17),
+  ];
+
+  // Date selection: today or the next three days.
+  late final List<DateTime> _dateOptions = List.generate(
+    4,
+    (i) => DateTime.now().add(Duration(days: i)),
+  );
+  int _selectedDateIndex = 0;
+
   @override
   Widget build(BuildContext context) {
+    final plan = ref.watch(tripPlanProvider);
+
     return MarineBackground(
       child: Column(
         children: [
@@ -48,7 +73,8 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white, size: 20),
                   onPressed: () {
                     if (_currentStep > 0) {
                       setState(() => _currentStep--);
@@ -57,16 +83,19 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                     }
                   },
                 ),
-                Text('Smart Trip Planner', style: AppTextStyles.subhead.copyWith(color: Colors.white)),
+                Text('Smart Trip Planner',
+                    style: AppTextStyles.subhead
+                        .copyWith(color: Colors.white)),
               ],
             ),
           ),
 
           // Glass Step Progress Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
             child: Row(
-              children: List.generate(3, (idx) {
+              children: List.generate(4, (idx) {
                 final isActive = idx == _currentStep;
                 final isPassed = idx < _currentStep;
                 return Expanded(
@@ -82,7 +111,8 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: AppColors.cyanAccent.withValues(alpha: 0.6),
+                                color: AppColors.cyanAccent
+                                    .withValues(alpha: 0.6),
                                 blurRadius: 6,
                               ),
                             ]
@@ -97,7 +127,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: _buildStepContent(),
+              child: _buildStepContent(plan),
             ),
           ),
 
@@ -118,11 +148,14 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                 ],
                 Expanded(
                   child: SoftButton(
-                    label: _currentStep == 2 ? 'Generate Calibrated Route' : 'Next Step',
+                    label: _currentStep == 3
+                        ? 'Generate Calibrated Route'
+                        : 'Next Step',
                     onPressed: () {
-                      if (_currentStep < 2) {
+                      if (_currentStep < 3) {
                         setState(() => _currentStep++);
                       } else {
+                        // TripRequest is complete; hand off to the planner.
                         context.push('/trip-recommendation');
                       }
                     },
@@ -136,160 +169,239 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
     );
   }
 
-  Widget _buildStepContent() {
+  Widget _buildStepContent(TripRequest plan) {
     switch (_currentStep) {
       case 0:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('STEP 1 OF 3', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 4),
-            Text('Select Target Species', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
-            const SizedBox(height: 6),
-            Text(
+        return _stepShell(
+          stepLabel: 'STEP 1 OF 4',
+          title: 'Select Target Species',
+          subtitle:
               'Route bathymetry and launch timing calibrate to the species thermal and feeding envelope.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _optionList(
+              _speciesOptions,
+              selected: plan.targetSpecies,
+              onSelected: (s) => ref
+                  .read(tripPlanProvider.notifier)
+                  .updateSpecies(s),
             ),
-            const SizedBox(height: 20),
-            ..._speciesOptions.map((s) {
-              final isSelected = _selectedSpecies == s;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GlassContainer(
-                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
-                  borderRadius: GlassTokens.radiusMedium,
-                  padding: const EdgeInsets.all(16),
-                  onTap: () => setState(() => _selectedSpecies = s),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                        size: 20,
-                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        s,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
+          ),
         );
 
       case 1:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('STEP 2 OF 3', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 4),
-            Text('Vessel & Cruising Range', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
-            const SizedBox(height: 6),
-            Text(
-              'Ensures fuel burn estimates and seaworthiness match your boat profile.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+        return _stepShell(
+          stepLabel: 'STEP 2 OF 4',
+          title: 'Starting Point',
+          subtitle:
+              'Departure marina or port — used for distance, fuel and bearing calculations.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _optionList(
+              _startingPoints.map((p) => p.$1).toList(),
+              selected: plan.departurePort,
+              onSelected: (portLabel) {
+                final match =
+                    _startingPoints.firstWhere((p) => p.$1 == portLabel);
+                ref.read(tripPlanProvider.notifier).updateStartingPoint(
+                      match.$1,
+                      match.$2,
+                      match.$3,
+                    );
+              },
             ),
-            const SizedBox(height: 20),
-            ..._boatOptions.map((b) {
-              final isSelected = _boatType == b;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GlassContainer(
-                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
-                  borderRadius: GlassTokens.radiusMedium,
-                  padding: const EdgeInsets.all(16),
-                  onTap: () => setState(() => _boatType = b),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
-                        size: 20,
-                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        b,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('MAX CRUISE RADIUS', style: AppTextStyles.sectionHeader),
-                Text('$_maxDistanceNmi nmi', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: AppColors.cyanAccent)),
-              ],
-            ),
-            Slider(
-              value: _maxDistanceNmi.toDouble(),
-              min: 5,
-              max: 50,
-              divisions: 9,
-              activeColor: AppColors.cyanAccent,
-              inactiveColor: Colors.white.withValues(alpha: 0.15),
-              onChanged: (v) => setState(() => _maxDistanceNmi = v.round()),
-            ),
-          ],
+          ),
         );
 
       case 2:
+        return _stepShell(
+          stepLabel: 'STEP 3 OF 4',
+          title: 'Vessel & Cruising Range',
+          subtitle:
+              'Ensures fuel burn estimates and seaworthiness match your boat profile.',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ..._optionList(
+                _boatOptions,
+                selected: plan.vesselType,
+                onSelected: (b) => ref
+                    .read(tripPlanProvider.notifier)
+                    .updateVesselType(b),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('MAX CRUISE RADIUS',
+                      style: AppTextStyles.sectionHeader),
+                  Text('${plan.maxRadiusNmi} nmi',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.cyanAccent)),
+                ],
+              ),
+              Slider(
+                value: plan.maxRadiusNmi.toDouble(),
+                min: 5,
+                max: 50,
+                divisions: 9,
+                activeColor: AppColors.cyanAccent,
+                inactiveColor: Colors.white.withValues(alpha: 0.15),
+                onChanged: (v) => ref
+                    .read(tripPlanProvider.notifier)
+                    .updateMaxRadius(v.round()),
+              ),
+            ],
+          ),
+        );
+
+      case 3:
       default:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('STEP 3 OF 3', style: AppTextStyles.sectionHeader),
-            const SizedBox(height: 4),
-            Text('Departure Time', style: AppTextStyles.screenTitle.copyWith(color: Colors.white)),
-            const SizedBox(height: 6),
-            Text(
+        return _stepShell(
+          stepLabel: 'STEP 4 OF 4',
+          title: 'Trip Date & Departure',
+          subtitle:
               'Tidal phases and surface wind calm periods will calibrate to this launch window.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            ...['04:30 AM (Pre-dawn)', '05:00 AM (Dawn Slack)', '02:30 PM (Afternoon Tide)', '05:30 PM (Dusk)'].map((t) {
-              final isSelected = _departureTime == t;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GlassContainer(
-                  level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
-                  borderRadius: GlassTokens.radiusMedium,
-                  padding: const EdgeInsets.all(16),
-                  onTap: () => setState(() => _departureTime = t),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.access_time_rounded,
-                        size: 20,
-                        color: isSelected ? AppColors.cyanAccent : AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 14),
-                      Text(
-                        t,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ..._dateOptions.asMap().entries.map((entry) {
+                final dt = entry.value;
+                final isSelected = entry.key == _selectedDateIndex;
+                final label = entry.key == 0
+                    ? 'Today — ${_fmtDate(dt)}'
+                    : _fmtDate(dt);
+                return _optionTile(
+                  label,
+                  icon: Icons.calendar_today_outlined,
+                  isSelected: isSelected,
+                  onTap: () {
+                    setState(() => _selectedDateIndex = entry.key);
+                    _syncDepartureTime(plan.departureSlotLabel);
+                  },
+                );
+              }),
+              const SizedBox(height: 8),
+              ..._departureSlots.map((slot) {
+                final isSelected =
+                    plan.departureSlotLabel == slot.$1;
+                return _optionTile(
+                  slot.$1,
+                  icon: Icons.access_time_rounded,
+                  isSelected: isSelected,
+                  onTap: () {
+                    final date = _dateOptions[_selectedDateIndex];
+                    final when = DateTime(date.year, date.month, date.day,
+                        slot.$2, 0);
+                    ref
+                        .read(tripPlanProvider.notifier)
+                        .updateDeparture(when, slot.$1);
+                  },
+                );
+              }),
+            ],
+          ),
         );
     }
+  }
+
+  /// Keeps departureTime aligned with the selected date when the date changes.
+  void _syncDepartureTime(String slotLabel) {
+    final slot = _departureSlots.firstWhere(
+      (s) => s.$1 == slotLabel,
+      orElse: () => _departureSlots.first,
+    );
+    final date = _dateOptions[_selectedDateIndex];
+    final when =
+        DateTime(date.year, date.month, date.day, slot.$2, 0);
+    ref
+        .read(tripPlanProvider.notifier)
+        .updateDeparture(when, slot.$1);
+  }
+
+  String _fmtDate(DateTime dt) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+  Widget _stepShell({
+    required String stepLabel,
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(stepLabel, style: AppTextStyles.sectionHeader),
+        const SizedBox(height: 4),
+        Text(title,
+            style: AppTextStyles.screenTitle
+                .copyWith(color: Colors.white)),
+        const SizedBox(height: 6),
+        Text(subtitle,
+            style: AppTextStyles.caption
+                .copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 20),
+        child,
+      ],
+    );
+  }
+
+  List<Widget> _optionList(
+    List<String> options, {
+    required String selected,
+    required ValueChanged<String> onSelected,
+  }) {
+    return options
+        .map((o) => _optionTile(o,
+            isSelected: selected == o, onTap: () => onSelected(o)))
+        .toList();
+  }
+
+  Widget _optionTile(
+    String label, {
+    IconData icon = Icons.radio_button_off_rounded,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GlassContainer(
+        level: isSelected ? GlassLevel.prominent : GlassLevel.standard,
+        borderRadius: GlassTokens.radiusMedium,
+        padding: const EdgeInsets.all(16),
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : icon,
+              size: 20,
+              color: isSelected
+                  ? AppColors.cyanAccent
+                  : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  fontWeight:
+                      isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color:
+                      isSelected ? Colors.white : AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

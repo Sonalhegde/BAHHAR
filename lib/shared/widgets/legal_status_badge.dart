@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 
+enum LegalStatus { permitted, protected, restricted }
+
 class LegalStatusBadge extends StatelessWidget {
   final bool isRestricted;
 

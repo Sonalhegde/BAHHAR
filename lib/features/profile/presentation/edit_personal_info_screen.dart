@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../core/providers/fisherman_profile_provider.dart';
 import '../../../core/localization/app_translations.dart';
-import '../../../core/localization/locale_utils.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
 import '../../../core/models/fisherman_profile_model.dart';
 
 class EditPersonalInfoScreen extends ConsumerStatefulWidget {

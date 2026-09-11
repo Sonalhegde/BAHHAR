@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 
 /// Complete fisherman profile — the core identity record for a BAHHAR user.
 class FishermanProfileModel {
@@ -188,7 +187,7 @@ class FishermanProfileModel {
     email: 'ahmed@example.com',
     governorate: 'Muscat',
     wilayat: 'Muttrah',
-    emergencyContact: EmergencyContactModel(
+    emergencyContact: const EmergencyContactModel(
       name: 'Fatima Al Balushi',
       nameArabic: 'فاطمة البلوشي',
       relationship: 'Spouse',

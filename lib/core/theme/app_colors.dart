@@ -57,6 +57,10 @@ class AppColors {
   static const Color mapLand = Color(0xFFF0F3F6);
   static const Color mapContour = Color(0xFFC8D9E8);
 
+  // ── Loading Skeletons ──
+  static const Color skeletonBase = Color(0xFFE8EDF2);
+  static const Color skeletonHighlight = Color(0xFFF6F8FA);
+
   // ── Compatibility Aliases ──
   static const Color bgPrimary = bgGradientTop;
   static const Color bgSecondary = bgGradientMid;

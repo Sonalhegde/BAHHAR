@@ -8,49 +8,50 @@ import 'package:bahhar/shared/widgets/alert_banner.dart';
 
 void main() {
   group('Bahhar AI Shared Components Tests', () {
-    testWidgets('FishingScoreGauge renders with correct percentage and high band color',
+    testWidgets('FishingScoreGauge renders the score and its band label',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: FishingScoreGauge(probability: 85),
+            body: FishingScoreGauge(score: 85),
           ),
         ),
       );
 
       expect(find.byType(FishingScoreGauge), findsOneWidget);
-      expect(AppColors.getProbabilityColor(85), AppColors.aquaTeal);
-      expect(AppColors.getProbabilityLabel(85), 'High');
+      expect(find.text('85'), findsOneWidget);
+      // 85 sits in the top probability band.
+      expect(AppColors.getProbabilityColor(85), AppColors.signalGood);
+      expect(AppColors.getProbabilityLabel(85), 'Optimal Bite');
     });
 
-    testWidgets('LegalStatusBadge renders distinctly for permitted and protected zones',
+    testWidgets('LegalStatusBadge renders for open waters vs reserves',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Column(
               children: [
-                LegalStatusBadge(status: LegalStatus.permitted),
-                LegalStatusBadge(status: LegalStatus.protected),
+                LegalStatusBadge(isRestricted: false),
+                LegalStatusBadge(isRestricted: true),
               ],
             ),
           ),
         ),
       );
 
-      expect(find.text('Permitted'), findsOneWidget);
-      expect(find.text('Protected Reserve'), findsOneWidget);
+      expect(find.text('Open Waters'), findsOneWidget);
+      expect(find.text('Marine Reserve'), findsOneWidget);
     });
 
-    testWidgets('ConditionStatChip displays numeric value and label',
+    testWidgets('ConditionStatChip displays value and label',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: ConditionStatChip(
-              icon: Icons.air,
-              value: '14 kts',
               label: 'Wind Speed',
+              value: '14 kts',
             ),
           ),
         ),
@@ -68,7 +69,7 @@ void main() {
           home: Scaffold(
             body: AlertBanner(
               title: 'High Swell Advisory',
-              message: 'Wave heights exceeding 2.2m off Ras Al Jinz',
+              message: 'Wave heights exceeding 2.2m off Ras Al Hadd',
               severity: AlertSeverity.warning,
               onDismiss: () => dismissed = true,
             ),
@@ -79,6 +80,7 @@ void main() {
       expect(find.text('High Swell Advisory'), findsOneWidget);
       expect(find.byIcon(Icons.close), findsOneWidget);
       await tester.tap(find.byIcon(Icons.close));
+      await tester.pump();
       expect(dismissed, isTrue);
     });
   });
