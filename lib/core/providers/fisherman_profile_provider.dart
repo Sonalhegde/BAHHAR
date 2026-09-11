@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/fisherman_profile_model.dart';
 import '../models/fishing_licence_model.dart';
 import '../models/vessel_model.dart';
@@ -8,7 +10,36 @@ import '../models/document_model.dart';
 // ─── Profile Provider ─────────────────────────────────────────────────────────
 
 class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
-  FishermanProfileNotifier() : super(FishermanProfileModel.demo);
+  FishermanProfileNotifier() : super(FishermanProfileModel.demo) {
+    _hydrate();
+  }
+
+  static const String _storageKey = 'bahhar_fisherman_profile';
+
+  /// Loads any previously saved profile from local storage, overriding the
+  /// demo seed. Failures are non-fatal — we simply keep the demo profile.
+  Future<void> _hydrate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_storageKey);
+      if (raw == null || raw.isEmpty) return;
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      state = FishermanProfileModel.fromJson(json);
+    } catch (_) {
+      // Keep current (demo) state on any decode/storage error.
+    }
+  }
+
+  /// Persists the current profile to local storage. Called after every
+  /// mutation so edits survive an app restart.
+  Future<void> _persist() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_storageKey, jsonEncode(state.toJson()));
+    } catch (_) {
+      // Ignore storage write failures; state remains correct in-memory.
+    }
+  }
 
   void updatePersonalInfo({
     String? fullName,
@@ -35,10 +66,17 @@ class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
       address: address,
       updatedAt: DateTime.now(),
     );
+    _persist();
   }
 
   void updateEmergencyContact(EmergencyContactModel contact) {
     state = state.copyWith(emergencyContact: contact, updatedAt: DateTime.now());
+    _persist();
+  }
+
+  void updateProfilePhoto(String? url) {
+    state = state.copyWith(profilePhotoUrl: url, updatedAt: DateTime.now());
+    _persist();
   }
 
   void addLicenceId(String id) {
@@ -47,6 +85,7 @@ class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
         licenceIds: [...state.licenceIds, id],
         updatedAt: DateTime.now(),
       );
+      _persist();
     }
   }
 
@@ -55,6 +94,7 @@ class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
       licenceIds: state.licenceIds.where((l) => l != id).toList(),
       updatedAt: DateTime.now(),
     );
+    _persist();
   }
 
   void addVesselId(String id) {
@@ -63,6 +103,7 @@ class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
         vesselIds: [...state.vesselIds, id],
         updatedAt: DateTime.now(),
       );
+      _persist();
     }
   }
 
@@ -71,6 +112,7 @@ class FishermanProfileNotifier extends StateNotifier<FishermanProfileModel> {
       vesselIds: state.vesselIds.where((v) => v != id).toList(),
       updatedAt: DateTime.now(),
     );
+    _persist();
   }
 }
 
