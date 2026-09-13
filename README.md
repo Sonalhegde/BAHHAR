@@ -1,4 +1,4 @@
-# BAHHAR (بَحّار)
+ # BAHHAR (بَحّار)
 > **Your trusted companion at sea — رفيقك الموثوق في البحر**
 
 BAHHAR is a smart marine companion built specifically for fishermen, boat operators, and marine enthusiasts in the Sultanate of Oman. Designed from the ground up for daylight legibility, sea safety, and reliable operations, BAHHAR combines real-time marine weather, hydrographic data, protected reserve geofencing, and complete vessel/licence management into a clean, human-designed mobile application.
