@@ -1,33 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BAHHAR — Smart Fishing for Oman's Waters</title>
-    <meta name="description" content="Predict fishing conditions using real oceanographic data tuned for Omani waters. From Musandam to Dhofar.">
+    <title>BAHHAR — Smart Fishing for Oman</title>
+    <meta name="description" content="Know when and where to fish using real oceanographic data tuned for Omani waters">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* Natural Maritime Theme */
         :root {
-            --ocean-deep: #0A2540;
-            --ocean-navy: #1e3a5f;
-            --ocean-teal: #0E6E6B;
+            --ocean: #1e3a5f;
+            --teal: #0d6e6b;
             --seafoam: #5fb3a8;
             --sand: #d4a574;
-            --coral: #d66454;
-            --white: #FFFFFF;
+            --white: #ffffff;
             --cream: #faf9f7;
-            --ink: #2c2c2c;
-            --slate: #5a6c7d;
-            --signal-good: #2d7a5e;
-            --signal-caution: #c49a3d;
-            
-            --spacing: 8px;
-            --border-radius: 8px;
-            --transition: all 0.25s ease;
+            --text: #2c2c2c;
+            --text-light: #5a6c7d;
         }
         
         * {
@@ -37,642 +28,475 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             line-height: 1.6;
-            color: var(--ink);
+            color: var(--text);
             background: var(--white);
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
         
-        /* Animated Wave Background */
-        .wave-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            z-index: 0;
-            opacity: 0.03;
-            pointer-events: none;
-        }
-        
-        .wave {
-            position: absolute;
-            width: 200%;
-            height: 100%;
-            background: linear-gradient(90deg, 
-                transparent 0%,
-                var(--ocean-navy) 25%,
-                transparent 50%,
-                var(--ocean-navy) 75%,
-                transparent 100%
-            );
-            animation: wave 12s linear infinite;
-        }
-        
-        .wave:nth-child(2) {
-            animation-duration: 18s;
-            opacity: 0.5;
-        }
-        
-        @keyframes wave {
-            0% { transform: translateX(-50%) translateY(0); }
-            100% { transform: translateX(0%) translateY(0); }
-        }
-        
-        /* Container */
         .container {
-            max-width: 1200px;
+            max-width: 1140px;
             margin: 0 auto;
-            padding: 0 calc(var(--spacing) * 3);
-            position: relative;
-            z-index: 1;
+            padding: 0 24px;
         }
         
-        /* Navigation */
+        /* Header */
+        header {
+            padding: 28px 0;
+            border-bottom: 1px solid #e8e8e8;
+        }
+        
         nav {
-            padding: calc(var(--spacing) * 3) 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .logo {
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing) * 2);
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
-            color: var(--ocean-navy);
+            color: var(--ocean);
             text-decoration: none;
             letter-spacing: -0.02em;
-        }
-        
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            position: relative;
         }
         
         .nav-links {
             display: flex;
-            gap: calc(var(--spacing) * 4);
+            gap: 32px;
             align-items: center;
+            list-style: none;
         }
         
         .nav-links a {
-            color: var(--slate);
+            color: var(--text-light);
             text-decoration: none;
-            font-weight: 500;
             font-size: 15px;
-            transition: var(--transition);
+            font-weight: 500;
+            transition: color 0.2s;
         }
         
         .nav-links a:hover {
-            color: var(--ocean-teal);
+            color: var(--ocean);
         }
         
-        .language-toggle {
+        .lang-switch {
             background: transparent;
-            border: 1px solid rgba(10, 37, 64, 0.15);
-            padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+            border: 1px solid #d0d0d0;
+            padding: 6px 14px;
             border-radius: 6px;
-            color: var(--slate);
-            cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: var(--transition);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
         }
         
-        .language-toggle:hover {
-            border-color: var(--ocean-teal);
-            color: var(--ocean-teal);
+        .lang-switch:hover {
+            border-color: var(--teal);
+            color: var(--teal);
         }
         
-        /* Hero Section */
+        /* Hero */
         .hero {
-            padding: calc(var(--spacing) * 10) 0 calc(var(--spacing) * 15);
+            padding: 80px 0 100px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: calc(var(--spacing) * 8);
+            gap: 60px;
             align-items: center;
-            min-height: 85vh;
         }
         
-        .hero-content {
-            animation: fadeInUp 0.8s ease-out;
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .coming-soon-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: calc(var(--spacing) * 1.5);
-            background: linear-gradient(135deg, rgba(14, 110, 107, 0.08), rgba(111, 200, 184, 0.08));
-            border: 1px solid rgba(14, 110, 107, 0.2);
-            padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
-            border-radius: 50px;
+        .badge {
+            display: inline-block;
+            background: #e8f5f4;
+            color: var(--teal);
+            padding: 8px 16px;
+            border-radius: 20px;
             font-size: 13px;
             font-weight: 600;
-            color: var(--ocean-teal);
-            margin-bottom: calc(var(--spacing) * 3);
-            letter-spacing: 0.02em;
-        }
-        
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--signal-good);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.2); }
+            margin-bottom: 24px;
         }
         
         h1 {
-            font-size: clamp(42px, 5vw, 64px);
-            font-weight: 800;
-            line-height: 1.1;
-            color: var(--ocean-navy);
-            margin-bottom: calc(var(--spacing) * 3);
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.15;
+            color: var(--ocean);
+            margin-bottom: 20px;
             letter-spacing: -0.03em;
         }
         
-        .hero h1 span {
-            background: linear-gradient(135deg, var(--ocean-teal), var(--seafoam));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .hero-description {
+        .hero-text {
             font-size: 19px;
-            color: var(--slate);
-            margin-bottom: calc(var(--spacing) * 4);
-            line-height: 1.7;
-            max-width: 540px;
+            color: var(--text-light);
+            line-height: 1.6;
+            margin-bottom: 32px;
+            max-width: 480px;
         }
         
-        .hero-location {
+        .location {
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing) * 1);
-            color: var(--ocean-teal);
+            gap: 8px;
+            color: var(--teal);
             font-size: 15px;
             font-weight: 600;
-            margin-bottom: calc(var(--spacing) * 5);
+            margin-bottom: 36px;
         }
         
-        /* Email Signup Form */
-        .email-signup {
+        .email-form {
             display: flex;
-            gap: calc(var(--spacing) * 2);
-            max-width: 520px;
-            margin-bottom: calc(var(--spacing) * 3);
+            gap: 12px;
+            max-width: 500px;
+            margin-bottom: 16px;
         }
         
         .email-input {
             flex: 1;
-            padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
-            border: 2px solid rgba(10, 37, 64, 0.12);
-            border-radius: var(--border-radius);
-            font-size: 16px;
-            transition: var(--transition);
-            background: var(--white);
+            padding: 14px 18px;
+            border: 1.5px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border 0.2s;
         }
         
         .email-input:focus {
             outline: none;
-            border-color: var(--ocean-teal);
-            box-shadow: 0 0 0 4px rgba(14, 110, 107, 0.08);
+            border-color: var(--teal);
         }
         
-        .btn-primary {
-            padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 5);
-            background: linear-gradient(135deg, var(--ocean-teal), var(--seafoam));
-            color: var(--white);
+        .btn {
+            padding: 14px 28px;
+            background: var(--teal);
+            color: white;
             border: none;
-            border-radius: var(--border-radius);
-            font-size: 16px;
+            border-radius: 8px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
-            white-space: nowrap;
+            transition: all 0.2s;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 32px rgba(14, 110, 107, 0.3);
+        .btn:hover {
+            background: #0a5a58;
+            transform: translateY(-1px);
         }
         
-        .privacy-note {
+        .privacy {
             font-size: 13px;
-            color: var(--slate);
-            opacity: 0.8;
+            color: var(--text-light);
         }
         
         /* Phone Mockup */
-        .phone-mockup {
+        .phone {
             position: relative;
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+            max-width: 320px;
+            margin: 0 auto;
         }
         
         .phone-frame {
-            width: 100%;
-            max-width: 340px;
-            margin: 0 auto;
-            background: var(--ocean-navy);
-            border-radius: 42px;
-            padding: 14px;
-            box-shadow: 
-                0 40px 80px rgba(10, 37, 64, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            background: linear-gradient(145deg, #2d3e50, #1e3a5f);
+            border-radius: 36px;
+            padding: 12px;
+            box-shadow: 0 20px 60px rgba(30, 58, 95, 0.25);
             position: relative;
-        }
-        
-        .phone-notch {
-            position: absolute;
-            top: 14px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 120px;
-            height: 28px;
-            background: var(--ocean-navy);
-            border-radius: 0 0 20px 20px;
-            z-index: 10;
         }
         
         .phone-screen {
             background: var(--cream);
-            border-radius: 32px;
+            border-radius: 28px;
             overflow: hidden;
             position: relative;
-            aspect-ratio: 9 / 19.5;
         }
         
-        /* Section Headings */
-        .section-label {
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            color: var(--ocean-teal);
-            margin-bottom: calc(var(--spacing) * 2);
-            text-transform: uppercase;
+        .phone-screen img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
         
-        h2 {
-            font-size: clamp(32px, 4vw, 48px);
-            font-weight: 800;
-            color: var(--ocean-navy);
-            line-height: 1.2;
-            margin-bottom: calc(var(--spacing) * 3);
-            letter-spacing: -0.02em;
-        }
-        
-        /* Why Section */
-        .why-section {
-            padding: calc(var(--spacing) * 15) 0;
-            background: linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
-        }
-        
-        .why-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: calc(var(--spacing) * 4);
-            margin-top: calc(var(--spacing) * 8);
-        }
-        
-        .why-card {
-            background: var(--white);
-            padding: calc(var(--spacing) * 5);
-            border-radius: calc(var(--border-radius) * 1.5);
-            border: 1px solid rgba(10, 37, 64, 0.08);
-            transition: var(--transition);
-        }
-        
-        .why-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(10, 37, 64, 0.12);
-        }
-        
-        .why-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, rgba(14, 110, 107, 0.1), rgba(111, 200, 184, 0.1));
-            border-radius: calc(var(--border-radius) * 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: calc(var(--spacing) * 3);
-            font-size: 28px;
-        }
-        
-        .why-card h3 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--ocean-navy);
-            margin-bottom: calc(var(--spacing) * 2);
-        }
-        
-        .why-card p {
-            color: var(--slate);
-            line-height: 1.7;
-            font-size: 15px;
-        }
-        
-        /* How It Works */
-        .how-section {
-            padding: calc(var(--spacing) * 15) 0;
-        }
-        
-        .how-steps {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: calc(var(--spacing) * 3);
-            margin-top: calc(var(--spacing) * 8);
+        .phone-mockup-container {
             position: relative;
+            width: 100%;
+            padding-bottom: 216.67%; /* 9:19.5 aspect ratio */
         }
         
-        .how-steps::before {
-            content: '';
+        .phone-mockup-content {
             position: absolute;
-            top: 40px;
-            left: 12.5%;
-            right: 12.5%;
-            height: 2px;
-            background: linear-gradient(90deg, 
-                var(--ocean-teal) 0%,
-                var(--seafoam) 50%,
-                var(--ocean-teal) 100%
-            );
-            opacity: 0.2;
-            z-index: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
         
-        .how-step {
-            position: relative;
-            text-align: center;
-            z-index: 1;
+        /* Section */
+        section {
+            padding: 90px 0;
         }
         
-        .step-number {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto calc(var(--spacing) * 3);
-            background: linear-gradient(135deg, var(--ocean-teal), var(--seafoam));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--white);
-            box-shadow: 0 8px 24px rgba(14, 110, 107, 0.3);
-            position: relative;
-        }
-        
-        .step-number::after {
-            content: '';
-            position: absolute;
-            inset: -8px;
-            border-radius: 50%;
-            border: 2px solid var(--ocean-teal);
-            opacity: 0.2;
-        }
-        
-        .how-step h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--ocean-navy);
-            margin-bottom: calc(var(--spacing) * 1.5);
-        }
-        
-        .how-step p {
-            color: var(--slate);
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        
-        /* Features Showcase */
-        .features-section {
-            padding: calc(var(--spacing) * 15) 0;
+        .section-bg {
             background: var(--cream);
         }
         
-        .feature-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: calc(var(--spacing) * 10);
-            align-items: center;
-            margin-bottom: calc(var(--spacing) * 15);
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
         }
         
-        .feature-row:nth-child(even) {
-            direction: rtl;
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--teal);
+            text-transform: uppercase;
+            margin-bottom: 12px;
         }
         
-        .feature-row:nth-child(even) > * {
-            direction: ltr;
-        }
-        
-        .feature-content h3 {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--ocean-navy);
-            margin-bottom: calc(var(--spacing) * 3);
+        h2 {
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--ocean);
+            line-height: 1.2;
             letter-spacing: -0.02em;
         }
         
-        .feature-content p {
-            font-size: 17px;
-            color: var(--slate);
-            line-height: 1.8;
-            margin-bottom: calc(var(--spacing) * 3);
+        /* Cards */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
         }
         
-        .feature-list {
-            list-style: none;
+        .card {
+            background: white;
+            padding: 36px 28px;
+            border-radius: 12px;
+            border: 1px solid #e8e8e8;
         }
         
-        .feature-list li {
-            padding: calc(var(--spacing) * 2) 0;
-            border-bottom: 1px solid rgba(10, 37, 64, 0.08);
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing) * 2);
-            color: var(--slate);
+        .card-icon {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        .card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ocean);
+            margin-bottom: 12px;
+        }
+        
+        .card p {
             font-size: 15px;
+            color: var(--text-light);
+            line-height: 1.6;
         }
         
-        .feature-list li:last-child {
-            border-bottom: none;
+        /* Steps */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 36px;
+            position: relative;
         }
         
-        .feature-list li::before {
-            content: '✓';
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, var(--ocean-teal), var(--seafoam));
+        .step {
+            text-align: center;
+        }
+        
+        .step-num {
+            width: 56px;
+            height: 56px;
+            background: var(--teal);
+            color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 24px;
             font-weight: 700;
-            color: var(--white);
+            margin: 0 auto 20px;
+        }
+        
+        .step h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ocean);
+            margin-bottom: 8px;
+        }
+        
+        .step p {
+            font-size: 14px;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+        
+        /* Features */
+        .feature {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            margin-bottom: 80px;
+        }
+        
+        .feature:nth-child(even) {
+            direction: rtl;
+        }
+        
+        .feature:nth-child(even) > * {
+            direction: ltr;
+        }
+        
+        .feature h3 {
+            font-size: 30px;
+            font-weight: 700;
+            color: var(--ocean);
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+        
+        .feature p {
+            font-size: 16px;
+            color: var(--text-light);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        
+        .feature ul {
+            list-style: none;
+        }
+        
+        .feature li {
+            padding: 12px 0;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 15px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .feature li:last-child {
+            border-bottom: none;
+        }
+        
+        .check {
+            width: 20px;
+            height: 20px;
+            background: var(--teal);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
             flex-shrink: 0;
         }
         
-        /* Species & Regions Strip */
-        .strip-section {
-            padding: calc(var(--spacing) * 10) 0;
-            background: var(--ocean-navy);
-            color: var(--white);
-            overflow: hidden;
+        /* Species */
+        .dark-section {
+            background: var(--ocean);
+            color: white;
         }
         
-        .strip-content {
-            text-align: center;
-            margin-bottom: calc(var(--spacing) * 6);
-        }
-        
-        .strip-content h2 {
-            color: var(--white);
+        .dark-section h2 {
+            color: white;
         }
         
         .species-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: calc(var(--spacing) * 3);
-            margin-bottom: calc(var(--spacing) * 8);
+            gap: 24px;
+            margin-bottom: 60px;
         }
         
         .species-card {
-            background: rgba(255, 255, 255, 0.08);
-            padding: calc(var(--spacing) * 3);
-            border-radius: var(--border-radius);
+            background: rgba(255,255,255,0.08);
+            padding: 24px 16px;
+            border-radius: 10px;
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: var(--transition);
-            backdrop-filter: blur(10px);
-        }
-        
-        .species-card:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-4px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .species-icon {
-            font-size: 36px;
-            margin-bottom: calc(var(--spacing) * 2);
+            font-size: 32px;
+            margin-bottom: 12px;
         }
         
         .species-card strong {
             display: block;
-            font-size: 15px;
-            margin-bottom: calc(var(--spacing) * 0.5);
+            font-size: 14px;
+            margin-bottom: 4px;
         }
         
         .species-card small {
-            font-size: 13px;
+            font-size: 12px;
             opacity: 0.7;
         }
         
-        .regions-scroll {
+        .regions {
             display: flex;
-            gap: calc(var(--spacing) * 2);
+            gap: 16px;
             justify-content: center;
             flex-wrap: wrap;
         }
         
-        .region-tag {
-            padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
+        .region {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
             font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
+            font-weight: 500;
         }
         
-        /* Final CTA Section */
-        .cta-section {
-            padding: calc(var(--spacing) * 15) 0;
+        /* CTA */
+        .cta {
             text-align: center;
-            background: linear-gradient(180deg, var(--white) 0%, var(--cream) 100%);
+            padding: 100px 0;
         }
         
-        .cta-content {
-            max-width: 640px;
-            margin: 0 auto;
+        .cta .email-form {
+            margin: 0 auto 32px;
         }
         
-        .cta-content h2 {
-            margin-bottom: calc(var(--spacing) * 4);
-        }
-        
-        .store-badges {
+        .stores {
             display: flex;
-            gap: calc(var(--spacing) * 3);
+            gap: 20px;
             justify-content: center;
-            margin: calc(var(--spacing) * 6) 0;
+            margin: 40px 0;
         }
         
-        .store-badge {
-            padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 4);
-            background: var(--white);
-            border: 2px solid rgba(10, 37, 64, 0.12);
-            border-radius: var(--border-radius);
+        .store {
+            padding: 16px 24px;
+            background: white;
+            border: 1.5px solid #d0d0d0;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: calc(var(--spacing) * 2);
+            gap: 12px;
             text-decoration: none;
-            color: var(--slate);
+            color: var(--text-light);
             opacity: 0.5;
             cursor: not-allowed;
             position: relative;
         }
         
-        .store-badge::after {
-            content: 'Coming Soon';
+        .store-badge {
             position: absolute;
-            top: -12px;
-            right: -12px;
-            background: var(--ocean-teal);
-            color: var(--white);
-            padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 1.5);
+            top: -8px;
+            right: -8px;
+            background: var(--teal);
+            color: white;
+            padding: 4px 10px;
             border-radius: 4px;
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.05em;
         }
         
         .store-icon {
-            font-size: 32px;
-        }
-        
-        .store-text {
-            text-align: left;
+            font-size: 28px;
         }
         
         .store-text small {
@@ -682,39 +506,40 @@
         
         .store-text strong {
             display: block;
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--ink);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
         }
         
         /* Footer */
         footer {
-            padding: calc(var(--spacing) * 8) 0;
-            background: var(--ocean-navy);
-            color: rgba(255, 255, 255, 0.7);
+            padding: 60px 0 40px;
+            background: var(--ocean);
+            color: rgba(255,255,255,0.7);
         }
         
-        .footer-content {
+        .footer-grid {
             display: grid;
             grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: calc(var(--spacing) * 6);
-            margin-bottom: calc(var(--spacing) * 6);
+            gap: 48px;
+            margin-bottom: 48px;
         }
         
         .footer-brand {
-            color: var(--white);
+            color: white;
         }
         
         .footer-brand .logo {
-            color: var(--white);
-            margin-bottom: calc(var(--spacing) * 3);
+            color: white;
+            display: block;
+            margin-bottom: 16px;
         }
         
         .footer-links h4 {
-            color: var(--white);
+            color: white;
             font-size: 14px;
-            font-weight: 700;
-            margin-bottom: calc(var(--spacing) * 2);
+            font-weight: 600;
+            margin-bottom: 16px;
         }
         
         .footer-links ul {
@@ -722,551 +547,501 @@
         }
         
         .footer-links li {
-            margin-bottom: calc(var(--spacing) * 1.5);
+            margin-bottom: 12px;
         }
         
         .footer-links a {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255,255,255,0.7);
             text-decoration: none;
             font-size: 14px;
-            transition: var(--transition);
+            transition: color 0.2s;
         }
         
         .footer-links a:hover {
-            color: var(--seafoam);
+            color: white;
         }
         
         .footer-bottom {
-            padding-top: calc(var(--spacing) * 4);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 32px;
+            border-top: 1px solid rgba(255,255,255,0.1);
             text-align: center;
             font-size: 13px;
         }
         
+        /* Success Message */
+        .success-msg {
+            display: none;
+            background: #d4f4dd;
+            color: #1e5128;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        
+        .success-msg.show {
+            display: block;
+        }
+        
         /* Responsive */
         @media (max-width: 968px) {
-            .hero {
+            .hero, .feature {
                 grid-template-columns: 1fr;
-                gap: calc(var(--spacing) * 6);
-                padding: calc(var(--spacing) * 6) 0;
+                gap: 48px;
             }
             
-            .why-grid {
+            .cards, .steps {
                 grid-template-columns: 1fr;
-            }
-            
-            .how-steps {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .how-steps::before {
-                display: none;
-            }
-            
-            .feature-row {
-                grid-template-columns: 1fr;
-                gap: calc(var(--spacing) * 6);
             }
             
             .species-grid {
                 grid-template-columns: repeat(3, 1fr);
             }
             
-            .footer-content {
+            .footer-grid {
                 grid-template-columns: 1fr;
             }
             
-            .store-badges {
-                flex-direction: column;
-                align-items: center;
-            }
-        }
-        
-        @media (max-width: 640px) {
             h1 {
                 font-size: 36px;
             }
             
-            .email-signup {
+            h2 {
+                font-size: 30px;
+            }
+            
+            .email-form {
                 flex-direction: column;
-            }
-            
-            .how-steps {
-                grid-template-columns: 1fr;
-            }
-            
-            .species-grid {
-                grid-template-columns: repeat(2, 1fr);
             }
             
             .nav-links {
                 display: none;
             }
         }
+        
+        @media (max-width: 640px) {
+            .species-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stores {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Animated Wave Background -->
-    <div class="wave-background">
-        <div class="wave"></div>
-        <div class="wave"></div>
-    </div>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo">BAHHAR</a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how">How It Works</a></li>
+                <li><a href="https://bahhar.netlify.app">About</a></li>
+                <li><button class="lang-switch">EN / عربي</button></li>
+            </ul>
+        </nav>
+    </header>
     
-    <!-- Navigation -->
-    <nav class="container">
-        <a href="#" class="logo">
-            <div class="logo-icon">
-                <svg viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 2L21 40M21 2C27 6 30 12 30 21C30 30 27 36 21 40M21 2C15 6 12 12 12 21C12 30 15 36 21 40" stroke="var(--ocean-teal)" stroke-width="3" stroke-linecap="round"/>
-                    <ellipse cx="21" cy="21" rx="9" ry="19" stroke="var(--ocean-teal)" stroke-width="2.5" fill="none"/>
-                </svg>
-            </div>
-            <span>BAHHAR</span>
-        </a>
-        <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="https://github.com/Sonalhegde/BAHHAR">GitHub</a>
-            <button class="language-toggle">EN / عربي</button>
-        </div>
-    </nav>
-    
-    <!-- Hero Section -->
-    <section class="hero container">
-        <div class="hero-content">
-            <div class="coming-soon-badge">
-                <span class="pulse-dot"></span>
-                Launching Soon — Beta Signups Open
-            </div>
-            
-            <h1>
-                Know <span>when</span> and <span>where</span> to fish in Oman's waters
-            </h1>
-            
-            <p class="hero-description">
-                BAHHAR (بَحّار) predicts bite probability using real-time oceanographic data, tidal analysis, and machine learning—tuned specifically to Omani coastal ecosystems from Musandam to Dhofar.
-            </p>
-            
-            <div class="hero-location">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                </svg>
-                سلطنة عُمان • Sultanate of Oman
-            </div>
-            
-            <form class="email-signup" onsubmit="handleSignup(event)">
-                <input 
-                    type="email" 
-                    class="email-input" 
-                    placeholder="Enter your email for early access"
-                    required
-                />
-                <button type="submit" class="btn-primary">
-                    Notify Me
-                </button>
-            </form>
-            
-            <p class="privacy-note">
-                We'll notify you when the app launches. No spam, unsubscribe anytime.
-            </p>
-        </div>
-        
-        <div class="phone-mockup">
-            <div class="phone-frame">
-                <div class="phone-notch"></div>
-                <div class="phone-screen">
-                    <!-- Home Dashboard Mockup -->
-                    <svg viewBox="0 0 360 780" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Background -->
-                        <rect width="360" height="780" fill="#FBF8F3"/>
-                        
-                        <!-- Header -->
-                        <text x="24" y="70" font-family="system-ui" font-size="22" font-weight="700" fill="#12263A">BAHHAR</text>
-                        <text x="310" y="70" font-family="system-ui" font-size="14" fill="#475569" text-anchor="end">Mutrah ▼</text>
-                        
-                        <!-- Fishing Score Gauge -->
-                        <circle cx="180" cy="200" r="80" stroke="#E7E7E4" stroke-width="12" fill="none"/>
-                        <circle cx="180" cy="200" r="80" stroke="url(#scoreGradient)" stroke-width="12" fill="none"
-                                stroke-dasharray="377" stroke-dashoffset="113" stroke-linecap="round" transform="rotate(-90 180 200)"/>
-                        <text x="180" y="190" font-family="system-ui" font-size="52" font-weight="800" fill="#12263A" text-anchor="middle">73</text>
-                        <text x="180" y="215" font-family="system-ui" font-size="14" font-weight="600" fill="#2E7D5B" text-anchor="middle">FAVORABLE</text>
-                        <text x="180" y="235" font-family="system-ui" font-size="12" fill="#6B6B6B" text-anchor="middle">Next Peak: 06:30</text>
-                        
-                        <!-- Gradient Definition -->
-                        <defs>
-                            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" style="stop-color:#0E6E6B"/>
-                                <stop offset="100%" style="stop-color:#6FC8B8"/>
-                            </linearGradient>
-                        </defs>
-                        
-                        <!-- Marine Conditions -->
-                        <text x="24" y="330" font-family="system-ui" font-size="11" font-weight="700" fill="#0E6E6B" letter-spacing="1">MARINE CONDITIONS</text>
-                        
-                        <!-- Condition Chips -->
-                        <rect x="24" y="345" width="72" height="52" rx="8" fill="white" stroke="#E7E7E4"/>
-                        <text x="60" y="368" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">Wave</text>
-                        <text x="60" y="387" font-family="system-ui" font-size="18" font-weight="700" fill="#12263A" text-anchor="middle">0.9m</text>
-                        
-                        <rect x="104" y="345" width="72" height="52" rx="8" fill="white" stroke="#E7E7E4"/>
-                        <text x="140" y="368" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">Wind</text>
-                        <text x="140" y="387" font-family="system-ui" font-size="18" font-weight="700" fill="#12263A" text-anchor="middle">12kt</text>
-                        
-                        <rect x="184" y="345" width="72" height="52" rx="8" fill="white" stroke="#E7E7E4"/>
-                        <text x="220" y="368" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">SST</text>
-                        <text x="220" y="387" font-family="system-ui" font-size="18" font-weight="700" fill="#12263A" text-anchor="middle">27.5°</text>
-                        
-                        <rect x="264" y="345" width="72" height="52" rx="8" fill="white" stroke="#E7E7E4"/>
-                        <text x="300" y="368" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">Tide</text>
-                        <text x="300" y="387" font-family="system-ui" font-size="14" font-weight="600" fill="#2E7D5B" text-anchor="middle">Rising</text>
-                        
-                        <!-- Top Hotspots -->
-                        <text x="24" y="435" font-family="system-ui" font-size="11" font-weight="700" fill="#0E6E6B" letter-spacing="1">TOP HOTSPOTS NEAR YOU</text>
-                        
-                        <!-- Hotspot Cards -->
-                        <rect x="24" y="450" width="312" height="68" rx="12" fill="white" stroke="#E7E7E4"/>
-                        <circle cx="52" cy="484" r="12" fill="#2E7D5B"/>
-                        <text x="52" y="488" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">85</text>
-                        <text x="76" y="479" font-family="system-ui" font-size="15" font-weight="700" fill="#12263A">Daymaniyat Drop-Off</text>
-                        <text x="76" y="497" font-family="system-ui" font-size="12" fill="#6B6B6B">38m • 15.2nmi • Kingfish</text>
-                        
-                        <rect x="24" y="530" width="312" height="68" rx="12" fill="white" stroke="#E7E7E4"/>
-                        <circle cx="52" cy="564" r="12" fill="#2E7D5B"/>
-                        <text x="52" y="568" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">72</text>
-                        <text x="76" y="559" font-family="system-ui" font-size="15" font-weight="700" fill="#12263A">Mutrah Rocky Bank</text>
-                        <text x="76" y="577" font-family="system-ui" font-size="12" fill="#6B6B6B">28m • 3.5nmi • Hammour</text>
-                        
-                        <rect x="24" y="610" width="312" height="68" rx="12" fill="white" stroke="#E7E7E4"/>
-                        <circle cx="52" cy="644" r="12" fill="#B8862E"/>
-                        <text x="52" y="648" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">68</text>
-                        <text x="76" y="639" font-family="system-ui" font-size="15" font-weight="700" fill="#12263A">Al Bustan Reef</text>
-                        <text x="76" y="657" font-family="system-ui" font-size="12" fill="#6B6B6B">18m • 8.1nmi • Grouper</text>
-                        
-                        <!-- Bottom Navigation -->
-                        <rect y="710" width="360" height="70" fill="white" stroke="#E7E7E4" stroke-width="1"/>
-                        <text x="45" y="745" font-family="system-ui" font-size="24" text-anchor="middle">🗺️</text>
-                        <text x="135" y="745" font-family="system-ui" font-size="24" text-anchor="middle">🧭</text>
-                        <text x="225" y="745" font-family="system-ui" font-size="24" text-anchor="middle">📝</text>
-                        <text x="315" y="745" font-family="system-ui" font-size="24" text-anchor="middle">👤</text>
+    <main>
+        <!-- Hero -->
+        <section class="hero container">
+            <div>
+                <div class="badge">Launching Soon</div>
+                <h1>Know when and where to fish in Oman's waters</h1>
+                <p class="hero-text">
+                    BAHHAR predicts fishing conditions using real-time oceanographic data, tidal analysis, and machine learning tuned specifically for Omani coastal waters.
+                </p>
+                <div class="location">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
                     </svg>
+                    Sultanate of Oman
                 </div>
+                <form class="email-form" id="signupForm">
+                    <input 
+                        type="email" 
+                        class="email-input" 
+                        placeholder="Enter your email for early access"
+                        id="emailInput"
+                        required
+                    />
+                    <button type="submit" class="btn">Join Waitlist</button>
+                </form>
+                <div id="successMsg" class="success-msg">
+                    ✓ Thanks! We'll notify you when BAHHAR launches.
+                </div>
+                <p class="privacy">We'll only notify you at launch. No spam.</p>
             </div>
-        </div>
-    </section>
-    
-    <!-- Why BAHHAR Section -->
-    <section class="why-section">
-        <div class="container">
-            <div class="section-label">Why Built for Oman</div>
-            <h2>Generic marine apps don't understand Omani waters</h2>
             
-            <div class="why-grid">
-                <div class="why-card">
-                    <div class="why-icon">🌊</div>
-                    <h3>Oman-Specific Thermoclines</h3>
-                    <p>Summer upwelling in Dhofar creates unique temperature layers that drive baitfish and predators—ignored by global models.</p>
-                </div>
-                
-                <div class="why-card">
-                    <div class="why-icon">🐟</div>
-                    <h3>Regional Species Behavior</h3>
-                    <p>Kingfish and Hammour patterns in the Arabian Sea differ dramatically from Red Sea or Gulf populations. We model Omani ecosystems.</p>
-                </div>
-                
-                <div class="why-card">
-                    <div class="why-icon">⚖️</div>
-                    <h3>Legal Compliance Built-In</h3>
-                    <p>Protected reserves like the Daymaniyat Islands require permits. BAHHAR geofences boundaries and reminds you of MOAF regulations.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- How It Works -->
-    <section class="how-section" id="how-it-works">
-        <div class="container">
-            <div class="section-label">How It Works</div>
-            <h2>From conditions to catch in four steps</h2>
-            
-            <div class="how-steps">
-                <div class="how-step">
-                    <div class="step-number">1</div>
-                    <h3>Set Your Location</h3>
-                    <p>Choose your port and target area—Muscat, Musandam, Salalah, or anywhere along Oman's 3,165km coastline</p>
-                </div>
-                
-                <div class="how-step">
-                    <div class="step-number">2</div>
-                    <h3>See Live Bite Score</h3>
-                    <p>ML engine analyzes SST, tide phase, bathymetry, and solunar cycles to predict 0–100 probability per species</p>
-                </div>
-                
-                <div class="how-step">
-                    <div class="step-number">3</div>
-                    <h3>Plan Your Trip</h3>
-                    <p>4-step wizard calculates fuel, departure time, and route based on your vessel and weather forecast</p>
-                </div>
-                
-                <div class="how-step">
-                    <div class="step-number">4</div>
-                    <h3>Log Your Catch</h3>
-                    <p>Record species, weight, GPS coords, and photos. Build your logbook and compare against predictions</p>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Features Showcase -->
-    <section class="features-section" id="features">
-        <div class="container">
-            <div class="section-label">Features</div>
-            <h2>Everything you need for smarter fishing</h2>
-            
-            <!-- Feature 1: Trip Planner -->
-            <div class="feature-row">
-                <div class="feature-content">
-                    <h3>Smart Trip Planner</h3>
-                    <p>Plan your entire fishing trip in minutes with our 4-step wizard that considers vessel type, fuel capacity, target species, and optimal departure windows.</p>
-                    <ul class="feature-list">
-                        <li>Fuel consumption estimates based on distance and vessel</li>
-                        <li>Tidal window recommendations for peak feeding</li>
-                        <li>Weather-safe route planning with swell alerts</li>
-                        <li>Save and share trip plans with crew</li>
-                    </ul>
-                </div>
-                <div class="phone-mockup" style="max-width: 280px;">
-                    <div class="phone-frame" style="max-width: 280px;">
-                        <div class="phone-notch"></div>
-                        <div class="phone-screen">
-                            <svg viewBox="0 0 360 780" fill="none">
-                                <rect width="360" height="780" fill="#FBF8F3"/>
-                                <text x="180" y="70" font-family="system-ui" font-size="18" font-weight="700" fill="#12263A" text-anchor="middle">Trip Planner • Step 3 of 4</text>
-                                
-                                <text x="24" y="130" font-family="system-ui" font-size="14" font-weight="600" fill="#6B6B6B">Departure Date</text>
-                                <rect x="24" y="145" width="312" height="50" rx="10" fill="white" stroke="#E7E7E4"/>
-                                <text x="40" y="176" font-family="system-ui" font-size="16" fill="#12263A">📅 Tomorrow, Sep 16, 2026</text>
-                                
-                                <text x="24" y="230" font-family="system-ui" font-size="14" font-weight="600" fill="#6B6B6B">Preferred Launch Window</text>
-                                <rect x="24" y="245" width="312" height="50" rx="10" fill="white" stroke="#0E6E6B" stroke-width="2"/>
-                                <circle cx="45" cy="270" r="8" fill="#0E6E6B"/>
-                                <text x="65" y="276" font-family="system-ui" font-size="15" fill="#12263A">Dawn (05:30-06:00)</text>
-                                
-                                <rect x="24" y="305" width="312" height="50" rx="10" fill="white" stroke="#E7E7E4"/>
-                                <circle cx="45" cy="330" r="8" stroke="#E7E7E4" stroke-width="2" fill="none"/>
-                                <text x="65" y="336" font-family="system-ui" font-size="15" fill="#6B6B6B">Afternoon Slack (14:30)</text>
-                                
-                                <rect x="24" y="380" width="312" height="80" rx="12" fill="rgba(14, 110, 107, 0.08)"/>
-                                <text x="40" y="410" font-family="system-ui" font-size="13" fill="#0E6E6B">⚠️ Tide: Rising at 06:15</text>
-                                <text x="40" y="435" font-family="system-ui" font-size="13" fill="#0E6E6B">🌙 Solunar: Major period 05:45-07:45</text>
-                                
-                                <rect x="24" y="700" width="140" height="48" rx="10" fill="white" stroke="#E7E7E4"/>
-                                <text x="94" y="730" font-family="system-ui" font-size="16" font-weight="600" fill="#6B6B6B" text-anchor="middle">← Back</text>
-                                
-                                <rect x="176" y="700" width="160" height="48" rx="10" fill="#0E6E6B"/>
-                                <text x="256" y="730" font-family="system-ui" font-size="16" font-weight="600" fill="white" text-anchor="middle">Next →</text>
-                            </svg>
+            <div class="phone">
+                <div class="phone-frame">
+                    <div class="phone-screen">
+                        <div class="phone-mockup-container">
+                            <div class="phone-mockup-content">
+                                <!-- Real app home screen -->
+                                <div style="background: #faf9f7; height: 100%; padding: 20px; overflow: auto;">
+                                    <!-- Header -->
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                                        <div style="font-family: Inter; font-size: 20px; font-weight: 700; color: #1e3a5f;">BAHHAR</div>
+                                        <div style="font-family: Inter; font-size: 14px; color: #5a6c7d;">Mutrah ▼</div>
+                                    </div>
+                                    
+                                    <!-- Score Gauge -->
+                                    <div style="text-align: center; margin-bottom: 36px;">
+                                        <svg width="160" height="160" viewBox="0 0 160 160">
+                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#e8e8e8" stroke-width="12"/>
+                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#0d6e6b" stroke-width="12" 
+                                                    stroke-dasharray="330" stroke-dashoffset="99" stroke-linecap="round" 
+                                                    transform="rotate(-90 80 80)" style="transition: stroke-dashoffset 1s ease"/>
+                                        </svg>
+                                        <div style="position: relative; margin-top: -120px;">
+                                            <div style="font-family: Inter; font-size: 48px; font-weight: 700; color: #1e3a5f;">73</div>
+                                            <div style="font-family: Inter; font-size: 13px; font-weight: 600; color: #2d7a5e; margin-top: 4px;">FAVORABLE</div>
+                                            <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 4px;">Peak: 06:30</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Conditions -->
+                                    <div style="margin-bottom: 24px;">
+                                        <div style="font-family: Inter; font-size: 10px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">CONDITIONS</div>
+                                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
+                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Wave</div>
+                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">0.9m</div>
+                                            </div>
+                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
+                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Wind</div>
+                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">12kt</div>
+                                            </div>
+                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
+                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Temp</div>
+                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">27°C</div>
+                                            </div>
+                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
+                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Tide</div>
+                                                <div style="font-family: Inter; font-size: 13px; font-weight: 600; color: #2d7a5e;">Rising</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Top Spots -->
+                                    <div>
+                                        <div style="font-family: Inter; font-size: 10px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">TOP SPOTS</div>
+                                        
+                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 28px; height: 28px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">85</div>
+                                            <div style="flex: 1;">
+                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Daymaniyat Drop-Off</div>
+                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">38m • 15.2nmi • Kingfish</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 28px; height: 28px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">72</div>
+                                            <div style="flex: 1;">
+                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Mutrah Rocky Bank</div>
+                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">28m • 3.5nmi • Hammour</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 28px; height: 28px; background: #c49a3d; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">68</div>
+                                            <div style="flex: 1;">
+                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Al Bustan Reef</div>
+                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">18m • 8.1nmi • Grouper</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Feature 2: Marine Charts -->
-            <div class="feature-row">
-                <div class="feature-content">
-                    <h3>Interactive Marine Charts</h3>
-                    <p>Navigate Oman's waters with custom nautical charts showing hotspots, protected areas, and real-time probability markers.</p>
-                    <ul class="feature-list">
-                        <li>Protected marine reserve boundaries with legal notices</li>
-                        <li>Bathymetric depth contours and drop-offs</li>
-                        <li>Color-coded probability markers (70+ = favorable)</li>
-                        <li>Distance and bearing calculations from your port</li>
-                    </ul>
+        </section>
+        
+        <!-- Why -->
+        <section class="section-bg">
+            <div class="container">
+                <div class="section-title">
+                    <div class="section-label">Why Oman-Specific</div>
+                    <h2>Generic apps don't understand Omani waters</h2>
                 </div>
-                <div class="phone-mockup" style="max-width: 280px;">
-                    <div class="phone-frame" style="max-width: 280px;">
-                        <div class="phone-notch"></div>
-                        <div class="phone-screen">
-                            <svg viewBox="0 0 360 780" fill="none">
-                                <rect width="360" height="780" fill="#E5E9EC"/>
-                                
-                                <!-- Simplified Map -->
-                                <path d="M 0 200 Q 180 150, 360 200 L 360 780 L 0 780 Z" fill="#FBF8F3"/>
-                                
-                                <!-- Protected Area -->
-                                <ellipse cx="180" cy="300" rx="60" ry="40" fill="rgba(107, 91, 149, 0.15)" stroke="#6B5B95" stroke-width="2" stroke-dasharray="4 4"/>
-                                <text x="180" y="305" font-family="system-ui" font-size="11" fill="#6B5B95" text-anchor="middle" font-weight="600">Daymaniyat</text>
-                                <text x="180" y="320" font-family="system-ui" font-size="9" fill="#6B5B95" text-anchor="middle">Protected Reserve</text>
-                                
-                                <!-- Hotspot Markers -->
-                                <circle cx="180" cy="450" r="18" fill="#2E7D5B" opacity="0.9"/>
-                                <text x="180" y="456" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">85</text>
-                                
-                                <circle cx="110" cy="520" r="18" fill="#2E7D5B" opacity="0.9"/>
-                                <text x="110" y="526" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">72</text>
-                                
-                                <circle cx="260" cy="480" r="18" fill="#B8862E" opacity="0.9"/>
-                                <text x="260" y="486" font-family="system-ui" font-size="14" font-weight="700" fill="white" text-anchor="middle">68</text>
-                                
-                                <!-- Header -->
-                                <rect y="0" width="360" height="90" fill="rgba(251, 248, 243, 0.95)" style="backdrop-filter: blur(10px);"/>
-                                <text x="24" y="50" font-family="system-ui" font-size="18" font-weight="700" fill="#12263A">Fishing Map</text>
-                                <text x="320" y="50" font-family="system-ui" font-size="14" fill="#0E6E6B" text-anchor="end">Filter ▼</text>
-                                
-                                <!-- Legend -->
-                                <rect x="24" y="650" width="312" height="100" rx="12" fill="rgba(255, 255, 255, 0.95)" style="backdrop-filter: blur(10px);"/>
-                                <text x="40" y="675" font-family="system-ui" font-size="11" font-weight="700" fill="#6B6B6B">LEGEND</text>
-                                <circle cx="45" cy="695" r="8" fill="#2E7D5B"/>
-                                <text x="65" y="700" font-family="system-ui" font-size="12" fill="#12263A">Excellent (70-100)</text>
-                                <circle cx="45" cy="720" r="8" fill="#B8862E"/>
-                                <text x="65" y="725" font-family="system-ui" font-size="12" fill="#12263A">Good (40-69)</text>
-                                <rect x="180" y="688" width="140" height="16" rx="3" fill="rgba(107, 91, 149, 0.2)" stroke="#6B5B95" stroke-dasharray="2 2"/>
-                                <text x="190" y="699" font-family="system-ui" font-size="11" fill="#6B5B95">Protected Area</text>
-                            </svg>
+                
+                <div class="cards">
+                    <div class="card">
+                        <div class="card-icon">🌊</div>
+                        <h3>Local Thermoclines</h3>
+                        <p>Summer upwelling in Dhofar creates unique temperature layers that drive baitfish populations—ignored by global models.</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">🐟</div>
+                        <h3>Regional Species</h3>
+                        <p>Kingfish and Hammour behavior in Arabian Sea waters differs from Red Sea populations. We model Omani ecosystems.</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon">⚖️</div>
+                        <h3>Legal Compliance</h3>
+                        <p>Protected areas like Daymaniyat Islands require permits. BAHHAR geofences boundaries and shows regulations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- How It Works -->
+        <section id="how">
+            <div class="container">
+                <div class="section-title">
+                    <div class="section-label">How It Works</div>
+                    <h2>From conditions to catch in four steps</h2>
+                </div>
+                
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <h3>Choose Location</h3>
+                        <p>Select your port and target area along Oman's 3,165km coastline</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <h3>See Bite Score</h3>
+                        <p>Get 0-100 probability per species based on real-time conditions</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <h3>Plan Your Trip</h3>
+                        <p>Calculate fuel, timing, and route based on weather forecast</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <h3>Log Your Catch</h3>
+                        <p>Record species, weight, GPS, and photos for your logbook</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Features -->
+        <section class="section-bg" id="features">
+            <div class="container">
+                <div class="section-title">
+                    <div class="section-label">Features</div>
+                    <h2>Built for Omani fishermen</h2>
+                </div>
+                
+                <div class="feature">
+                    <div>
+                        <h3>Smart Trip Planning</h3>
+                        <p>Plan complete fishing trips with 4-step wizard considering vessel type, fuel capacity, and target species.</p>
+                        <ul>
+                            <li><span class="check">✓</span> Fuel consumption estimates</li>
+                            <li><span class="check">✓</span> Tidal window recommendations</li>
+                            <li><span class="check">✓</span> Weather-safe route planning</li>
+                            <li><span class="check">✓</span> Save and share trip plans</li>
+                        </ul>
+                    </div>
+                    <div class="phone">
+                        <div class="phone-frame" style="max-width: 280px;">
+                            <div class="phone-screen">
+                                <svg viewBox="0 0 360 780" fill="none">
+                                    <rect width="360" height="780" fill="#faf9f7"/>
+                                    <text x="180" y="65" font-family="Inter" font-size="16" font-weight="600" fill="#2c2c2c" text-anchor="middle">Trip Planner • Step 3/4</text>
+                                    
+                                    <text x="24" y="120" font-family="Inter" font-size="13" font-weight="600" fill="#5a6c7d">Departure Date</text>
+                                    <rect x="24" y="135" width="312" height="46" rx="8" fill="white" stroke="#d0d0d0"/>
+                                    <text x="40" y="163" font-family="Inter" font-size="15" fill="#2c2c2c">📅 Tomorrow, Sep 16</text>
+                                    
+                                    <text x="24" y="210" font-family="Inter" font-size="13" font-weight="600" fill="#5a6c7d">Launch Window</text>
+                                    <rect x="24" y="225" width="312" height="46" rx="8" fill="white" stroke="#0d6e6b" stroke-width="2"/>
+                                    <circle cx="42" cy="248" r="7" fill="#0d6e6b"/>
+                                    <text x="62" y="253" font-family="Inter" font-size="14" fill="#2c2c2c">Dawn (05:30-06:00)</text>
+                                    
+                                    <rect x="24" y="285" width="312" height="46" rx="8" fill="white" stroke="#d0d0d0"/>
+                                    <circle cx="42" cy="308" r="7" stroke="#d0d0d0" stroke-width="2" fill="none"/>
+                                    <text x="62" y="313" font-family="Inter" font-size="14" fill="#5a6c7d">Afternoon (14:30)</text>
+                                    
+                                    <rect x="24" y="355" width="312" height="70" rx="10" fill="#e8f5f4"/>
+                                    <text x="40" y="380" font-family="Inter" font-size="12" fill="#0d6e6b">⚠️ Tide rising at 06:15</text>
+                                    <text x="40" y="405" font-family="Inter" font-size="12" fill="#0d6e6b">🌙 Solunar: 05:45-07:45</text>
+                                    
+                                    <rect x="24" y="690" width="130" height="44" rx="8" fill="white" stroke="#d0d0d0"/>
+                                    <text x="89" y="717" font-family="Inter" font-size="15" font-weight="600" fill="#5a6c7d" text-anchor="middle">← Back</text>
+                                    
+                                    <rect x="166" y="690" width="170" height="44" rx="8" fill="#0d6e6b"/>
+                                    <text x="251" y="717" font-family="Inter" font-size="15" font-weight="600" fill="white" text-anchor="middle">Next →</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature">
+                    <div>
+                        <h3>Marine Charts</h3>
+                        <p>Navigate with custom charts showing hotspots, protected areas, and probability markers.</p>
+                        <ul>
+                            <li><span class="check">✓</span> Protected reserve boundaries</li>
+                            <li><span class="check">✓</span> Depth contours and drop-offs</li>
+                            <li><span class="check">✓</span> Color-coded probability markers</li>
+                            <li><span class="check">✓</span> Distance calculations from port</li>
+                        </ul>
+                    </div>
+                    <div class="phone">
+                        <div class="phone-frame" style="max-width: 280px;">
+                            <div class="phone-screen">
+                                <iframe src="assets/screenshots/map-mockup.html" 
+                                        style="width: 100%; height: 100%; border: none; display: block;"
+                                        title="BAHHAR Map View"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feature">
+                    <div>
+                        <h3>Catch Logging</h3>
+                        <p>Document every catch with GPS, species data, and photos. Track success against predictions.</p>
+                        <ul>
+                            <li><span class="check">✓</span> Photo documentation</li>
+                            <li><span class="check">✓</span> Species, weight, and length tracking</li>
+                            <li><span class="check">✓</span> Personal analytics and trends</li>
+                            <li><span class="check">✓</span> Export logbook as PDF</li>
+                        </ul>
+                    </div>
+                    <div class="phone">
+                        <div class="phone-frame" style="max-width: 280px;">
+                            <div class="phone-screen">
+                                <svg viewBox="0 0 360 780" fill="none">
+                                    <rect width="360" height="780" fill="#faf9f7"/>
+                                    <text x="180" y="65" font-family="Inter" font-size="18" font-weight="600" fill="#2c2c2c" text-anchor="middle">My Catch Log</text>
+                                    
+                                    <rect x="24" y="90" width="312" height="36" rx="8" fill="#e8f5f4"/>
+                                    <text x="40" y="113" font-family="Inter" font-size="13" font-weight="600" fill="#0d6e6b">This Month: 12 catches • 45.3kg</text>
+                                    
+                                    <rect x="24" y="145" width="312" height="110" rx="10" fill="white" stroke="#e8e8e8"/>
+                                    <text x="40" y="170" font-family="Inter" font-size="15" font-weight="600" fill="#2c2c2c">🐟 Kingfish • 5.75kg</text>
+                                    <text x="40" y="188" font-family="Inter" font-size="12" fill="#5a6c7d">Today 06:45 • Daymaniyat</text>
+                                    <rect x="40" y="200" width="80" height="45" rx="6" fill="#e8e8e8"/>
+                                    <text x="80" y="227" font-family="Inter" font-size="10" fill="#5a6c7d" text-anchor="middle">📷 Photo</text>
+                                    
+                                    <rect x="24" y="270" width="312" height="90" rx="10" fill="white" stroke="#e8e8e8"/>
+                                    <text x="40" y="295" font-family="Inter" font-size="15" font-weight="600" fill="#2c2c2c">🐟 Hammour • 3.2kg</text>
+                                    <text x="40" y="313" font-family="Inter" font-size="12" fill="#5a6c7d">Yesterday • Mutrah Bank</text>
+                                    <rect x="40" y="325" width="75" height="22" rx="4" fill="rgba(45, 122, 94, 0.1)"/>
+                                    <text x="77" y="340" font-family="Inter" font-size="10" font-weight="600" fill="#2d7a5e" text-anchor="middle">Released ✓</text>
+                                    
+                                    <rect x="24" y="375" width="312" height="110" rx="10" fill="white" stroke="#e8e8e8"/>
+                                    <text x="40" y="400" font-family="Inter" font-size="15" font-weight="600" fill="#2c2c2c">🐟 Tuna • 12.8kg</text>
+                                    <text x="40" y="418" font-family="Inter" font-size="12" fill="#5a6c7d">Sep 13 • Al Bustan Reef</text>
+                                    <rect x="40" y="430" width="80" height="45" rx="6" fill="#e8e8e8"/>
+                                    <text x="80" y="457" font-family="Inter" font-size="10" fill="#5a6c7d" text-anchor="middle">📷 Photo</text>
+                                    
+                                    <rect x="24" y="510" width="312" height="46" rx="8" fill="#0d6e6b"/>
+                                    <text x="180" y="538" font-family="Inter" font-size="15" font-weight="600" fill="white" text-anchor="middle">View Analytics →</text>
+                                </svg>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Feature 3: Catch Log -->
-            <div class="feature-row">
-                <div class="feature-content">
-                    <h3>Catch Log & Analytics</h3>
-                    <p>Document every catch with GPS coordinates, species data, and photos. Track your success rate against predictions.</p>
-                    <ul class="feature-list">
-                        <li>Photo uploads with automatic compression</li>
-                        <li>Species, weight, length, and gear tracking</li>
-                        <li>Personal analytics and seasonal trends</li>
-                        <li>Export logbook as PDF or CSV</li>
-                    </ul>
+        </section>
+        
+        <!-- Species -->
+        <section class="dark-section">
+            <div class="container">
+                <div class="section-title">
+                    <div class="section-label" style="color: #5fb3a8;">Species & Coverage</div>
+                    <h2>Targeting Oman's sought-after species</h2>
                 </div>
-                <div class="phone-mockup" style="max-width: 280px;">
-                    <div class="phone-frame" style="max-width: 280px;">
-                        <div class="phone-notch"></div>
-                        <div class="phone-screen">
-                            <svg viewBox="0 0 360 780" fill="none">
-                                <rect width="360" height="780" fill="#FBF8F3"/>
-                                <text x="180" y="70" font-family="system-ui" font-size="20" font-weight="700" fill="#12263A" text-anchor="middle">📝 My Catch Log</text>
-                                
-                                <rect x="24" y="100" width="312" height="40" rx="8" fill="rgba(14, 110, 107, 0.08)"/>
-                                <text x="40" y="126" font-family="system-ui" font-size="14" font-weight="600" fill="#0E6E6B">This Month: 12 catches • 45.3kg</text>
-                                
-                                <!-- Catch Entry 1 -->
-                                <rect x="24" y="160" width="312" height="120" rx="12" fill="white" stroke="#E7E7E4"/>
-                                <text x="40" y="188" font-family="system-ui" font-size="16" font-weight="700" fill="#12263A">🐟 Kingfish • 5.75kg</text>
-                                <text x="40" y="208" font-family="system-ui" font-size="13" fill="#6B6B6B">Today 06:45 • Daymaniyat Drop-Off</text>
-                                <rect x="40" y="220" width="90" height="50" rx="6" fill="#E7E7E4"/>
-                                <text x="85" y="250" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">📷 Photo</text>
-                                
-                                <!-- Catch Entry 2 -->
-                                <rect x="24" y="295" width="312" height="100" rx="12" fill="white" stroke="#E7E7E4"/>
-                                <text x="40" y="323" font-family="system-ui" font-size="16" font-weight="700" fill="#12263A">🐟 Hammour • 3.2kg</text>
-                                <text x="40" y="343" font-family="system-ui" font-size="13" fill="#6B6B6B">Yesterday 07:15 • Mutrah Bank</text>
-                                <rect x="40" y="355" width="80" height="24" rx="4" fill="rgba(46, 125, 91, 0.1)"/>
-                                <text x="80" y="372" font-family="system-ui" font-size="11" font-weight="600" fill="#2E7D5B" text-anchor="middle">Released ✓</text>
-                                
-                                <!-- Catch Entry 3 -->
-                                <rect x="24" y="410" width="312" height="120" rx="12" fill="white" stroke="#E7E7E4"/>
-                                <text x="40" y="438" font-family="system-ui" font-size="16" font-weight="700" fill="#12263A">🐟 Yellowfin Tuna • 12.8kg</text>
-                                <text x="40" y="458" font-family="system-ui" font-size="13" fill="#6B6B6B">Sep 13 • Al Bustan Reef</text>
-                                <rect x="40" y="470" width="90" height="50" rx="6" fill="#E7E7E4"/>
-                                <text x="85" y="500" font-family="system-ui" font-size="11" fill="#6B6B6B" text-anchor="middle">📷 Photo</text>
-                                
-                                <!-- View Analytics Button -->
-                                <rect x="24" y="560" width="312" height="50" rx="10" fill="#0E6E6B"/>
-                                <text x="180" y="590" font-family="system-ui" font-size="16" font-weight="600" fill="white" text-anchor="middle">View Analytics →</text>
-                            </svg>
-                        </div>
+                
+                <div class="species-grid">
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Kingfish</strong>
+                        <small>كنعد (Kanaad)</small>
+                    </div>
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Yellowfin Tuna</strong>
+                        <small>ثمد (Thamad)</small>
+                    </div>
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Hammour</strong>
+                        <small>هامور (Grouper)</small>
+                    </div>
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Amberjack</strong>
+                        <small>Pelagic</small>
+                    </div>
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Sailfish</strong>
+                        <small>Open Ocean</small>
+                    </div>
+                    <div class="species-card">
+                        <div class="species-icon">🐟</div>
+                        <strong>Mahi Mahi</strong>
+                        <small>Dorado</small>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Species & Regions -->
-    <section class="strip-section">
-        <div class="container">
-            <div class="strip-content">
-                <div class="section-label" style="color: var(--seafoam);">Species & Coverage</div>
-                <h2>Targeting Oman's most sought-after species</h2>
-            </div>
-            
-            <div class="species-grid">
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Kingfish</strong>
-                    <small>كنعد (Kanaad)</small>
+                
+                <div class="section-title" style="margin-top: 48px;">
+                    <h2>All Omani coastal regions</h2>
                 </div>
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Yellowfin Tuna</strong>
-                    <small>ثمد (Thamad)</small>
-                </div>
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Hammour</strong>
-                    <small>هامور (Grouper)</small>
-                </div>
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Amberjack</strong>
-                    <small>Pelagic Runner</small>
-                </div>
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Sailfish</strong>
-                    <small>Open Ocean</small>
-                </div>
-                <div class="species-card">
-                    <div class="species-icon">🐟</div>
-                    <strong>Mahi Mahi</strong>
-                    <small>Dorado</small>
+                
+                <div class="regions">
+                    <div class="region">Musandam</div>
+                    <div class="region">Al Batinah</div>
+                    <div class="region">Muscat</div>
+                    <div class="region">Ash Sharqiyah</div>
+                    <div class="region">Al Wusta</div>
+                    <div class="region">Dhofar</div>
                 </div>
             </div>
-            
-            <div class="strip-content">
-                <h2 style="margin-top: 60px;">Covering all Omani coastal regions</h2>
-            </div>
-            
-            <div class="regions-scroll">
-                <div class="region-tag">Musandam (Khasab, Bukha)</div>
-                <div class="region-tag">Al Batinah (Sohar, Barka)</div>
-                <div class="region-tag">Muscat (Mutrah, Marina Bandar)</div>
-                <div class="region-tag">Ash Sharqiyah (Sur, Ras Al Hadd)</div>
-                <div class="region-tag">Al Wusta (Duqm)</div>
-                <div class="region-tag">Dhofar (Salalah, Mirbat)</div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Final CTA -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-content">
+        </section>
+        
+        <!-- CTA -->
+        <section class="cta">
+            <div class="container">
                 <div class="section-label">Get Early Access</div>
-                <h2>Be among the first to fish smarter</h2>
+                <h2>Be first to fish smarter</h2>
                 
-                <form class="email-signup" style="margin: 0 auto;" onsubmit="handleSignup(event)">
+                <form class="email-form" id="signupForm2">
                     <input 
                         type="email" 
                         class="email-input" 
                         placeholder="Enter your email"
+                        id="emailInput2"
                         required
                     />
-                    <button type="submit" class="btn-primary">
-                        Join Waitlist
-                    </button>
+                    <button type="submit" class="btn">Join Waitlist</button>
                 </form>
+                <div id="successMsg2" class="success-msg">
+                    ✓ Thanks! We'll notify you when BAHHAR launches.
+                </div>
                 
-                <div class="store-badges">
-                    <a href="#" class="store-badge">
+                <div class="stores">
+                    <a href="#" class="store">
+                        <div class="store-badge">Coming Soon</div>
                         <div class="store-icon">🍎</div>
                         <div class="store-text">
                             <small>Download on the</small>
                             <strong>App Store</strong>
                         </div>
                     </a>
-                    <a href="#" class="store-badge">
+                    <a href="#" class="store">
+                        <div class="store-badge">Coming Soon</div>
                         <div class="store-icon">📱</div>
                         <div class="store-text">
                             <small>Get it on</small>
@@ -1275,49 +1050,38 @@
                     </a>
                 </div>
                 
-                <p style="color: var(--slate); margin-top: 24px;">
-                    Not yet available on App Store or Google Play. Sign up for early beta access.
+                <p style="color: var(--text-light); margin-top: 24px;">
+                    Not yet on App Store or Google Play. Join the waitlist for beta access.
                 </p>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
     
     <!-- Footer -->
     <footer>
         <div class="container">
-            <div class="footer-content">
+            <div class="footer-grid">
                 <div class="footer-brand">
-                    <a href="#" class="logo">
-                        <div class="logo-icon">
-                            <svg viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M21 2L21 40M21 2C27 6 30 12 30 21C30 30 27 36 21 40M21 2C15 6 12 12 12 21C12 30 15 36 21 40" stroke="var(--seafoam)" stroke-width="3" stroke-linecap="round"/>
-                                <ellipse cx="21" cy="21" rx="9" ry="19" stroke="var(--seafoam)" stroke-width="2.5" fill="none"/>
-                            </svg>
-                        </div>
-                        <span>BAHHAR</span>
-                    </a>
-                    <p style="margin-top: 16px; max-width: 320px;">
-                        AI-powered fishing intelligence for Oman's coastal waters. From Musandam to Dhofar, know when and where to fish.
-                    </p>
+                    <a href="/" class="logo">BAHHAR</a>
+                    <p style="margin-top: 16px;">Smart fishing intelligence for Oman's coastal waters. From Musandam to Dhofar.</p>
                 </div>
                 
                 <div class="footer-links">
                     <h4>Product</h4>
                     <ul>
                         <li><a href="#features">Features</a></li>
-                        <li><a href="#how-it-works">How It Works</a></li>
-                        <li><a href="https://github.com/Sonalhegde/BAHHAR">GitHub</a></li>
-                        <li><a href="https://github.com/Sonalhegde/BAHHAR/blob/main/ANDROID_PUBLICATION_GUIDE.md">Documentation</a></li>
+                        <li><a href="#how">How It Works</a></li>
+                        <li><a href="https://bahhar.netlify.app">About</a></li>
+                        <li><a href="https://bahhar.netlify.app/DEPLOYMENT_GUIDE.html">Documentation</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-links">
                     <h4>Company</h4>
                     <ul>
-                        <li><a href="https://github.com/Sonalhegde/BAHHAR#about">About</a></li>
-                        <li><a href="https://github.com/Sonalhegde/BAHHAR/blob/main/README.md">Press Kit</a></li>
+                        <li><a href="https://bahhar.netlify.app">About BAHHAR</a></li>
                         <li><a href="mailto:support@bahharai.com">Contact</a></li>
-                        <li><a href="https://github.com/Sonalhegde/BAHHAR/issues">Support</a></li>
+                        <li><a href="mailto:support@bahharai.com">Support</a></li>
                     </ul>
                 </div>
                 
@@ -1326,27 +1090,67 @@
                     <ul>
                         <li><a href="#">Privacy Policy</a></li>
                         <li><a href="#">Terms of Service</a></li>
-                        <li><a href="#">Cookie Policy</a></li>
-                        <li><a href="#">Compliance</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2026 BAHHAR AI. All rights reserved. • سلطنة عُمان • Sultanate of Oman</p>
+                <p>&copy; 2026 BAHHAR. All rights reserved. • Sultanate of Oman</p>
             </div>
         </div>
     </footer>
     
     <script>
-        function handleSignup(event) {
-            event.preventDefault();
-            const email = event.target.querySelector('input[type="email"]').value;
-            alert('Thanks for your interest! We\'ll notify ' + email + ' when BAHHAR launches.\n\nمع تحياتنا من فريق بَحّار');
-            event.target.reset();
-        }
+        // Email collection as JSON in localStorage
+        const signupForms = ['signupForm', 'signupForm2'];
+        const successMessages = ['successMsg', 'successMsg2'];
         
-        // Smooth scroll for anchor links
+        signupForms.forEach((formId, index) => {
+            const form = document.getElementById(formId);
+            const successMsg = document.getElementById(successMessages[index]);
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const emailInput = this.querySelector('input[type="email"]');
+                const email = emailInput.value;
+                
+                // Get existing emails from localStorage
+                let emails = [];
+                const stored = localStorage.getItem('bahhar_emails');
+                if (stored) {
+                    emails = JSON.parse(stored);
+                }
+                
+                // Check if email already exists
+                if (!emails.find(e => e.email === email)) {
+                    // Add new email with timestamp
+                    emails.push({
+                        email: email,
+                        timestamp: new Date().toISOString(),
+                        source: window.location.pathname
+                    });
+                    
+                    // Save back to localStorage
+                    localStorage.setItem('bahhar_emails', JSON.stringify(emails));
+                    
+                    // Log to console (for testing)
+                    console.log('Email collected:', email);
+                    console.log('All emails:', emails);
+                }
+                
+                // Show success message
+                successMsg.classList.add('show');
+                emailInput.value = '';
+                
+                // Hide after 5 seconds
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 5000);
+            });
+        });
+        
+        // Smooth scroll
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -1359,6 +1163,39 @@
                 }
             });
         });
+        
+        // View collected emails (developer tool)
+        window.viewEmails = function() {
+            const stored = localStorage.getItem('bahhar_emails');
+            if (stored) {
+                const emails = JSON.parse(stored);
+                console.log('Total signups:', emails.length);
+                console.table(emails);
+                return emails;
+            } else {
+                console.log('No signups yet');
+                return [];
+            }
+        };
+        
+        // Export emails as JSON (developer tool)
+        window.exportEmails = function() {
+            const stored = localStorage.getItem('bahhar_emails');
+            if (stored) {
+                const blob = new Blob([stored], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bahhar-emails-' + new Date().toISOString().split('T')[0] + '.json';
+                a.click();
+                console.log('Emails exported!');
+            } else {
+                console.log('No emails to export');
+            }
+        };
+        
+        console.log('📧 Email collection active. Type viewEmails() to see collected emails.');
+        console.log('💾 Type exportEmails() to download as JSON file.');
     </script>
 </body>
 </html>
