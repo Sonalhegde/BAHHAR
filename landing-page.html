@@ -203,30 +203,25 @@
         }
         
         .phone-screen {
-            background: var(--cream);
+            background: #faf9f7;
             border-radius: 28px;
             overflow: hidden;
             position: relative;
+            height: 680px;
         }
         
         .phone-screen img {
             width: 100%;
-            height: auto;
+            height: 100%;
+            object-fit: cover;
             display: block;
         }
         
-        .phone-mockup-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 216.67%; /* 9:19.5 aspect ratio */
-        }
-        
-        .phone-mockup-content {
-            position: absolute;
-            top: 0;
-            left: 0;
+        .phone-screen iframe {
             width: 100%;
             height: 100%;
+            border: none;
+            display: block;
         }
         
         /* Section */
@@ -680,81 +675,77 @@
             <div class="phone">
                 <div class="phone-frame">
                     <div class="phone-screen">
-                        <div class="phone-mockup-container">
-                            <div class="phone-mockup-content">
-                                <!-- Real app home screen -->
-                                <div style="background: #faf9f7; height: 100%; padding: 20px; overflow: auto;">
-                                    <!-- Header -->
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
-                                        <div style="font-family: Inter; font-size: 20px; font-weight: 700; color: #1e3a5f;">BAHHAR</div>
-                                        <div style="font-family: Inter; font-size: 14px; color: #5a6c7d;">Mutrah ▼</div>
+                        <!-- Real app home screen -->
+                        <div style="height: 100%; padding: 20px; overflow-y: auto;">
+                            <!-- Header -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+                                <div style="font-family: Inter, sans-serif; font-size: 20px; font-weight: 700; color: #1e3a5f;">BAHHAR</div>
+                                <div style="font-family: Inter, sans-serif; font-size: 14px; color: #5a6c7d;">Mutrah ▼</div>
+                            </div>
+                            
+                            <!-- Score Gauge -->
+                            <div style="text-align: center; margin-bottom: 32px; position: relative;">
+                                <svg width="150" height="150" viewBox="0 0 160 160" style="display: block; margin: 0 auto;">
+                                    <circle cx="80" cy="80" r="65" fill="none" stroke="#e8e8e8" stroke-width="10"/>
+                                    <circle cx="80" cy="80" r="65" fill="none" stroke="#0d6e6b" stroke-width="10" 
+                                            stroke-dasharray="306" stroke-dashoffset="92" stroke-linecap="round" 
+                                            transform="rotate(-90 80 80)"/>
+                                </svg>
+                                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                    <div style="font-family: Inter, sans-serif; font-size: 44px; font-weight: 700; color: #1e3a5f; line-height: 1;">73</div>
+                                    <div style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; color: #2d7a5e; margin-top: 4px;">FAVORABLE</div>
+                                    <div style="font-family: Inter, sans-serif; font-size: 10px; color: #5a6c7d; margin-top: 2px;">Peak: 06:30</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Conditions -->
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-family: Inter, sans-serif; font-size: 9px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 10px; text-transform: uppercase;">CONDITIONS</div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                                    <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 6px; text-align: center;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 9px; color: #5a6c7d; margin-bottom: 3px;">Wave</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 15px; font-weight: 600; color: #2c2c2c;">0.9m</div>
                                     </div>
-                                    
-                                    <!-- Score Gauge -->
-                                    <div style="text-align: center; margin-bottom: 36px;">
-                                        <svg width="160" height="160" viewBox="0 0 160 160">
-                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#e8e8e8" stroke-width="12"/>
-                                            <circle cx="80" cy="80" r="70" fill="none" stroke="#0d6e6b" stroke-width="12" 
-                                                    stroke-dasharray="330" stroke-dashoffset="99" stroke-linecap="round" 
-                                                    transform="rotate(-90 80 80)" style="transition: stroke-dashoffset 1s ease"/>
-                                        </svg>
-                                        <div style="position: relative; margin-top: -120px;">
-                                            <div style="font-family: Inter; font-size: 48px; font-weight: 700; color: #1e3a5f;">73</div>
-                                            <div style="font-family: Inter; font-size: 13px; font-weight: 600; color: #2d7a5e; margin-top: 4px;">FAVORABLE</div>
-                                            <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 4px;">Peak: 06:30</div>
-                                        </div>
+                                    <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 6px; text-align: center;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 9px; color: #5a6c7d; margin-bottom: 3px;">Wind</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 15px; font-weight: 600; color: #2c2c2c;">12kt</div>
                                     </div>
-                                    
-                                    <!-- Conditions -->
-                                    <div style="margin-bottom: 24px;">
-                                        <div style="font-family: Inter; font-size: 10px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">CONDITIONS</div>
-                                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
-                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Wave</div>
-                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">0.9m</div>
-                                            </div>
-                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
-                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Wind</div>
-                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">12kt</div>
-                                            </div>
-                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
-                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Temp</div>
-                                                <div style="font-family: Inter; font-size: 16px; font-weight: 600; color: #2c2c2c;">27°C</div>
-                                            </div>
-                                            <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 12px 8px; text-align: center;">
-                                                <div style="font-family: Inter; font-size: 10px; color: #5a6c7d; margin-bottom: 4px;">Tide</div>
-                                                <div style="font-family: Inter; font-size: 13px; font-weight: 600; color: #2d7a5e;">Rising</div>
-                                            </div>
-                                        </div>
+                                    <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 6px; text-align: center;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 9px; color: #5a6c7d; margin-bottom: 3px;">Temp</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 15px; font-weight: 600; color: #2c2c2c;">27°C</div>
                                     </div>
-                                    
-                                    <!-- Top Spots -->
-                                    <div>
-                                        <div style="font-family: Inter; font-size: 10px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 12px; text-transform: uppercase;">TOP SPOTS</div>
-                                        
-                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-                                            <div style="width: 28px; height: 28px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">85</div>
-                                            <div style="flex: 1;">
-                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Daymaniyat Drop-Off</div>
-                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">38m • 15.2nmi • Kingfish</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
-                                            <div style="width: 28px; height: 28px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">72</div>
-                                            <div style="flex: 1;">
-                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Mutrah Rocky Bank</div>
-                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">28m • 3.5nmi • Hammour</div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 16px; display: flex; align-items: center; gap: 12px;">
-                                            <div style="width: 28px; height: 28px; background: #c49a3d; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter; font-size: 14px; font-weight: 700; flex-shrink: 0;">68</div>
-                                            <div style="flex: 1;">
-                                                <div style="font-family: Inter; font-size: 14px; font-weight: 600; color: #2c2c2c;">Al Bustan Reef</div>
-                                                <div style="font-family: Inter; font-size: 11px; color: #5a6c7d; margin-top: 2px;">18m • 8.1nmi • Grouper</div>
-                                            </div>
-                                        </div>
+                                    <div style="background: white; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 6px; text-align: center;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 9px; color: #5a6c7d; margin-bottom: 3px;">Tide</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 12px; font-weight: 600; color: #2d7a5e;">Rising</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Top Spots -->
+                            <div>
+                                <div style="font-family: Inter, sans-serif; font-size: 9px; font-weight: 700; color: #0d6e6b; letter-spacing: 0.05em; margin-bottom: 10px; text-transform: uppercase;">TOP SPOTS</div>
+                                
+                                <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 26px; height: 26px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter, sans-serif; font-size: 13px; font-weight: 700; flex-shrink: 0;">85</div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #2c2c2c;">Daymaniyat Drop-Off</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 10px; color: #5a6c7d; margin-top: 1px;">38m • 15.2nmi • Kingfish</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 26px; height: 26px; background: #2d7a5e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter, sans-serif; font-size: 13px; font-weight: 700; flex-shrink: 0;">72</div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #2c2c2c;">Mutrah Rocky Bank</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 10px; color: #5a6c7d; margin-top: 1px;">28m • 3.5nmi • Hammour</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: white; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 26px; height: 26px; background: #c49a3d; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-family: Inter, sans-serif; font-size: 13px; font-weight: 700; flex-shrink: 0;">68</div>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; color: #2c2c2c;">Al Bustan Reef</div>
+                                        <div style="font-family: Inter, sans-serif; font-size: 10px; color: #5a6c7d; margin-top: 1px;">18m • 8.1nmi • Grouper</div>
                                     </div>
                                 </div>
                             </div>
@@ -897,7 +888,7 @@
                     </div>
                     <div class="phone">
                         <div class="phone-frame" style="max-width: 280px;">
-                            <div class="phone-screen">
+                            <div class="phone-screen" style="height: 590px;">
                                 <iframe src="assets/screenshots/map-mockup.html" 
                                         style="width: 100%; height: 100%; border: none; display: block;"
                                         title="BAHHAR Map View"></iframe>
