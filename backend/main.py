@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import math
-from datetime import datetime
+from datetime import datetime, UTC
 
 app = FastAPI(
     title="Bahhar AI — Marine & Fishing Prediction Microservice",
@@ -12,14 +12,27 @@ app = FastAPI(
 
 # Contract compliant with Master Build Prompt Section 10
 class PredictionRequest(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "latitude": 23.5880,
+            "longitude": 58.3829,
+            "target_species": "Kingfish",
+            "sea_temp_c": 27.5,
+            "wind_speed_kts": 12.0,
+            "wave_height_m": 0.9,
+            "tide_state": "Rising",
+            "depth_meters": 38
+        }
+    })
+    
     latitude: float = Field(..., ge=16.0, le=27.0, description="Omani coastal latitude")
     longitude: float = Field(..., ge=52.0, le=60.5, description="Omani coastal longitude")
-    target_species: str = Field(..., example="Kingfish")
-    sea_temp_c: float = Field(..., example=27.5)
-    wind_speed_kts: float = Field(..., example=12.0)
-    wave_height_m: float = Field(..., example=0.9)
-    tide_state: str = Field(..., example="Rising")
-    depth_meters: int = Field(..., example=38)
+    target_species: str = Field(..., description="Target fish species (e.g., Kingfish, Tuna, Hammour)")
+    sea_temp_c: float = Field(..., description="Sea surface temperature in Celsius")
+    wind_speed_kts: float = Field(..., description="Wind speed in knots")
+    wave_height_m: float = Field(..., description="Wave height in meters")
+    tide_state: str = Field(..., description="Tidal state (Rising, Falling, High, Low)")
+    depth_meters: int = Field(..., description="Water depth in meters")
 
 class PredictionResponse(BaseModel):
     probability: int = Field(..., ge=0, le=100)
@@ -87,7 +100,7 @@ def health():
     return {
         "service": "Bahhar AI Prediction Engine",
         "status": "online",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
 @app.post("/api/v1/predict", response_model=PredictionResponse)

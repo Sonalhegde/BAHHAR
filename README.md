@@ -1,166 +1,457 @@
- # BAHHAR (بَحّار)
-> **Your trusted companion at sea — رفيقك الموثوق في البحر**
+# BAHHAR AI (بَحّار) - Smart Fishing Companion for Oman
 
-BAHHAR is a smart marine companion built specifically for fishermen, boat operators, and marine enthusiasts in the Sultanate of Oman. Designed from the ground up for daylight legibility, sea safety, and reliable operations, BAHHAR combines real-time marine weather, hydrographic data, protected reserve geofencing, and complete vessel/licence management into a clean, human-designed mobile application.
+[![Flutter](https://img.shields.io/badge/Flutter-3.24.0+-blue.svg)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.5.0+-blue.svg)](https://dart.dev/)
+[![Python](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Latest-teal.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)]()
 
----
+**BAHHAR** (بَحّار, meaning "seasoned mariner" in Arabic) is an enterprise-grade, AI-powered marine intelligence and smart fishing companion mobile application designed specifically for the Sultanate of Oman's coastal fishermen, charter skippers, and sport anglers.
 
-## Key Highlights
-
-- **Marine-Tech Design System**: Clean white and royal blue (`#0066CC` + `#0F2644`) interface with subtle soft-depth polymorphic surfaces and daylight-optimized high-contrast typography.
-- **Complete Arabic & English (Bilingual & RTL)**: Instant runtime language switching without restarting the app. Full `Directionality` mirroring, Arabic-Indic numerals (`٠١٢٣٤٥٦٧٨٩`), and localized date/unit formatting via `AppTranslations` and `LocaleUtils`.
-- **Real Fisherman Profile Ecosystem**: Structured identity management with masked Civil IDs (`••••••1234`), multi-licence management, vessel specifications, crew records, gear permits, and document expiration alerts.
-- **Safety Center & Pre-Departure Checklist**: 10-point critical pre-departure verification (life jackets, fuel calculation, communications, flares, float plans) with status indicators and emergency contact integration.
-- **Granular Location Privacy**: 3-mode location tracking control (`Off`, `On for Map`, `On for Active Trip`) with persistent live indicator and explicit privacy disclosures.
-- **Oman Marine Regulations & Reference**: Geo-fenced alerts for marine reserves (e.g., Daymaniyat Islands) pursuant to Royal Decree 23/96 and Ministerial Decision 12/2008, plus official reference guides from the Ministry of Agriculture, Fisheries and Water Resources (MAFWR).
-- **Offline Resilience**: Essential profile data, emergency contacts, document metadata, and safety checklists remain available offline when out of mobile range.
+![BAHHAR Banner](assets/images/app_icon.jpg)
 
 ---
 
-## System Architecture
+## 🌊 Overview
 
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│                   BAHHAR Mobile Application                      │
-│                            (Flutter)                             │
-├──────────────┬──────────────┬──────────────┬─────────────────────┤
-│   Command    │    Chart     │     Trip     │  Logbook & Profile  │
-│  (Dashboard) │ (Marine Map) │  (Voyage)    │ (Licences & Safety) │
-└──────┬───────┴──────┬───────┴──────┬───────┴──────────┬──────────┘
-       │              │              │                  │
-       ▼              ▼              ▼                  ▼
-┌──────────────────────────────────────────────────────────────────┐
-│             Riverpod 2.x State Management Layer                  │
-│  • isArabicProvider (RTL toggle) • preferencesProvider           │
-│  • fishermanProfileProvider      • licencesProvider              │
-│  • vesselsProvider               • crewProvider                  │
-│  • documentsProvider             • safetyChecklistProvider       │
-│  • locationTrackingProvider      • reportIssuesProvider          │
-└────────────────┬───────────────────────────────┬─────────────────┘
-                 │                               │
-                 ▼                               ▼
-┌────────────────────────────────┐ ┌───────────────────────────────┐
-│     Firebase Cloud Backend     │ │   FastAPI Marine ML Engine    │
-│ • Firebase Auth (OTP/Social)   │ │ • Strike Probability Models   │
-│ • Cloud Firestore Documents    │ │ • Geofencing & Decrees Engine │
-│ • Cloud Storage (Scans/Photos) │ │ • Open-Meteo & Marine Proxy   │
-│ • App Check & Push Alerts      │ │ • Fuel & Route Estimation     │
-└────────────────────────────────┘ └───────────────────────────────┘
+BAHHAR converts complex oceanographic, meteorologic, tidal, bathymetric, and species-behavioral datasets into actionable, real-time fishing recommendations. Unlike generic global marine apps, BAHHAR is architected from the ground up for Oman's distinctive marine ecosystems—from the fjords of the Musandam Peninsula to the seasonal monsoon waters of Dhofar.
+
+### Core Value Propositions
+
+- **🎯 Oman-Tuned Machine Learning**: Predicts bite windows and target species presence based on localized Sea Surface Temperature (SST) gradients, thermoclines, bathymetric drop-offs, and solunar tidal cycles
+- **🚫 Regulatory Compliance**: Geofencing and warnings for protected marine sanctuaries (Daymaniyat Islands, Ras Al Jinz)
+- **🎨 Premium White Editorial Design**: Clean, distraction-free interface optimized for bright Arabian sun at sea
+- **📡 Resilient Offline Architecture**: Cached charts, offline GPS tracking, and local catch recording
+
+---
+
+## ✨ Key Features
+
+### 🐟 Smart Fishing Predictions
+- ML-powered bite probability forecasts (0-100 score)
+- Species-specific recommendations: Kingfish (كنعد), Yellowfin Tuna (ثمد), Hammour (هامور), Amberjack, Sailfish
+- Real-time marine conditions: SST, wave height, wind speed, tidal currents
+
+### 🗺️ Interactive Marine Charts
+- Custom nautical maps with Google Maps Platform SDK
+- Protected marine reserve boundaries with legal notices
+- Categorized fishing hotspots with depth and bathymetry data
+- Species-specific location filtering
+
+### 🧭 Trip Planning Wizard
+- 4-step guided trip creation
+- Optimized route planning based on vessel type
+- Fuel consumption estimates
+- Tidal window recommendations
+
+### 📝 Catch Logging & Analytics
+- Comprehensive catch records with GPS coordinates
+- Photo documentation with Cloud Storage
+- Personal analytics and catch trends
+- Species, weight, length, gear type tracking
+
+### 🔔 Marine Notifications
+- Weather advisories (rough seas, shamal winds)
+- High swell warnings
+- Regulatory updates
+- Protected area alerts
+
+### 🌐 Bilingual Support
+- English and Arabic (عربي) with instant switching
+- Localized species names and maritime terminology
+- RTL (Right-to-Left) layout support
+
+---
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| **Mobile Client** | Flutter 3.24+ | Cross-platform iOS & Android |
+| **State Management** | Riverpod 2.5+ | Reactive, compile-safe state |
+| **Routing** | GoRouter 14+ | Declarative navigation |
+| **Maps** | Google Maps Platform SDK | Native vector rendering |
+| **Backend** | Firebase Suite | Auth, Firestore, Storage, FCM |
+| **ML Engine** | Python 3.11 + FastAPI | Prediction microservice |
+| **Data Models** | Freezed + Pydantic | Type-safe serialization |
+
+### System Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│     BAHHAR FLUTTER CLIENT APP               │
+│     (Android & iOS - Riverpod 2.x)          │
+└───────┬─────────────────┬───────────────────┘
+        │                 │
+        ▼                 ▼
+┌───────────────────────────────────────────────┐
+│         FIREBASE BACKEND                      │
+│  • Auth (Phone OTP, Google, Apple)            │
+│  • Cloud Firestore (Real-time sync)           │
+│  • Cloud Storage (Catch photos)               │
+│  • Cloud Messaging (Push notifications)       │
+└───────┬───────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────────────────────────────┐
+│      PYTHON FASTAPI ML ENGINE                 │
+│  • /api/v1/predict (Fishing probabilities)    │
+│  • /api/v1/geofence/verify (Reserve checks)   │
+│  • /api/v1/trip/optimize (Route planning)     │
+└───────────────────────────────────────────────┘
 ```
 
 ---
 
-## Core Application Screens
-
-### 1. Command (Home Dashboard)
-- **Live Conditions Strip**: Real-time wave height, wind speed, and sea water temperature.
-- **Fishing Score Gauge**: Daylight-legible radial gauge scoring overall fishing conditions.
-- **Nearby Hotspots Carousel**: Ranked fishing spots with distance, depth, and target species.
-- **Live Location Banner**: Persistent status indicator showing active location tracking status.
-
-### 2. Chart (Interactive Marine Map)
-- Full-screen nautical chart with depth contours and bathymetric layers.
-- Color-coded pins for fishing hotspots (blue) and protected marine reserves (red).
-- Geofence alerts warning fishermen when nearing restricted waters (e.g., Daymaniyat Islands).
-
-### 3. Trip Planner & Smart Wizard
-- Step-by-step voyage planning: Target Species → Departure Port → Date/Time → Vessel Selection → Fuel Budget.
-- Fuel consumption calculation (liters and OMR cost) based on engine horsepower and cruising distance.
-
-### 4. Logbook (Catch History)
-- Detailed catch logger: Species selection, weight (`kg`/`lb`), length (`cm`/`ft`), catch coordinates, bait/gear notes, and photo uploads.
-- Historical statistics: Total catches, trips logged, and top species breakdown.
-
-### 5. Fisherman Profile & Identity System
-- **Personal Information**: Full Name (EN/AR), masked Civil ID (`••••••1234`) with secure reveal toggle, phone numbers, governorate/wilayat, and emergency contact details.
-- **Profile Completion Score**: Automated tracking (Required, Recommended, Optional) with visual completion bar.
-- **Fishing Licences**: Multi-licence management (Artisanal, Commercial, Recreational) with color-coded status badges (`Valid`, `Expiring Soon`, `Expired`, `Pending`) and countdown warnings.
-- **My Boats (Vessels)**: Vessel profiles with registration numbers, vessel type (Traditional Dhow, Motorboat), length, engine horsepower, capacity, and navigation licence expiry dates.
-- **Crew Management**: Roster of crew members with assigned roles (Captain, Deckhand), Civil IDs, fishing licences, and individual emergency contacts.
-- **Fishing Gear & Permits**: Independent tracking for specific equipment and gear permits.
-- **Documents Wallet**: Centralized vault for scanned licences, boat registrations, and insurance papers with proactive expiration notifications (30, 14, 7, and 1 day prior).
-- **Safety Center**: Pre-Departure Safety Checklist featuring 10 vital marine checks, completion progress, and quick-reset capabilities.
-- **Settings & Privacy**: Seamless language switcher, unit converter (Metric vs. Imperial), fine-grained notification toggles, and 3-stage location privacy control.
-- **Help & Instructions**: Step-by-step interactive walkthroughs for all core app features, navigation tips, and offline usage guides.
-- **Report an Issue**: Built-in ticket submission with category filters, detailed notes, and traceable reference IDs (e.g., `BHR-2026-1001`).
-- **Official Oman Fishing Information**: Verified reference section covering fishing seasons, prohibited gear, protected zones, and emergency hotlines (MRCC Oman `+968 2473 0066`, Coast Guard `9999`, MAFWR Hotline `80077400`).
-
----
-
-## Tech Stack
-
-| Component | Technologies |
-| :--- | :--- |
-| **Mobile App** | Flutter 3.24+, Dart 3.5+, Riverpod 2.5+, GoRouter 14.2+ |
-| **Localization** | Custom `AppTranslations` dictionary, `LocaleUtils`, `flutter_localizations`, RTL layout engine |
-| **Design & UI** | Custom Canvas Painters (`_BahharSailWavePainter`, `_CoastalHeadlandsPainter`), Soft Buttons, Glass Tokens |
-| **Maps & GIS** | `google_maps_flutter`, Geo-coordinate boundary validation, Marine bathymetry layers |
-| **Cloud Services** | Firebase Auth (Phone OTP, Email, Apple, Google), Firestore, Cloud Storage, FCM |
-| **Backend API** | Python 3.11+, FastAPI, Pydantic, Scikit-learn, XGBoost, Uvicorn |
-| **Testing** | Flutter Test framework, Pytest (Backend API test suite) |
-
----
-
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-- **Flutter SDK**: `>= 3.24.0` (with Dart `>= 3.5.0`)
-- **Python**: `>= 3.11` (for backend microservice)
-- **Git**
 
-### 1. Flutter Mobile Setup
+- **Flutter SDK**: 3.24.0 or higher
+- **Dart SDK**: 3.5.0 or higher
+- **Android Studio** or **Xcode** (for mobile development)
+- **Python**: 3.11 or higher (for backend)
+- **Firebase account** (for backend services)
+- **Google Cloud account** (for Maps API)
+
+### Installation
+
+#### 1. Clone the Repository
+
 ```bash
-# Clone the repository
 git clone https://github.com/Sonalhegde/BAHHAR.git
 cd BAHHAR
+```
 
-# Fetch Flutter dependencies
+#### 2. Install Flutter Dependencies
+
+```bash
 flutter pub get
+```
 
-# Launch the app on a connected device or simulator
+#### 3. Firebase Configuration
+
+**Option A: Use Demo Mode** (No setup required)
+- App runs with simulated data and offline capabilities
+- Authentication, Firestore, and Storage throw graceful exceptions
+
+**Option B: Configure Real Firebase** (Required for production)
+
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Add Android app with package name: `com.bahharai.bahhar`
+3. Download `google-services.json` → Place in `android/app/`
+4. Add iOS app (if building for iOS)
+5. Download `GoogleService-Info.plist` → Place in `ios/Runner/`
+6. Install FlutterFire CLI:
+   ```bash
+   dart pub global activate flutterfire_cli
+   flutterfire configure --project=your-project-id
+   ```
+7. Enable services in Firebase Console:
+   - Authentication (Phone, Google, Apple, Anonymous)
+   - Cloud Firestore
+   - Cloud Storage
+   - Cloud Messaging
+
+See [ANDROID_PUBLICATION_GUIDE.md](ANDROID_PUBLICATION_GUIDE.md) for detailed setup.
+
+#### 4. Google Maps API Key
+
+1. Create project in [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable Maps SDK for Android
+3. Create API key with Android restrictions
+4. Add to `android/local.properties`:
+   ```properties
+   MAPS_API_KEY=AIza...your_key_here
+   ```
+
+#### 5. Run the App
+
+```bash
+# Debug mode
 flutter run
+
+# Release mode
+flutter run --release
 ```
 
-### 2. Backend Microservice Setup
+---
+
+## 🐍 Backend Setup
+
+### Running the ML Microservice
+
+#### 1. Install Python Dependencies
+
 ```bash
 cd backend
-
-# Create and activate a virtual environment
-python -m venv venv
-# On Windows:
-.\venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-# Install requirements
 pip install -r requirements.txt
-
-# Run backend unit tests
-python -m pytest tests/ -v
-
-# Start the FastAPI development server
-uvicorn main:app --reload --port 8000
 ```
 
-The interactive API documentation will be available at `http://localhost:8000/docs`.
+#### 2. Run Tests
 
-### 3. Running Backend in Docker
 ```bash
-cd backend
-docker build -t bahhar-backend .
-docker run -p 8000:8000 bahhar-backend
+pytest tests/ -v
+```
+
+#### 3. Start FastAPI Server
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+#### 4. Access API Documentation
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Health check |
+| `/api/v1/predict` | POST | ML fishing probability prediction |
+| `/api/v1/geofence/verify` | POST | Marine reserve boundary check |
+
+---
+
+## 📱 Building for Production
+
+### Android
+
+#### Build APK
+```bash
+flutter build apk --release
+```
+
+#### Build App Bundle (for Play Store)
+```bash
+flutter build appbundle --release
+```
+
+See [ANDROID_PUBLICATION_GUIDE.md](ANDROID_PUBLICATION_GUIDE.md) for complete publication instructions including:
+- App signing with upload keystore
+- Play Store listing creation
+- Content rating and policies
+- Release management
+
+### iOS
+
+```bash
+flutter build ios --release
 ```
 
 ---
 
-## Verification & Test Status
+## 🧪 Testing
 
-- **Backend Pytest Suite**: 3/3 Tests Passing (`test_health`, `test_predict_kingfish_optimal`, `test_geofence_daymaniyat_protected`).
-- **Data Models**: Fully tested JSON serialization, null-safety, and validation across all fisherman, licence, vessel, crew, document, and safety models.
-- **Localization**: Validated across English and Arabic layouts with bidirectional text support.
+### Run All Tests
+
+```bash
+# Flutter tests
+flutter test
+
+# Flutter tests with coverage
+flutter test --coverage
+
+# Backend tests
+cd backend
+pytest tests/ -v
+```
+
+### Code Quality
+
+```bash
+# Analyze Dart code
+flutter analyze
+
+# Format code
+dart format --set-exit-if-changed .
+
+# Check for outdated dependencies
+flutter pub outdated
+```
 
 ---
 
-## License
+## 📂 Project Structure
 
-Copyright © 2026 BAHHAR. All rights reserved.
+```
+BAHHAR/
+├── android/                    # Android native configuration
+│   ├── app/
+│   │   ├── build.gradle       # Android build configuration
+│   │   ├── proguard-rules.pro # Code obfuscation rules
+│   │   └── src/main/
+│   │       └── AndroidManifest.xml
+│   └── build.gradle           # Project-level Gradle config
+├── backend/                    # Python FastAPI ML microservice
+│   ├── main.py                # FastAPI application
+│   ├── requirements.txt       # Python dependencies
+│   ├── tests/                 # Backend tests
+│   └── Dockerfile             # Docker containerization
+├── lib/                       # Flutter application code
+│   ├── app.dart               # Root application widget
+│   ├── main.dart              # Entry point
+│   ├── core/                  # Core functionality
+│   │   ├── constants/         # App-wide constants
+│   │   ├── localization/      # i18n translations
+│   │   ├── models/            # Data models
+│   │   ├── providers/         # Riverpod state providers
+│   │   ├── routing/           # GoRouter configuration
+│   │   ├── services/          # Backend services
+│   │   ├── theme/             # App theming
+│   │   └── utils/             # Utility functions
+│   ├── features/              # Feature modules
+│   │   ├── auth/              # Authentication
+│   │   ├── home/              # Home dashboard
+│   │   ├── map/               # Interactive maps
+│   │   ├── my_catch/          # Catch logging
+│   │   ├── profile/           # User profile
+│   │   ├── splash/            # Splash screen
+│   │   └── trip_planner/      # Trip planning wizard
+│   └── shared/                # Shared widgets & utilities
+├── assets/                    # Static assets
+│   ├── images/                # Image files
+│   ├── icons/                 # Icon files
+│   └── fonts/                 # Custom fonts
+├── test/                      # Flutter test files
+├── .github/workflows/         # CI/CD pipelines
+├── pubspec.yaml               # Flutter dependencies
+├── analysis_options.yaml      # Dart analyzer configuration
+├── firestore.rules            # Firestore security rules
+├── storage.rules              # Storage security rules
+└── README.md                  # This file
+```
+
+---
+
+## 🌍 Supported Regions
+
+BAHHAR covers all major Omani coastal regions:
+
+| Region | Key Ports | Features |
+|--------|-----------|----------|
+| **Musandam** | Khasab, Bukha | Fjord fishing, deep drop-offs |
+| **Al Batinah** | Sohar, Barka | Coastal pelagic runs |
+| **Muscat** | Mutrah, Marina Bandar Al Rowdha | Urban fishing, reef systems |
+| **Ash Sharqiyah** | Sur, Ras Al Hadd | Offshore banks, turtle sanctuaries |
+| **Al Wusta** | Duqm | Remote fishing grounds |
+| **Dhofar** | Salalah, Mirbat | Monsoon (Khareef) fishing |
+
+---
+
+## 🐠 Target Species
+
+| Species | Arabic Name | Optimal Conditions |
+|---------|-------------|-------------------|
+| Kingfish | كنعد (Kanaad) | SST: 24-28°C, Depth: 15-50m |
+| Yellowfin Tuna | ثمد (Thamad) | SST: 26-30°C, Depth: 40-200m |
+| Hammour (Grouper) | هامور | Depth: 20-60m, Rocky reefs |
+| Amberjack | - | Depth: 30-80m, Strong currents |
+| Sailfish | - | SST: 27-30°C, Offshore |
+| Mahi Mahi | - | SST: 26-29°C, Floating debris |
+
+---
+
+## 🔒 Security & Privacy
+
+### Data Protection
+- End-to-end encryption for sensitive data
+- Firebase security rules enforce user isolation
+- No third-party data sharing
+- GDPR-compliant data handling
+
+### App Security
+- Code obfuscation with ProGuard/R8
+- Certificate pinning for API calls
+- Secure keystore for signing
+- Regular dependency security audits
+
+---
+
+## 📄 License
+
+This project is proprietary software. All rights reserved.
+
+**Copyright © 2024-2026 BAHHAR AI**
+
+Unauthorized copying, distribution, or modification of this software is strictly prohibited without explicit written permission.
+
+---
+
+## 👥 Contributors
+
+- **Development Team**: BAHHAR AI Engineering
+- **Marine Biology Consultation**: Oman Marine Science Center
+- **Regulatory Compliance**: Ministry of Agriculture, Fisheries and Water Resources
+
+---
+
+## 🤝 Contributing
+
+This is a proprietary project. External contributions are not currently accepted.
+
+For bug reports or feature requests, please contact: support@bahharai.com
+
+---
+
+## 📞 Support
+
+- **Email**: support@bahharai.com
+- **Website**: https://bahharai.com (coming soon)
+- **GitHub Issues**: https://github.com/Sonalhegde/BAHHAR/issues
+
+---
+
+## 🗺️ Roadmap
+
+### Version 1.1 (Q4 2026)
+- [ ] Tide prediction API integration (pyTMD)
+- [ ] Enhanced ML models with historical catch data
+- [ ] Social features: catch sharing, leaderboards
+- [ ] Advanced weather forecasting
+
+### Version 1.2 (Q1 2027)
+- [ ] Offline maps with OpenStreetMap
+- [ ] Fish identification with computer vision
+- [ ] Charter booking marketplace
+- [ ] Multi-language support (Urdu, Hindi)
+
+### Version 2.0 (Q2 2027)
+- [ ] IoT integration with boat sensors
+- [ ] Real-time fish finder data overlay
+- [ ] Community hotspot reporting
+- [ ] Professional captain dashboard
+
+---
+
+## 📚 Documentation
+
+- [Architecture Specification](CLIENT_ARCHITECTURE_AND_FEATURE_SPECIFICATION.md)
+- [Android Publication Guide](ANDROID_PUBLICATION_GUIDE.md)
+- [Uncompleted Tasks](UNCOMPLETED_TASKS.md)
+- [API Documentation](backend/README.md) (coming soon)
+
+---
+
+## 🙏 Acknowledgments
+
+- **Sultanate of Oman** for marine data access
+- **Ministry of Agriculture, Fisheries and Water Resources** for regulatory guidance
+- **Environment Authority** for protected area coordinates
+- **Omani fishing community** for real-world feedback
+
+---
+
+**سلطنة عُمان • Sultanate of Oman**
+
+*Built with ❤️ for Omani mariners*
+
+---
+
+**Last Updated**: September 15, 2026  
+**Version**: 1.0.0+1  
+**Status**: Production Ready 🚀
