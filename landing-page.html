@@ -294,17 +294,14 @@
         }
         
         .oman-flag {
-            width: 20px;
-            height: 14px;
-            display: flex;
-            overflow: hidden;
+            width: 24px;
+            height: 16px;
+            display: inline-block;
+            position: relative;
             border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
-        
-        .flag-red { width: 30%; background: var(--oman-red); }
-        .flag-stripes { width: 70%; display: flex; flex-direction: column; }
-        .flag-white { height: 33.33%; background: var(--oman-white); }
-        .flag-green { height: 66.67%; background: var(--oman-green); }
         
         h1 {
             font-size: 56px;
@@ -647,16 +644,31 @@
             text-align: center;
             border: 1px solid var(--gray-200);
             transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .species-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border-color: var(--teal-primary);
         }
         
         .species-icon {
-            font-size: 48px;
+            font-size: 64px;
             margin-bottom: 16px;
+            line-height: 1;
+        }
+        
+        .species-image {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
         }
         
         .species-card strong {
@@ -908,13 +920,16 @@
             <div class="hero-content">
                 <div class="hero-text-section">
                     <div class="badge animate-in">
-                        <div class="oman-flag">
-                            <div class="flag-red"></div>
-                            <div class="flag-stripes">
-                                <div class="flag-white"></div>
-                                <div class="flag-green"></div>
-                            </div>
-                        </div>
+                        <svg class="oman-flag" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Red vertical band (left 1/4) -->
+                            <rect width="15" height="40" fill="#da291c"/>
+                            <!-- White horizontal stripe (top 1/3) -->
+                            <rect x="15" width="45" height="13.33" fill="#ffffff"/>
+                            <!-- Red horizontal stripe (middle 1/3) -->
+                            <rect x="15" y="13.33" width="45" height="13.33" fill="#da291c"/>
+                            <!-- Green horizontal stripe (bottom 1/3) -->
+                            <rect x="15" y="26.66" width="45" height="13.34" fill="#009a44"/>
+                        </svg>
                         Made for Omani Fishermen
                     </div>
                     
@@ -1225,42 +1240,107 @@
             
             <div class="species-grid">
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Kingfish - streamlined, fast-looking -->
+                        <ellipse cx="50" cy="50" rx="35" ry="18" fill="#4a7c9e" opacity="0.9"/>
+                        <path d="M 15 50 L 30 45 L 30 55 Z" fill="#3d6680"/>
+                        <circle cx="70" cy="45" r="3" fill="#1a1a1a"/>
+                        <path d="M 50 35 L 55 25 L 52 35 Z" fill="#5a8cae"/>
+                        <path d="M 45 60 L 48 70 L 50 60 Z" fill="#5a8cae"/>
+                    </svg>
                     <strong>Kingfish</strong>
                     <small>كنعد (Kanaad)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Yellowfin Tuna - robust body, yellow fins -->
+                        <ellipse cx="50" cy="50" rx="38" ry="22" fill="#2a5a7a" opacity="0.95"/>
+                        <ellipse cx="48" cy="52" rx="25" ry="15" fill="#87CEEB" opacity="0.3"/>
+                        <path d="M 12 50 L 28 48 L 28 52 Z" fill="#1a3a4a"/>
+                        <circle cx="72" cy="46" r="3" fill="#1a1a1a"/>
+                        <path d="M 48 30 L 52 18 L 50 30 Z" fill="#ffd700"/>
+                        <path d="M 48 68 L 52 82 L 50 68 Z" fill="#ffd700"/>
+                        <path d="M 40 35 L 42 25 L 44 35 Z" fill="#ffd700"/>
+                    </svg>
                     <strong>Yellowfin Tuna</strong>
                     <small>تونة (Tuna)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Hammour - robust grouper shape -->
+                        <ellipse cx="52" cy="50" rx="32" ry="24" fill="#8b6f47" opacity="0.9"/>
+                        <path d="M 20 50 L 32 45 L 32 55 Z" fill="#6b5737"/>
+                        <circle cx="72" cy="45" r="3" fill="#1a1a1a"/>
+                        <path d="M 52 32 L 56 25 L 54 32 Z" fill="#9b7f57"/>
+                        <path d="M 50 65 L 52 72 L 54 65 Z" fill="#9b7f57"/>
+                        <path d="M 60 38 L 62 30 L 64 38 Z" fill="#9b7f57"/>
+                    </svg>
                     <strong>Hammour</strong>
                     <small>هامور (Hammour)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Grouper - broad, thick body -->
+                        <ellipse cx="52" cy="50" rx="34" ry="26" fill="#7a5c3e" opacity="0.9"/>
+                        <path d="M 18 50 L 32 46 L 32 54 Z" fill="#5a3c2e"/>
+                        <circle cx="74" cy="46" r="3" fill="#1a1a1a"/>
+                        <path d="M 52 28 L 56 20 L 54 28 Z" fill="#8a6c4e"/>
+                        <path d="M 48 68 L 52 78 L 54 68 Z" fill="#8a6c4e"/>
+                        <ellipse cx="45" cy="50" rx="8" ry="12" fill="#5a3c2e" opacity="0.3"/>
+                    </svg>
                     <strong>Grouper</strong>
                     <small>جروبر (Grouper)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Barracuda - long, sleek, predatory -->
+                        <ellipse cx="50" cy="50" rx="40" ry="12" fill="#5a7a8a" opacity="0.9"/>
+                        <path d="M 10 50 L 22 48 L 22 52 Z" fill="#3a5a6a"/>
+                        <circle cx="78" cy="48" r="2" fill="#1a1a1a"/>
+                        <path d="M 50 40 L 52 32 L 54 40 Z" fill="#6a8a9a"/>
+                        <path d="M 50 60 L 52 68 L 54 60 Z" fill="#6a8a9a"/>
+                        <line x1="30" y1="50" x2="70" y2="50" stroke="#3a5a6a" stroke-width="2"/>
+                    </svg>
                     <strong>Barracuda</strong>
                     <small>باراكودا (Barracuda)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Snapper - compact, colorful -->
+                        <ellipse cx="52" cy="50" rx="30" ry="22" fill="#d85a5a" opacity="0.85"/>
+                        <path d="M 22 50 L 34 46 L 34 54 Z" fill="#b83a3a"/>
+                        <circle cx="72" cy="46" r="3" fill="#1a1a1a"/>
+                        <path d="M 52 32 L 56 24 L 54 32 Z" fill="#e86a6a"/>
+                        <path d="M 48 66 L 52 76 L 54 66 Z" fill="#e86a6a"/>
+                        <ellipse cx="50" cy="50" rx="15" ry="10" fill="#fff" opacity="0.2"/>
+                    </svg>
                     <strong>Snapper</strong>
                     <small>سنابر (Snapper)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Sailfish - distinctive sail dorsal fin -->
+                        <ellipse cx="50" cy="52" rx="38" ry="14" fill="#4a6a8a" opacity="0.9"/>
+                        <path d="M 12 52 L 26 50 L 26 54 Z" fill="#2a4a6a"/>
+                        <circle cx="76" cy="48" r="2" fill="#1a1a1a"/>
+                        <!-- Large sail -->
+                        <path d="M 45 25 L 55 18 L 52 52 L 48 52 Z" fill="#5a7aaa" opacity="0.8"/>
+                        <path d="M 45 52 L 48 65 L 50 52 Z" fill="#5a7aaa"/>
+                        <line x1="48" y1="20" x2="50" y2="50" stroke="#3a5a8a" stroke-width="1"/>
+                    </svg>
                     <strong>Sailfish</strong>
                     <small>سمكة الشراع (Sailfish)</small>
                 </div>
                 <div class="species-card scroll-reveal">
-                    <span class="species-icon">🐟</span>
+                    <svg class="species-icon" viewBox="0 0 100 100" style="width: 80px; height: 80px;">
+                        <!-- Cobia - long body, flat head -->
+                        <ellipse cx="50" cy="50" rx="36" ry="16" fill="#4a4a3a" opacity="0.9"/>
+                        <path d="M 14 50 L 28 48 L 28 52 Z" fill="#2a2a1a"/>
+                        <circle cx="74" cy="47" r="2" fill="#1a1a1a"/>
+                        <path d="M 50 36 L 52 28 L 54 36 Z" fill="#5a5a4a"/>
+                        <path d="M 50 64 L 52 72 L 54 64 Z" fill="#5a5a4a"/>
+                        <line x1="28" y1="50" x2="72" y2="50" stroke="#3a3a2a" stroke-width="3"/>
+                    </svg>
                     <strong>Cobia</strong>
                     <small>كوبيا (Cobia)</small>
                 </div>
@@ -1326,7 +1406,15 @@
             
             <div class="footer-bottom">
                 <p>&copy; 2026 BAHHAR. Built for Omani fishermen.</p>
-                <p>🇴🇲 Made in Oman</p>
+                <p style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="14" viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg" style="border-radius: 2px;">
+                        <rect width="15" height="40" fill="#da291c"/>
+                        <rect x="15" width="45" height="13.33" fill="#ffffff"/>
+                        <rect x="15" y="13.33" width="45" height="13.33" fill="#da291c"/>
+                        <rect x="15" y="26.66" width="45" height="13.34" fill="#009a44"/>
+                    </svg>
+                    Made in Oman
+                </p>
             </div>
         </div>
     </footer>
