@@ -586,8 +586,7 @@ flutter run
 ### Project Documentation
 - [README.md](README.md) - Project overview
 - [ANDROID_PUBLICATION_GUIDE.md](ANDROID_PUBLICATION_GUIDE.md) - Publishing guide
-- [CLIENT_ARCHITECTURE_AND_FEATURE_SPECIFICATION.md](CLIENT_ARCHITECTURE_AND_FEATURE_SPECIFICATION.md) - Architecture
-- [UNCOMPLETED_TASKS.md](UNCOMPLETED_TASKS.md) - Known issues and TODOs
+- [SPECIFICATION.md](SPECIFICATION.md) - Unified master specification (architecture, features, status & roadmap)
 
 ### Community
 - [Flutter Community](https://flutter.dev/community)
@@ -600,7 +599,7 @@ flutter run
 
 ### Internal
 - Check existing documentation first
-- Review [UNCOMPLETED_TASKS.md](UNCOMPLETED_TASKS.md)
+- Review [SPECIFICATION.md](SPECIFICATION.md) §9 (Implementation Status & Roadmap)
 - Ask team members
 
 ### External

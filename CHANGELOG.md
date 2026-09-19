@@ -255,7 +255,7 @@ All Omani coastal regions:
 - iOS platform not configured
 - Email/password auth intentionally disabled
 
-See [UNCOMPLETED_TASKS.md](UNCOMPLETED_TASKS.md) for complete list.
+See [SPECIFICATION.md](SPECIFICATION.md) §9 (Implementation Status & Roadmap) for the complete list.
 
 ### 📦 Dependencies
 
