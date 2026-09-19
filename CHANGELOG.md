@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### ✨ Added
+- **Live marine & tide data integration** — FastAPI proxy `GET /api/v1/marine/conditions` +
+  `GET /api/v1/tides` aggregating Open-Meteo (weather + marine, keyless) and WorldTides v3,
+  with server-side TTL caching and 502/503 upstream-failure handling. WorldTides key is held
+  only in `backend/.env`, never shipped in the Flutter binary.
+- **Flutter live `MarineService`** — replaces the simulated service; fetches via `ApiClient`,
+  falls back to the last-known snapshot when offline/stale, and the Home dashboard shows a
+  "Last updated … showing last known conditions" banner.
+- **Landing website redesign** (`landing-page.html`) — full-bleed hero, verified glassmorphism
+  system, alternating story pillars, custom nautical-chart SVG, 8 distinct species silhouettes,
+  GSAP/ScrollTrigger reveals with fallback, mobile hamburger and working EN ⇄ AR RTL toggle.
+- **`.vercelignore`** to scope Vercel uploads to web assets (never secrets or app source).
+- Backend test suite expanded to **9 passing** cases (marine/tide proxy + tide-state derivation).
+
+### 📚 Documentation
+- Consolidated the four overlapping specification docs into a single unified
+  **[SPECIFICATION.md](SPECIFICATION.md)** and rewrote **[README.md](README.md)** to the canonical
+  structure (removed un-implemented overclaims, fixed dead links).
+- Added **[QA_REPORT.md](QA_REPORT.md)** (test matrix, security/secret scan, deferred items).
+
+### 🔧 Fixed
+- Landing pillars did not alternate (CSS `order` no-op).
+- Stale docs that described the app as "simulation only".
+
+---
+
 ## [1.0.0] - 2026-09-15 - Production Release Preparation
 
 ### 🎉 Initial Release
@@ -310,7 +338,7 @@ httpx>=0.25.0
 ### Planned for v1.1.0 (Q4 2026)
 
 #### Features
-- [ ] Tide prediction API integration (pyTMD)
+- [x] Tide prediction API integration (WorldTides v3, proxied via backend)
 - [ ] Enhanced ML models with historical catch data
 - [ ] Social features: catch sharing, leaderboards
 - [ ] Advanced weather forecasting
