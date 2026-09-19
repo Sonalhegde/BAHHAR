@@ -17,7 +17,7 @@ class BahharApp extends ConsumerWidget {
       child: MaterialApp.router(
         title: 'BAHHAR',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.coastalLightTheme,
+        theme: AppTheme.coastalLightTheme(isArabic: isArabic),
         themeMode: ThemeMode.light,
         locale: isArabic ? const Locale('ar', 'OM') : const Locale('en', 'OM'),
         supportedLocales: const [

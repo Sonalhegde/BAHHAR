@@ -78,7 +78,6 @@ class BahharLogoWidget extends StatelessWidget {
               fontSize: size * 0.44,
               fontWeight: FontWeight.w700,
               color: AppColors.oceanNavy,
-              fontFamily: 'sans-serif',
             ),
           ),
           const SizedBox(height: 2),

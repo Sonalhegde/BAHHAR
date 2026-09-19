@@ -1,10 +1,12 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../animations/app_animations.dart';
 
 /// Atmospheric Coastal Marine Background Wrapper
-/// Features the exact soft coastal mountain/fjord silhouettes and ocean wave
-/// layers seen in the reference design.
-class MarineBackground extends StatelessWidget {
+/// Soft coastal mountain/fjord silhouettes with two slow, out-of-phase
+/// drifting ocean wave layers for a gentle "alive water" texture.
+class MarineBackground extends StatefulWidget {
   final Widget child;
   final bool showHeadlandSilhouettes;
 
@@ -15,12 +17,31 @@ class MarineBackground extends StatelessWidget {
   });
 
   @override
+  State<MarineBackground> createState() => _MarineBackgroundState();
+}
+
+class _MarineBackgroundState extends State<MarineBackground>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _tide =
+      AnimationController(vsync: this, duration: const Duration(seconds: 14))
+        ..repeat();
+
+  @override
+  void dispose() {
+    _tide.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final animate =
+        widget.showHeadlandSilhouettes && !reduceMotionOf(context);
+
     return Scaffold(
       backgroundColor: AppColors.bgGradientTop,
       body: Stack(
         children: [
-          // Base Soft Sky Gradient
+          // Base Soft Sky Gradient with a faint warm sun glow top-right
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -38,24 +59,49 @@ class MarineBackground extends StatelessWidget {
               ),
             ),
           ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0.85, -0.9),
+                    radius: 0.9,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.55),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
 
-          // Coastal Mountain & Wave Silhouettes at the bottom
-          if (showHeadlandSilhouettes)
+          // Coastal Mountain & animated Wave Silhouettes at the bottom
+          if (widget.showHeadlandSilhouettes)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               height: 320,
-              child: CustomPaint(
-                painter: _CoastalHeadlandsPainter(),
-              ),
+              child: animate
+                  ? RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _tide,
+                        builder: (context, _) => CustomPaint(
+                          painter: _CoastalHeadlandsPainter(phase: _tide.value * 2 * math.pi),
+                        ),
+                      ),
+                    )
+                  : CustomPaint(
+                      painter: _CoastalHeadlandsPainter(phase: 0),
+                    ),
             ),
 
           // Foreground Interactive Content
           Positioned.fill(
             child: SafeArea(
               bottom: false,
-              child: child,
+              child: widget.child,
             ),
           ),
         ],
@@ -65,6 +111,9 @@ class MarineBackground extends StatelessWidget {
 }
 
 class _CoastalHeadlandsPainter extends CustomPainter {
+  final double phase;
+  _CoastalHeadlandsPainter({required this.phase});
+
   @override
   void paint(Canvas canvas, Size size) {
     final w = size.width;
@@ -102,21 +151,42 @@ class _CoastalHeadlandsPainter extends CustomPainter {
     path2.close();
     canvas.drawPath(path2, mountainPaint2);
 
-    // Layer 3: Foreground Ocean Waves
-    final wavePaint = Paint()
+    // Layer 3: Driving swell — slow full-width wave
+    final wavePaintBack = Paint()
+      ..color = const Color(0xFFC3DDF7).withValues(alpha: 0.7)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(_wavePath(w, h, baseY: 0.84, amp: 0.018, freq: 1.6, shift: phase * 0.55), wavePaintBack);
+
+    // Layer 4: Foreground Ocean Wave — opposite drift for parallax
+    final wavePaintFront = Paint()
       ..color = const Color(0xFFB8D7F5).withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
+    canvas.drawPath(_wavePath(w, h, baseY: 0.90, amp: 0.014, freq: 2.4, shift: -phase * 0.85 + 1.3), wavePaintFront);
+  }
 
-    final path3 = Path();
-    path3.moveTo(0, h * 0.88);
-    path3.quadraticBezierTo(w * 0.25, h * 0.82, w * 0.55, h * 0.88);
-    path3.quadraticBezierTo(w * 0.80, h * 0.94, w, h * 0.86);
-    path3.lineTo(w, h);
-    path3.lineTo(0, h);
-    path3.close();
-    canvas.drawPath(path3, wavePaint);
+  /// Samples a sine swell across the canvas width and closes it to the bottom.
+  Path _wavePath(double w, double h,
+      {required double baseY, required double amp, required double freq, required double shift}) {
+    final path = Path();
+    const steps = 48;
+    for (var i = 0; i <= steps; i++) {
+      final x = w * i / steps;
+      final u = i / steps;
+      final y = h * (baseY + amp * math.sin(2 * math.pi * freq * u + shift));
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    return path;
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _CoastalHeadlandsPainter oldDelegate) =>
+      oldDelegate.phase != phase;
 }

@@ -13,6 +13,7 @@ import '../../../../shared/glass/glass_container.dart';
 import '../../../../shared/polymorphic/soft_button.dart';
 import '../../../../shared/polymorphic/soft_toggle.dart';
 import '../../../../shared/polymorphic/glass_input.dart';
+import '../../../../shared/animations/app_animations.dart';
 
 enum AuthMethod { phone, email }
 
@@ -186,7 +187,11 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-          child: ConstrainedBox(
+          child: SlideFadeReveal(
+            delay: const Duration(milliseconds: 80),
+            duration: const Duration(milliseconds: 700),
+            offsetY: 28,
+            child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,6 +638,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

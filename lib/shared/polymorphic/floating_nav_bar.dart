@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 
 class NavDestinationItem {
@@ -48,37 +49,74 @@ class FloatingGlassNavBar extends StatelessWidget {
           children: List.generate(items.length, (idx) {
             final item = items[idx];
             final isSelected = idx == selectedIndex;
+            const motion = Duration(milliseconds: 220);
+            const ease = Curves.easeOutCubic;
 
             return Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onDestinationSelected(idx),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onDestinationSelected(idx);
+                },
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      isSelected ? item.selectedIcon : item.icon,
-                      size: 22,
-                      color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? AppColors.primaryBlue : AppColors.textSecondary,
+                    // Soft pill halo blooming behind the active icon
+                    AnimatedContainer(
+                      duration: motion,
+                      curve: ease,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSelected ? 14 : 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryBlueLight
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: AnimatedScale(
+                        duration: motion,
+                        curve: Curves.easeOutBack,
+                        scale: isSelected ? 1.12 : 1.0,
+                        child: Icon(
+                          isSelected ? item.selectedIcon : item.icon,
+                          size: 22,
+                          color: isSelected
+                              ? AppColors.primaryBlue
+                              : AppColors.textSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 3),
+                    AnimatedDefaultTextStyle(
+                      duration: motion,
+                      curve: ease,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? AppColors.primaryBlue
+                            : AppColors.textSecondary,
+                      ),
+                      child: Text(item.label),
+                    ),
+                    const SizedBox(height: 3),
                     // Active indicator dot from reference image
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isSelected ? AppColors.primaryBlue : Colors.transparent,
+                    AnimatedScale(
+                      duration: motion,
+                      curve: Curves.easeOutBack,
+                      scale: isSelected ? 1.0 : 0.0,
+                      child: Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryBlue,
+                        ),
                       ),
                     ),
                   ],

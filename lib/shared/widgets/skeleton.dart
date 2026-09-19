@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../animations/app_animations.dart';
 
-/// Simple loading skeleton. Part 3 replaces the flat grey with a shimmer
-/// sweep; the shape API stays identical.
-class SkeletonBox extends StatelessWidget {
+/// Loading skeleton with a soft shimmer sweep travelling across the block.
+class SkeletonBox extends StatefulWidget {
   final double height;
   final double? width;
   final BorderRadius? borderRadius;
@@ -12,13 +12,58 @@ class SkeletonBox extends StatelessWidget {
   const SkeletonBox({super.key, required this.height, this.width, this.borderRadius});
 
   @override
+  State<SkeletonBox> createState() => _SkeletonBoxState();
+}
+
+class _SkeletonBoxState extends State<SkeletonBox>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmer =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1300))
+        ..repeat();
+
+  @override
+  void dispose() {
+    _shimmer.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: width ?? double.infinity,
+    final radius = widget.borderRadius ?? BorderRadius.circular(8);
+
+    final block = Container(
+      height: widget.height,
+      width: widget.width ?? double.infinity,
       decoration: BoxDecoration(
         color: AppColors.skeletonBase,
-        borderRadius: borderRadius ?? BorderRadius.circular(8),
+        borderRadius: radius,
+      ),
+    );
+
+    if (reduceMotionOf(context) || !TickerMode.of(context)) return block;
+
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _shimmer,
+        child: block,
+        builder: (context, child) {
+          // Sweep highlight from off-left to off-right, with a soft pause.
+          final t = Curves.easeInOut.transform(_shimmer.value);
+          return ShaderMask(
+            blendMode: BlendMode.srcATop,
+            shaderCallback: (bounds) => LinearGradient(
+              begin: Alignment(-2.2 + 3.4 * t, -0.3),
+              end: Alignment(-1.2 + 3.4 * t, 0.3),
+              colors: const [
+                AppColors.skeletonBase,
+                AppColors.skeletonHighlight,
+                AppColors.skeletonBase,
+              ],
+              stops: const [0.25, 0.5, 0.75],
+            ).createShader(bounds),
+            child: child,
+          );
+        },
       ),
     );
   }

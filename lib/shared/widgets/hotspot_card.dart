@@ -4,34 +4,55 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/models/hotspot_model.dart';
 import 'legal_status_badge.dart';
 
-class HotspotCard extends StatelessWidget {
+class HotspotCard extends StatefulWidget {
   final HotspotModel hotspot;
   final VoidCallback? onTap;
 
   const HotspotCard({super.key, required this.hotspot, this.onTap});
 
   @override
+  State<HotspotCard> createState() => _HotspotCardState();
+}
+
+class _HotspotCardState extends State<HotspotCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
+    final hotspot = widget.hotspot;
     final probColor = AppColors.getProbabilityColor(hotspot.probability);
     final isProtected = hotspot.legalStatus != LegalStatus.permitted;
 
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFD6E6F7), width: 1.0),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
+      onTap: widget.onTap,
+      onTapDown: widget.onTap == null ? null : (_) => setState(() => _pressed = true),
+      onTapUp: widget.onTap == null ? null : (_) => setState(() => _pressed = false),
+      onTapCancel: widget.onTap == null ? null : () => setState(() => _pressed = false),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _pressed ? 0.975 : 1.0,
+        duration: const Duration(milliseconds: 140),
+        curve: Curves.easeOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _pressed ? probColor.withValues(alpha: 0.35) : const Color(0xFFD6E6F7),
+              width: 1.0,
             ),
-          ],
-        ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F172A).withValues(alpha: _pressed ? 0.10 : 0.05),
+                blurRadius: _pressed ? 18 : 12,
+                offset: Offset(0, _pressed ? 6 : 3),
+              ),
+            ],
+          ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -106,6 +127,7 @@ class HotspotCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

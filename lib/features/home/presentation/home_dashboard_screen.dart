@@ -8,11 +8,14 @@ import '../../../core/providers/marine_provider.dart';
 import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../core/services/firebase_service.dart';
+import '../../../core/services/marine_service.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../shared/glass/marine_background.dart';
 import '../../../shared/widgets/fishing_score_gauge.dart';
 import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/hotspot_card.dart';
 import '../../../shared/widgets/skeleton.dart';
+import '../../../shared/animations/app_animations.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
   const HomeDashboardScreen({super.key});
@@ -40,7 +43,10 @@ class HomeDashboardScreen extends ConsumerWidget {
         slivers: [
           // Coastal Header Bar
           SliverToBoxAdapter(
-            child: Padding(
+            child: SlideFadeReveal(
+              duration: const Duration(milliseconds: 450),
+              offsetY: 12,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -117,6 +123,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
           ),
 
           // Offline demo banner (visible, not silent)
@@ -157,7 +164,9 @@ class HomeDashboardScreen extends ConsumerWidget {
 
           // Hero Score Command Panel
           SliverToBoxAdapter(
-            child: Container(
+            child: SlideFadeReveal(
+              delay: const Duration(milliseconds: 120),
+              child: Container(
               margin: const EdgeInsets.fromLTRB(16, 4, 16, 14),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.92),
@@ -215,11 +224,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
           ),
 
           // Live Marine Conditions Grid
           SliverToBoxAdapter(
-            child: Padding(
+            child: SlideFadeReveal(
+              delay: const Duration(milliseconds: 220),
+              child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -233,39 +245,64 @@ class HomeDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   marineAsync.when(
-                    data: (conditions) => Row(
+                    data: (conditions) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: ConditionStatChip(
-                            label:
-                                isArabic ? 'ارتفاع الموج' : 'WAVE HEIGHT',
-                            value: '${conditions.waveHeightM}m',
-                            subtext:
-                                'Period ${conditions.wavePeriodS}s',
-                            isWarning: conditions.waveHeightM > 1.8,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ConditionStatChip(
+                                label:
+                                    isArabic ? 'ارتفاع الموج' : 'WAVE HEIGHT',
+                                value: '${conditions.waveHeightM}m',
+                                subtext:
+                                    'Period ${conditions.wavePeriodS}s',
+                                isWarning: conditions.waveHeightM > 1.8,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ConditionStatChip(
+                                label:
+                                    isArabic ? 'سرعة الرياح' : 'WIND SPEED',
+                                value: '${conditions.windSpeedKts}kt',
+                                subtext:
+                                    conditions.windDirectionCompass,
+                                isWarning: conditions.windSpeedKts > 20,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ConditionStatChip(
+                                label:
+                                    isArabic ? 'حرارة البحر' : 'WATER TEMP',
+                                value:
+                                    '${conditions.seaTemperatureC}°C',
+                                subtext: 'SST Normal',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ConditionStatChip(
-                            label:
-                                isArabic ? 'سرعة الرياح' : 'WIND SPEED',
-                            value: '${conditions.windSpeedKts}kt',
-                            subtext:
-                                conditions.windDirectionCompass,
-                            isWarning: conditions.windSpeedKts > 20,
+                        // Offline/stale-cache indicator (Master Build Prompt §9)
+                        if (MarineService.isStale(conditions)) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(Icons.cloud_off,
+                                  size: 13, color: AppColors.textTertiary),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  isArabic
+                                      ? 'آخر تحديث: ${Formatters.formatTime(conditions.lastUpdated)} — بيانات محفوظة محلياً'
+                                      : 'Last updated ${Formatters.formatTime(conditions.lastUpdated)} — showing last known conditions',
+                                  style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.textTertiary),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ConditionStatChip(
-                            label:
-                                isArabic ? 'حرارة البحر' : 'WATER TEMP',
-                            value:
-                                '${conditions.seaTemperatureC}°C',
-                            subtext: 'SST Normal',
-                          ),
-                        ),
+                        ],
                       ],
                     ),
                     loading: () => const Row(
@@ -296,11 +333,14 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
           ),
 
           // Hotspots Section Header
           SliverToBoxAdapter(
-            child: Padding(
+            child: SlideFadeReveal(
+              delay: const Duration(milliseconds: 320),
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -326,6 +366,7 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
           ),
 
           // Hotspot List
@@ -336,10 +377,13 @@ class HomeDashboardScreen extends ConsumerWidget {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final spot = spots[index];
-                        return HotspotCard(
-                          hotspot: spot,
-                          onTap: () =>
-                              context.push('/hotspots/${spot.id}'),
+                        return SlideFadeReveal.staggered(
+                          index: index,
+                          child: HotspotCard(
+                            hotspot: spot,
+                            onTap: () =>
+                                context.push('/hotspots/${spot.id}'),
+                          ),
                         );
                       },
                       childCount: spots.length,

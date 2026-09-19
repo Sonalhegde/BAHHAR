@@ -33,6 +33,7 @@ dependencies:
   # UI & Vector
   cupertino_icons: ^1.0.8
   flutter_svg: ^2.0.10
+  google_fonts: ^6.2.1
 
   # Social & Device Capabilities
   google_sign_in: ^6.2.1

@@ -23,6 +23,7 @@ import '../../features/profile/presentation/profile_settings_screen.dart';
 import '../../features/hotspot/presentation/hotspot_details_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../shared/polymorphic/floating_nav_bar.dart';
+import '../../shared/animations/app_animations.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -34,84 +35,105 @@ class AppRouter {
     routes: [
       GoRoute(
         path: '/splash',
-        builder: (context, state) => const SplashScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const SplashScreen()),
       ),
       GoRoute(
         path: '/onboarding',
-        builder: (context, state) => const OnboardingScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const OnboardingScreen()),
       ),
       GoRoute(
         path: '/auth',
-        builder: (context, state) => const LoginRegisterScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const LoginRegisterScreen()),
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginRegisterScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const LoginRegisterScreen()),
       ),
       GoRoute(
         path: '/hotspots/:id',
-        builder: (context, state) {
+        pageBuilder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return HotspotDetailsScreen(hotspotId: id);
+          return fadeSlidePage(
+            keyName: state.uri.toString(),
+            child: HotspotDetailsScreen(hotspotId: id),
+          );
         },
       ),
       GoRoute(
         path: '/trip-recommendation',
-        builder: (context, state) => const TripRecommendationScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const TripRecommendationScreen()),
       ),
       GoRoute(
         path: '/my-catch/add',
-        builder: (context, state) => const AddCatchScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const AddCatchScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => const NotificationsScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const NotificationsScreen()),
       ),
 
       // ── Profile sub-screens (outside shell — full screen) ─────────────────
       GoRoute(
         path: '/profile/licences',
-        builder: (context, state) => const LicencesScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const LicencesScreen()),
       ),
       GoRoute(
         path: '/profile/vessels',
-        builder: (context, state) => const VesselsScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const VesselsScreen()),
       ),
       GoRoute(
         path: '/profile/crew',
-        builder: (context, state) => const CrewScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const CrewScreen()),
       ),
       GoRoute(
         path: '/profile/gear',
-        builder: (context, state) => const DocumentsWalletScreen(), // gear handled inside documents for now
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const DocumentsWalletScreen()), // gear handled inside documents for now
       ),
       GoRoute(
         path: '/profile/documents',
-        builder: (context, state) => const DocumentsWalletScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const DocumentsWalletScreen()),
       ),
       GoRoute(
         path: '/profile/safety',
-        builder: (context, state) => const SafetyCenterScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const SafetyCenterScreen()),
       ),
       GoRoute(
         path: '/profile/help',
-        builder: (context, state) => const HelpInstructionsScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const HelpInstructionsScreen()),
       ),
       GoRoute(
         path: '/profile/report',
-        builder: (context, state) => const ReportIssueScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const ReportIssueScreen()),
       ),
       GoRoute(
         path: '/profile/official-info',
-        builder: (context, state) => const OfficialInfoScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const OfficialInfoScreen()),
       ),
       GoRoute(
         path: '/profile/edit-personal',
-        builder: (context, state) => const EditPersonalInfoScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const EditPersonalInfoScreen()),
       ),
       GoRoute(
         path: '/profile/settings',
-        builder: (context, state) => const ProfileSettingsScreen(),
+        pageBuilder: (context, state) =>
+            fadeSlidePage(keyName: state.uri.toString(), child: const ProfileSettingsScreen()),
       ),
 
       // ── Main Shell with Bottom Navigation ─────────────────────────────────
@@ -127,23 +149,28 @@ class AppRouter {
           ),
           GoRoute(
             path: '/home',
-            builder: (context, state) => const HomeDashboardScreen(),
+            pageBuilder: (context, state) =>
+                fadeSlidePage(keyName: state.uri.toString(), child: const HomeDashboardScreen()),
           ),
           GoRoute(
             path: '/map',
-            builder: (context, state) => const FishingMapScreen(),
+            pageBuilder: (context, state) =>
+                fadeSlidePage(keyName: state.uri.toString(), child: const FishingMapScreen()),
           ),
           GoRoute(
             path: '/trip-planner',
-            builder: (context, state) => const SmartTripWizardScreen(),
+            pageBuilder: (context, state) =>
+                fadeSlidePage(keyName: state.uri.toString(), child: const SmartTripWizardScreen()),
           ),
           GoRoute(
             path: '/catch',
-            builder: (context, state) => const CatchHistoryScreen(),
+            pageBuilder: (context, state) =>
+                fadeSlidePage(keyName: state.uri.toString(), child: const CatchHistoryScreen()),
           ),
           GoRoute(
             path: '/profile',
-            builder: (context, state) => const ProfileScreen(),
+            pageBuilder: (context, state) =>
+                fadeSlidePage(keyName: state.uri.toString(), child: const ProfileScreen()),
           ),
         ],
       ),

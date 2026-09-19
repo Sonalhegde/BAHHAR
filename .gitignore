@@ -50,6 +50,10 @@ app.*.map.json
 **/ios/**/DerivedData/
 
 # Firebase / Secrets placeholders
+.env
+.env.*
+!.env.example
+backend/.env
 **/google-services.json
 **/GoogleService-Info.plist
 firebase_options.dart
