@@ -19,6 +19,10 @@ migrate_working_dir/
 # Visual Studio Code related
 .vscode/
 
+# Vercel CLI deploy scratch (temp scripts/logs) — never commit
+.vercel-tmp/
+.vercel/
+
 # Flutter / Dart / Pub related
 **/doc/api/
 .dart_tool/
