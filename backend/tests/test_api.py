@@ -44,7 +44,7 @@ def test_geofence_daymaniyat_protected():
 # Marine / tide proxy endpoints — all upstream calls are monkeypatched so the
 # suite stays offline-safe (CI has no network credentials).
 # ---------------------------------------------------------------------------
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, UTC, timedelta, date
 
 import main
 
@@ -112,7 +112,7 @@ def test_marine_conditions_proxy_offline(monkeypatch):
     data = res.json()
     assert data["wave_height_m"] == 1.2
     assert data["sea_temperature_c"] == 27.8
-    assert data["wind_speed_kts"] == 28  # 14.4 km/h * 1.943844
+    assert data["wind_speed_kts"] == 8  # 14.4 km/h = 7.8 kt (Open-Meteo's wind unit is km/h)
     assert data["tide_state"] == "Unavailable"
     assert data["cached"] is False
 
@@ -247,7 +247,7 @@ def test_marine_conditions_carry_wave_direction_current_and_band(monkeypatch):
     assert data["current_speed_kts"] == 0.6
     assert data["current_sets_to"] == "S"            # sets toward the south
     assert data["sea_state"]["band"] == "moderate"
-    assert data["sea_state"]["drivers"] == ["wave_height_m", "wind_speed_kts"]
+    assert data["sea_state"]["drivers"] == ["wave_height_m"]
     assert data["day_rating"]["ocean_band"] == "moderate"
     assert "next_high_tide" not in data              # no tide station: field absent, not guessed
 
@@ -255,6 +255,7 @@ def test_marine_conditions_carry_wave_direction_current_and_band(monkeypatch):
 def test_weather_endpoint_serves_the_documented_mock_shape(monkeypatch):
     main._CACHE.clear()
     monkeypatch.setattr(main, "ACCUWEATHER_API_KEY", "")
+    _offline_open_meteo(monkeypatch)
     res = client.get("/api/v1/weather", params={"lat": 23.61, "lon": 58.54, "region": "Muscat"})
     assert res.status_code == 200
     data = res.json()
@@ -267,8 +268,258 @@ def test_weather_endpoint_serves_the_documented_mock_shape(monkeypatch):
                   "wind_kmh", "wind_dir", "rain_probability_pct", "uv_index", "visibility_km"):
         assert field in current, field
     assert len(data["hourly"]) >= 6 and len(data["daily"]) == 5
-    assert "AccuWeather is not connected" in data["note"]
+    assert "No weather provider is reachable" in data["note"]
 
     res2 = client.get("/api/v1/weather", params={"lat": 23.61, "lon": 58.54})
     assert res2.json()["cached"] is True
+
+
+# ---------------------------------------------------------------------------
+# Keyless Open-Meteo weather fallback - the provider that answers when no
+# ACCUWEATHER_API_KEY is set, so the app shows live readings instead of the
+# sample shape. Upstream is monkeypatched; the suite never touches the network.
+# ---------------------------------------------------------------------------
+
+FAKE_OM_FORECAST = {
+    "current": {
+        "time": "2026-04-18T09:00",
+        "temperature_2m": 31.4,
+        "apparent_temperature": 35.1,
+        "relative_humidity_2m": 62,
+        "weather_code": 2,
+        "wind_speed_10m": 14.0,
+        "wind_direction_10m": 45.0,
+        "precipitation_probability": 5,
+        "uv_index": 8.2,
+        "visibility": 24000.0,
+    },
+    "hourly": {
+        # A full day from midnight, so slicing to the current hour is observable.
+        "time": [f"2026-04-18T{h:02d}:00" for h in range(24)],
+        "temperature_2m": [28.0 + h * 0.1 for h in range(24)],
+        "weather_code": [0] * 24,
+        "precipitation_probability": [h for h in range(24)],
+    },
+    "daily": {
+        "time": [f"2026-04-{17 + d:02d}" for d in range(5)],
+        "weather_code": [0, 1, 2, 3, 45],
+        "temperature_2m_max": [33.0, 33.5, 32.0, 31.0, 32.5],
+        "temperature_2m_min": [26.0, 26.5, 25.5, 25.0, 26.0],
+    },
+}
+
+
+def _offline_open_meteo(monkeypatch):
+    """Make the keyless provider unreachable, so the mock branch is testable offline."""
+    async def boom(client, lat, lon):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(main, "_fetch_open_meteo_forecast", boom)
+
+
+def _fake_open_meteo(monkeypatch, raw=FAKE_OM_FORECAST):
+    async def fake(client, lat, lon):
+        return raw
+
+    monkeypatch.setattr(main, "_fetch_open_meteo_forecast", fake)
+
+
+def test_wmo_phrase_translates_codes_without_inventing_conditions():
+    assert main._wmo_phrase(2) == "Partly cloudy"
+    assert main._wmo_phrase(95) == "Thunderstorm"
+    assert main._wmo_phrase(None) == "Mixed"      # no reading, no claim
+    assert main._wmo_phrase(9999) == "Mixed"      # code outside the table
+
+
+def test_open_meteo_mapper_matches_the_weather_contract():
+    mapped = main._map_open_meteo_weather(FAKE_OM_FORECAST)
+    cur = mapped["current"]
+    assert cur["temp_c"] == 31.4 and cur["feels_like_c"] == 35.1
+    assert cur["condition"] == "Partly cloudy"    # code 2, not the number 2
+    assert cur["wind_dir"] == "NE"                # 45 degrees, the bearing wind comes FROM
+    assert cur["visibility_km"] == 24.0           # metres in the API, km in the contract
+    assert cur["uv_index"] == 8.2
+    assert mapped["hourly"][0]["time"] == "09:00"  # the strip starts now, not at midnight
+    assert len(mapped["hourly"]) == 8
+    assert mapped["daily"][4]["condition"] == "Fog"
+    assert mapped["alerts"] == []                 # Open-Meteo has no alert feed for Oman
+
+
+def test_open_meteo_mapper_leaves_a_missing_bearing_null():
+    raw = {"current": {k: v for k, v in FAKE_OM_FORECAST["current"].items()
+                       if k != "wind_direction_10m"}}
+    assert main._map_open_meteo_weather(raw)["current"]["wind_dir"] is None
+
+
+def test_weather_endpoint_prefers_live_open_meteo_over_the_mock(monkeypatch):
+    main._CACHE.clear()
+    monkeypatch.setattr(main, "ACCUWEATHER_API_KEY", "")
+    _fake_open_meteo(monkeypatch)
+    res = client.get("/api/v1/weather", params={"lat": 23.61, "lon": 58.54})
+    data = res.json()
+    assert data["source"] == "open-meteo"
+    assert data["attribution"] == main.OPEN_METEO_ATTRIBUTION
+    assert data["current"]["temp_c"] == 31.4
+    assert data["alerts"] == []
+    # The absent alert feed is disclosed rather than rendered as an all-clear.
+    assert "alert banner cannot light up" in data["note"]
+
+
+def test_weather_endpoint_degrades_past_a_spent_accuweather_budget(monkeypatch):
+    """The daily call ceiling belongs to AccuWeather, not to the page: once it is spent the
+    endpoint must fall back to the keyless provider instead of answering 5xx."""
+    main._CACHE.clear()
+    monkeypatch.setattr(main, "ACCUWEATHER_API_KEY", "test-key")
+    monkeypatch.setattr(main, "ACCUWEATHER_DAILY_CALL_BUDGET", 1)
+    monkeypatch.setitem(main._ACCUWEATHER_CALLS, date.today().isoformat(), 99)
+    _fake_open_meteo(monkeypatch)
+    res = client.get("/api/v1/weather", params={"lat": 23.61, "lon": 58.54})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["source"] == "open-meteo"
+    assert "budget is spent" in data["note"]
+
+
+# ---------------------------------------------------------------------------
+# Trip optimisation, and the wind-unit bug it exposed in the marine proxy.
+# ---------------------------------------------------------------------------
+
+def _patch_water(monkeypatch, wind_kmh=9.0, wave_m=0.6):
+    """Calm water by default, so a test that says nothing about weather is not silently
+    being scored on a storm."""
+    main._CACHE.clear()
+    weather = {"current": {**FAKE_WEATHER["current"], "wind_speed_10m": wind_kmh}}
+    marine = {"hourly": {**FAKE_MARINE["hourly"], "wave_height": [wave_m]}}
+    monkeypatch.setattr(main, "_fetch_open_meteo_weather", _fake_fetcher(weather))
+    monkeypatch.setattr(main, "_fetch_open_meteo_marine", _fake_fetcher(marine))
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "")
+
+
+def test_marine_wind_is_converted_from_kilometres_per_hour(monkeypatch):
+    """Open-Meteo sends km/h. The m/s factor this line used to carry turned a 20 km/h breeze
+    into 38.9 kt and banded it "high risk" - a warning that sends fishermen home for nothing."""
+    _patch_water(monkeypatch, wind_kmh=20.0, wave_m=0.5)
+    data = client.get("/api/v1/marine/conditions",
+                      params={"lat": 23.61, "lon": 58.54}).json()
+    assert data["wind_speed_kts"] == 11.0        # 20 km/h = 10.8 kt, not 38.9
+    assert data["sea_state"]["band"] == "good"   # the old factor banded this "high_risk"
+
+
+def _spot(spot_id, lat, lon, prob, species, depth=30):
+    return {"id": spot_id, "name": spot_id.title(), "latitude": lat, "longitude": lon,
+            "probability": prob, "target_species": species, "depth_meters": depth}
+
+
+TRIP_BODY = {
+    "target_species": "Kingfish",
+    "departure_lat": 23.6143,
+    "departure_lon": 58.5453,
+    "max_radius_nmi": 15,
+    "max_budget_omr": 35,
+    "cruising_speed_kts": 20,
+    "liters_per_nmi": 0.85,
+}
+
+
+def test_trip_optimize_prefers_the_species_match_over_the_closer_spot(monkeypatch):
+    _patch_water(monkeypatch)
+    body = {**TRIP_BODY, "candidates": [
+        _spot("near", 23.63, 58.56, 70, ["Grouper"]),
+        _spot("far", 23.70, 58.62, 65, ["Kingfish"], depth=45),
+    ]}
+    data = client.post("/api/v1/trip/optimize", json=body).json()
+    assert data["recommended"]["id"] == "far"
+    assert "species_match" in data["recommended"]["reasons"]
+    assert data["alternatives"][0]["id"] == "near"
+
+
+def test_trip_optimize_reports_what_the_boat_cannot_do(monkeypatch):
+    _patch_water(monkeypatch)
+    body = {**TRIP_BODY, "max_budget_omr": 0.15, "candidates": [
+        _spot("too-far", 24.30, 58.90, 90, ["Kingfish"]),
+        _spot("affordable", 23.62, 58.55, 50, ["Kingfish"]),
+    ]}
+    data = client.post("/api/v1/trip/optimize", json=body).json()
+    blockers = {r["id"]: r["blockers"] for r in data["rejected"]}
+    assert "outside_radius" in blockers["too-far"]
+    assert "over_budget" in blockers["affordable"]
+    assert data["viable_options"] == 0
+    # Nothing fits, so the shortest crossing is offered - and labelled as not a real plan.
+    assert data["recommended"]["id"] == "affordable"
+    assert data["recommended"]["fallback"] is True
+    assert "no_viable_option" in data["recommended"]["reasons"]
+
+
+def test_trip_optimize_sea_state_and_boat_size_change_the_score(monkeypatch):
+    candidates = [_spot("a", 23.70, 58.62, 65, ["Kingfish"])]
+
+    _patch_water(monkeypatch, wind_kmh=9.0, wave_m=0.6)
+    calm = client.post("/api/v1/trip/optimize",
+                       json={**TRIP_BODY, "candidates": candidates}).json()
+
+    _patch_water(monkeypatch, wind_kmh=40.0, wave_m=2.2)
+    big = client.post("/api/v1/trip/optimize",
+                      json={**TRIP_BODY, "boat_length_m": 12.0,
+                            "candidates": candidates}).json()
+    small = client.post("/api/v1/trip/optimize",
+                        json={**TRIP_BODY, "boat_length_m": 5.0,
+                              "candidates": candidates}).json()
+
+    assert calm["conditions"]["sea_state_band"] == "good"
+    assert big["conditions"]["sea_state_band"] == "rough_sea"
+    assert big["recommended"]["score"] < calm["recommended"]["score"]
+    # The same water is a different proposition in a 5 m open boat than in a 12 m one.
+    assert small["recommended"]["score"] < big["recommended"]["score"]
+    assert "small_boat_in_this_sea" in small["recommended"]["reasons"]
+
+
+def test_trip_optimize_says_so_when_it_cannot_see_the_water(monkeypatch):
+    main._CACHE.clear()
+
+    async def fail(client, lat, lon):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(main, "_fetch_open_meteo_weather", fail)
+    monkeypatch.setattr(main, "_fetch_open_meteo_marine", fail)
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "")
+    body = {**TRIP_BODY, "candidates": [
+        _spot("dull", 23.62, 58.55, 50, ["Kingfish"]),
+        _spot("likely", 23.70, 58.62, 80, ["Kingfish"]),
+    ]}
+    res = client.post("/api/v1/trip/optimize", json=body)
+    assert res.status_code == 200            # blind, not broken
+    data = res.json()
+    assert data["conditions"] is None
+    assert "No sea-state penalty applied" in data["conditions_note"]
+    assert data["recommended"]["id"] == "likely"
+
+
+def test_trip_optimize_fuel_arithmetic_matches_the_apps_calculator(monkeypatch):
+    """The client owns the boat table and sends it; this checks the server used it the same
+    way FuelCalculatorService.calculateTrip does: round trip, 25 % reserve, Omani pump price."""
+    _patch_water(monkeypatch)
+    body = {**TRIP_BODY, "candidates": [_spot("a", 23.70, 58.62, 65, ["Kingfish"])]}
+    plan = client.post("/api/v1/trip/optimize", json=body).json()["recommended"]
+    expected_fuel = round(plan["round_trip_nm"] * 0.85 * 1.25, 1)
+    assert plan["fuel_liters"] == expected_fuel
+    # Every figure is priced off the printed one above it, so the arithmetic is checkable.
+    assert plan["cost_omr"] == round(plan["fuel_liters"] * 0.239, 2)
+    assert plan["round_trip_nm"] == round(plan["distance_nm"] * 2, 1)
+    assert plan["travel_minutes"] == round(plan["distance_nm"] / 20 * 60)
+
+
+def test_trip_optimize_refuses_an_empty_catalogue():
+    res = client.post("/api/v1/trip/optimize", json={**TRIP_BODY, "candidates": []})
+    assert res.status_code == 400
+
+
+def test_trip_optimize_declares_itself_a_rule_not_a_model(monkeypatch):
+    """The endpoint is called ML in the roadmap; until a model exists the response must not
+    let a caller believe one does."""
+    _patch_water(monkeypatch)
+    data = client.post("/api/v1/trip/optimize",
+                       json={**TRIP_BODY, "candidates": [_spot("a", 23.62, 58.55, 50, [])]}).json()
+    assert "not a trained model" in data["strategy"]
+    assert "score =" in data["rule"]
+    assert data["weights"]["species_match"] == 18.0
 

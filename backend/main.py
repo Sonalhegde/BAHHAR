@@ -60,6 +60,15 @@ ACCUWEATHER_LOCKEY_TTL_SECONDS = 86400   # 24 h — a location key does not chan
 # Their terms make attribution a condition of use; keep the wording next to the data so a
 # client cannot render the payload without it.
 ACCUWEATHER_ATTRIBUTION = "Weather data provided by AccuWeather."
+# Open-Meteo is keyless and its data is CC-BY 4.0, so the attribution travels in the payload
+# the same way AccuWeather's does - whichever provider actually answered.
+OPEN_METEO_ATTRIBUTION = "Weather data from Open-Meteo.com (CC-BY 4.0)."
+
+# Unit conversions, named because mixing them up was the bug the marine endpoint carried:
+# Open-Meteo reports wind in km/h but its marine current components in m/s, and the two
+# factors differ by 3.6x. Both appear here, so neither can be reached for blindly.
+KM_PER_HOUR_TO_KNOTS = 0.539957
+METERS_PER_SECOND_TO_KNOTS = 1.943844
 
 
 def _cache_get(key: str) -> Optional[Any]:
@@ -575,14 +584,19 @@ async def marine_conditions(
         return _as_float(values[idx], default) if idx < len(values) else default
 
     current_weather = weather.get("current") or {}
-    wind_kts = _as_float(current_weather.get("wind_speed_10m"), 0.0) * 1.943844  # km/h -> knots
+    # Open-Meteo's default wind unit is km/h (its `wind_speed_unit` parameter), so km/h -> kt
+    # is 0.539957. The factor this line used to carry, 1.943844, converts m/s -> kt, which
+    # overstated every wind reading 3.6x: a 20 km/h breeze (10.8 kt) arrived as 38.9 kt and
+    # banded "high risk", warning fishermen off benign water. Currents below genuinely do
+    # arrive in m/s, so their 1.943844 is correct and stays.
+    wind_kts = _as_float(current_weather.get("wind_speed_10m"), 0.0) * KM_PER_HOUR_TO_KNOTS
 
     # Surface current arrives as eastward/northward components in m/s. Recombine them into
     # speed + the bearing it SETS TOWARD (the convention the Ocean readout prints; waves and
     # wind are reported the other way round, as the bearing they come FROM).
     cur_east = _hourly("surface_current_eastward", 0.0)
     cur_north = _hourly("surface_current_northward", 0.0)
-    current_kts = round(math.hypot(cur_east, cur_north) * 1.943844, 1)
+    current_kts = round(math.hypot(cur_east, cur_north) * METERS_PER_SECOND_TO_KNOTS, 1)
     current_deg = round((math.degrees(math.atan2(cur_east, cur_north)) + 360) % 360, 0)
     # Open-Meteo reports visibility in metres; the readout prints kilometres.
     visibility_m = _as_float(current_weather.get("visibility"), -1.0)
@@ -602,7 +616,7 @@ async def marine_conditions(
         "current_direction_deg": current_deg,
         "current_sets_to": _compass_deg(current_deg),
         "visibility_km": round(visibility_m / 1000, 1) if visibility_m >= 0 else None,
-        "wind_gust_kts": round(_as_float(current_weather.get("wind_gusts_10m"), 0.0) * 1.943844, 0),
+        "wind_gust_kts": round(_as_float(current_weather.get("wind_gusts_10m"), 0.0) * KM_PER_HOUR_TO_KNOTS, 0),
         "air_temperature_c": _as_float(current_weather.get("temperature_2m"), 0.0),
         "apparent_temperature_c": _as_float(current_weather.get("apparent_temperature"), 0.0),
         "cloud_cover_pct": _as_float(current_weather.get("cloud_cover"), 0.0),
@@ -709,11 +723,11 @@ async def tides(
 # mock) when the day's calls are spent — never a 5xx in front of a fisherman.
 # ---------------------------------------------------------------------------
 ACCUWEATHER_DAILY_CALL_BUDGET = int(os.environ.get("ACCUWEATHER_DAILY_CALL_BUDGET", "0") or 0)
-_ACCUEWEATHER_CALLS: Dict[str, int] = {}
+_ACCUWEATHER_CALLS: Dict[str, int] = {}
 
 
 def _accuweather_calls_today() -> int:
-    return _ACCUEWEATHER_CALLS.get(date.today().isoformat(), 0)
+    return _ACCUWEATHER_CALLS.get(date.today().isoformat(), 0)
 
 
 def _accuweather_budget_available(spend: int = 1) -> bool:
@@ -733,7 +747,7 @@ def _cache_get_stale(key: str) -> Optional[Any]:
 async def _accuweather_get(client: httpx.AsyncClient, path: str, params: Dict[str, Any]) -> Any:
     """Single door to the provider: attaches the server-side key and counts the call."""
     day = date.today().isoformat()
-    _ACCUEWEATHER_CALLS[day] = _ACCUEWEATHER_CALLS.get(day, 0) + 1
+    _ACCUWEATHER_CALLS[day] = _ACCUWEATHER_CALLS.get(day, 0) + 1
     res = await client.get(
         f"{ACCUWEATHER_BASE}{path}",
         params={"apikey": ACCUWEATHER_API_KEY, "language": "en-us", **params},
@@ -874,6 +888,138 @@ def _accuweather_mock(lat: float, lon: float) -> Dict[str, Any]:
     return {"current": dict(_MOCK_CURRENT), "hourly": hourly, "daily": daily, "alerts": []}
 
 
+# WMO 4680 interpretation codes. Open-Meteo returns a number where AccuWeather returns a phrase,
+# and the client contract promises a phrase, so the translation lives here rather than being
+# re-implemented by every consumer of /api/v1/weather.
+_WMO_PHRASES = {
+    0: "Clear", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+    45: "Fog", 48: "Rime fog",
+    51: "Light drizzle", 53: "Drizzle", 55: "Heavy drizzle",
+    56: "Freezing drizzle", 57: "Freezing drizzle",
+    61: "Light rain", 63: "Rain", 65: "Heavy rain",
+    66: "Freezing rain", 67: "Freezing rain",
+    71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+    80: "Light showers", 81: "Showers", 82: "Heavy showers",
+    85: "Snow showers", 86: "Snow showers",
+    95: "Thunderstorm", 96: "Thunderstorm, hail", 99: "Thunderstorm, hail",
+}
+
+
+def _wmo_phrase(code: Any) -> str:
+    """Plain-English sky phrase for a WMO code. An unknown code says "Mixed" rather than
+    inventing a condition nobody reported - the tile must not outstate the data."""
+    try:
+        return _WMO_PHRASES.get(int(_as_float(code, -1)), "Mixed")
+    except (TypeError, ValueError):
+        return "Mixed"
+
+
+async def _fetch_open_meteo_forecast(
+    client: httpx.AsyncClient, lat: float, lon: float
+) -> Dict[str, Any]:
+    """One request carrying current + hourly + daily, so the keyless fallback costs the
+    upstream a single call instead of the three the AccuWeather path needs."""
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "current": ",".join([
+            "temperature_2m", "apparent_temperature", "relative_humidity_2m",
+            "weather_code", "wind_speed_10m", "wind_direction_10m",
+            "precipitation_probability", "uv_index", "visibility",
+        ]),
+        "hourly": "temperature_2m,weather_code,precipitation_probability",
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min",
+        "forecast_days": 5,
+        "timezone": "Asia/Muscat",
+    }
+    res = await client.get(OPEN_METEO_BASE, params=params)
+    res.raise_for_status()
+    return res.json()
+
+
+def _map_open_meteo_weather(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Project an Open-Meteo forecast response onto the weather contract.
+
+    Same keys as the AccuWeather branch, including `wind_dir` as compass text and
+    `visibility_km` (Open-Meteo reports visibility in metres). Open-Meteo publishes no
+    severe-weather alerts for Oman, so `alerts` is an empty list and the note says so -
+    an absent feed is disclosed, not silently rendered as an all-clear."""
+    cur = raw.get("current") or {}
+    hourly = raw.get("hourly") or {}
+    daily = raw.get("daily") or {}
+
+    times = hourly.get("time") or []
+    temps = hourly.get("temperature_2m") or []
+    codes = hourly.get("weather_code") or []
+    probs = hourly.get("precipitation_probability") or []
+
+    # Open-Meteo's hourly array starts at midnight; the strip should start at the current
+    # hour, which is what `current.time` is stamped with ("2026-09-20T09:00").
+    stamp = str(cur.get("time") or "")[:13]
+    try:
+        start = next(i for i, t in enumerate(times) if str(t)[:13] >= stamp)
+    except StopIteration:
+        start = 0
+
+    hours: List[Dict[str, Any]] = []
+    for i in range(start, min(start + 8, len(times))):
+        hours.append({
+            "time": str(times[i])[11:16],
+            "temp_c": _as_float(temps[i] if i < len(temps) else None),
+            "condition": _wmo_phrase(codes[i] if i < len(codes) else None),
+            "rain_probability_pct": _as_float(probs[i] if i < len(probs) else None),
+        })
+
+    d_times = daily.get("time") or []
+    d_codes = daily.get("weather_code") or []
+    d_max = daily.get("temperature_2m_max") or []
+    d_min = daily.get("temperature_2m_min") or []
+    days: List[Dict[str, Any]] = []
+    for i in range(min(5, len(d_times))):
+        days.append({
+            "date": str(d_times[i])[:10],
+            "high_c": _as_float(d_max[i] if i < len(d_max) else None),
+            "low_c": _as_float(d_min[i] if i < len(d_min) else None),
+            "condition": _wmo_phrase(d_codes[i] if i < len(d_codes) else None),
+        })
+
+    return {
+        "current": {
+            "temp_c": _as_float(cur.get("temperature_2m")),
+            "feels_like_c": _as_float(cur.get("apparent_temperature")),
+            "condition": _wmo_phrase(cur.get("weather_code")),
+            "humidity_pct": _as_float(cur.get("relative_humidity_2m")),
+            "wind_kmh": _as_float(cur.get("wind_speed_10m")),
+            # None, not 0, when the field is missing: a calm-looking "N" that nobody
+            # measured is worse than a blank reading.
+            "wind_dir": _compass_deg(None if cur.get("wind_direction_10m") is None
+                                     else _as_float(cur.get("wind_direction_10m"))),
+            "rain_probability_pct": _as_float(cur.get("precipitation_probability")),
+            "uv_index": _as_float(cur.get("uv_index")),
+            "visibility_km": round(_as_float(cur.get("visibility")) / 1000, 1),
+        },
+        "hourly": hours,
+        "daily": days,
+        "alerts": [],
+    }
+
+
+async def _open_meteo_weather(lat: float, lon: float) -> Optional[Dict[str, Any]]:
+    """Live atmospheric data with no key required, or None if upstream is unusable.
+
+    Returns None rather than raising so the caller can degrade to the documented mock:
+    a visitor should see the sample reading, not a 502, when a free API hiccups."""
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT, follow_redirects=True) as client:
+            raw = await _fetch_open_meteo_forecast(client, lat, lon)
+    except httpx.HTTPError:
+        return None
+    except (RuntimeError, ValueError):
+        return None
+    mapped = _map_open_meteo_weather(raw)
+    return mapped if mapped["current"]["temp_c"] or mapped["hourly"] else None
+
+
 @app.get("/api/v1/weather")
 async def weather(
     lat: float = Query(..., ge=-90, le=90),
@@ -898,26 +1044,46 @@ async def weather(
     }
 
     if not ACCUWEATHER_API_KEY:
+        # No key is not a reason to show a visitor invented numbers: Open-Meteo is keyless
+        # and already used for the marine data, so the default path is live.
+        live = await _open_meteo_weather(lat, lon)
         payload = {
             **envelope,
-            "source": "mock",
-            "note": "AccuWeather is not connected yet: this is the response shape the app is "
-                    "built against, so going live changes the data source, not the client.",
-            **_accuweather_mock(lat, lon),
+            "source": "open-meteo" if live else "mock",
+            "attribution": OPEN_METEO_ATTRIBUTION if live else ACCUWEATHER_ATTRIBUTION,
+            "note": (
+                "AccuWeather is not connected, so this is live Open-Meteo mapped onto the same "
+                "contract. Open-Meteo carries no severe-weather alert feed for Omani waters, so "
+                "the alert banner cannot light up until an AccuWeather key is set."
+                if live else
+                "No weather provider is reachable: this is the response shape the app is built "
+                "against, so going live changes the data source, not the client."
+            ),
+            **(live or _accuweather_mock(lat, lon)),
             "fetched_at": datetime.now(UTC).isoformat(),
         }
-        _cache_set(cache_key, payload, ACCUWEATHER_TTL_SECONDS)
+        _cache_set(cache_key, payload, WEATHER_TTL_SECONDS if live else ACCUWEATHER_TTL_SECONDS)
         return {**payload, "cached": False}
 
     if not _accuweather_budget_available(3):
+        # Last good AccuWeather answer first, then the keyless provider, then the sample.
+        # The ceiling is AccuWeather's, not the page's, so a spent budget must not blank
+        # the panel.
         stale = _cache_get_stale(cache_key)
+        live = None if stale else await _open_meteo_weather(lat, lon)
         payload = {
             **envelope,
-            "source": "accuweather" if stale else "mock",
+            "source": "accuweather" if stale else ("open-meteo" if live else "mock"),
+            "attribution": OPEN_METEO_ATTRIBUTION if live else ACCUWEATHER_ATTRIBUTION,
             "stale": stale is not None,
-            "note": "Today's AccuWeather call budget is spent; this is the last response the "
-                    "backend fetched, served until the budget resets.",
-            **(stale or _accuweather_mock(lat, lon)),
+            "note": "Today's AccuWeather call budget is spent; this is " + (
+                "the last response the backend fetched, served until the budget resets."
+                if stale else
+                "live Open-Meteo until the budget resets."
+                if live else
+                "the documented sample shape until the budget resets."
+            ),
+            **(stale or live or _accuweather_mock(lat, lon)),
             "fetched_at": datetime.now(UTC).isoformat(),
         }
         payload.pop("cached", None)
@@ -950,3 +1116,231 @@ async def weather(
     }
     _cache_set(cache_key, payload, ACCUWEATHER_TTL_SECONDS)
     return {**payload, "cached": False}
+
+
+# ---------------------------------------------------------------------------
+# Trip optimisation
+#
+# This replaces the heuristic that lived in trip_service.dart, and it does so for one
+# specific reason: the client heuristic had no water in it. It ranked spots on the static
+# hotspot catalogue, so it could recommend a 12-nmi run into a rough sea for a 5 m skiff.
+# The server has the cached marine sample, so the same ranking now accounts for the actual
+# conditions.
+#
+# It is a rule-based optimiser, not a trained model, and says so in `strategy`. Calling it
+# ML would be a claim about a neural network that does not exist here; the weights below are
+# printed in the response so a fisherman can argue with them.
+#
+# The response is data, not copy. Waypoint wording, tackle labels and reason sentences stay
+# in the client, because this app is bilingual and server-rendered English prose cannot be
+# translated by the Arabic toggle.
+# ---------------------------------------------------------------------------
+
+KM_TO_NMI = 0.539957
+# Mirrors FuelCalculatorService.omanFuelPricePerLiterOmr and its 25 % reserve for currents,
+# trolling and harbour manoeuvring. If the app's numbers move, these must move with them - the
+# two disagreeing is how a fisherman runs out of fuel.
+OMAN_FUEL_PRICE_OMR_PER_L = 0.239
+FUEL_RESERVE_FACTOR = 1.25
+
+TRIP_WEIGHTS = {
+    "species_match": 18.0,
+    "depth_affinity": 10.0,
+    "distance_penalty_per_radius": 12.0,
+    "band_penalty": {
+        "good": 0.0,
+        "moderate": 8.0,
+        "rough_sea": 25.0,
+        "strong_current": 15.0,
+        "high_risk": 60.0,
+    },
+    "small_boat_extra_penalty": 20.0,
+}
+
+
+class TripCandidate(BaseModel):
+    """One spot from the caller's catalogue. Sent by the client rather than read from a
+    database because the backend holds no hotspot store; it is the ocean above the water
+    that this endpoint adds, not a copy of the spots."""
+
+    id: str
+    name: str = ""
+    latitude: float
+    longitude: float
+    depth_meters: float = 0.0
+    probability: float = 0.0
+    target_species: List[str] = []
+
+
+class TripOptimizeRequest(BaseModel):
+    target_species: str = "Kingfish"
+    departure_lat: float = Field(..., ge=-90, le=90)
+    departure_lon: float = Field(..., ge=-180, le=180)
+    max_radius_nmi: float = Field(15.0, gt=0, le=200)
+    max_budget_omr: float = Field(35.0, gt=0, le=1000)
+    duration_hours: float = Field(6.0, gt=0, le=48)
+    boat_length_m: Optional[float] = Field(None, ge=1.0, le=30.0)
+    # Boat economics come from the caller's own BoatProfile so the app's table stays the
+    # single source of truth for what a skiff burns.
+    cruising_speed_kts: float = Field(20.0, gt=0, le=60)
+    liters_per_nmi: float = Field(0.85, gt=0, le=20)
+    candidates: List[TripCandidate] = []
+
+
+def _species_matches(candidate: TripCandidate, target: str) -> bool:
+    def norm(s: str) -> str:
+        return s.lower().split("(")[0].strip()
+
+    t = norm(target)
+    return any(norm(c) == t or t in norm(c) or norm(c) in t for c in candidate.target_species)
+
+
+def _depth_affinity(target: str, depth_m: float) -> bool:
+    s = target.lower()
+    if ("tuna" in s or "sailfish" in s) and depth_m > 40:
+        return True
+    if ("grouper" in s or "hammour" in s or "hamoor" in s) and 20 <= depth_m <= 60:
+        return True
+    return False
+
+
+def _score_candidate(
+    cand: TripCandidate,
+    req: TripOptimizeRequest,
+    band: Optional[str],
+) -> Dict[str, Any]:
+    """One candidate, one score, and the codes that explain the score.
+
+    Every figure is derived from the one above it after rounding, so a fisherman checking
+    litres x pump price against the printed cost gets the printed cost back."""
+    one_way_nm = round(haversine_km(req.departure_lat, req.departure_lon,
+                                    cand.latitude, cand.longitude) * KM_TO_NMI, 1)
+    round_nm = round(one_way_nm * 2.0, 1)
+    fuel_l = round(round_nm * req.liters_per_nmi * FUEL_RESERVE_FACTOR, 1)
+    cost = round(fuel_l * OMAN_FUEL_PRICE_OMR_PER_L, 2)
+    minutes = round(one_way_nm / max(req.cruising_speed_kts, 0.1) * 60)
+
+    reasons: List[str] = []
+    blockers: List[str] = []
+    if one_way_nm > req.max_radius_nmi:
+        blockers.append("outside_radius")
+    if cost > req.max_budget_omr:
+        blockers.append("over_budget")
+
+    score = max(0.0, min(100.0, cand.probability))
+    reasons.append("bite_probability")
+
+    if _species_matches(cand, req.target_species):
+        score += TRIP_WEIGHTS["species_match"]
+        reasons.append("species_match")
+    if _depth_affinity(req.target_species, cand.depth_meters):
+        score += TRIP_WEIGHTS["depth_affinity"]
+        reasons.append("depth_affinity")
+
+    # Closer costs less and leaves more of the trip window for fishing.
+    travel_penalty = (one_way_nm / req.max_radius_nmi) * TRIP_WEIGHTS["distance_penalty_per_radius"]
+    score -= travel_penalty
+    if travel_penalty >= 6.0:
+        reasons.append("long_crossing")
+
+    if band:
+        penalty = TRIP_WEIGHTS["band_penalty"].get(band, 0.0)
+        # A short open boat in the same water as a 12 m cabin cruiser is a different risk.
+        if band not in ("good",) and (req.boat_length_m or 12.0) < 7.0:
+            penalty += TRIP_WEIGHTS["small_boat_extra_penalty"]
+            reasons.append("small_boat_in_this_sea")
+        if penalty:
+            score -= penalty
+            reasons.append(f"sea_state_{band}")
+
+    return {
+        "id": cand.id,
+        "name": cand.name,
+        "latitude": cand.latitude,
+        "longitude": cand.longitude,
+        "depth_meters": cand.depth_meters,
+        "probability": cand.probability,
+        "score": round(max(0.0, min(100.0, score)), 1),
+        "distance_nm": one_way_nm,
+        "round_trip_nm": round_nm,
+        "fuel_liters": fuel_l,
+        "cost_omr": cost,
+        "travel_minutes": minutes,
+        "reasons": reasons,
+        "blockers": blockers,
+    }
+
+
+@app.post("/api/v1/trip/optimize")
+async def trip_optimize(req: TripOptimizeRequest):
+    """Rank the caller's candidate spots against the live water.
+
+    Rule-based, not learned: `strategy` and `weights` are in the response so the ranking can
+    be argued with. Spots are within the cruising radius of each other, so one cached marine
+    sample covers the area - fetching per spot would multiply upstream calls for no change in
+    the answer."""
+    if not req.candidates:
+        raise HTTPException(status_code=400, detail="No candidate spots to optimise.")
+
+    band: Optional[str] = None
+    conditions: Optional[Dict[str, Any]] = None
+    conditions_note: Optional[str] = None
+    try:
+        sample = await marine_conditions(
+            req.departure_lat, req.departure_lon, False, None, "open", None
+        )
+        sea = sample.get("sea_state") or {}
+        band = sea.get("band")
+        conditions = {
+            key: sample.get(key)
+            for key in (
+                "sea_temperature_c", "wave_height_m", "wave_period_s", "wind_speed_kts",
+                "current_speed_kts", "visibility_km", "tide_state",
+            )
+        }
+        conditions["sea_state_band"] = band
+        conditions["drivers"] = sea.get("drivers", [])
+    except HTTPException:
+        # No water data is a reason to rank on the catalogue alone, not a reason to refuse
+        # the request - but the response must say the ranking flew blind.
+        conditions_note = (
+            "Live marine conditions were unavailable, so this ranking uses each spot's own "
+            "bite probability and the caller's constraints only. No sea-state penalty applied."
+        )
+
+    scored = sorted(
+        (_score_candidate(c, req, band) for c in req.candidates),
+        key=lambda plan: plan["score"],
+        reverse=True,
+    )
+    viable = [p for p in scored if not p["blockers"]]
+    rejected = [p for p in scored if p["blockers"]]
+    if viable:
+        winner = viable[0]
+    else:
+        # Nothing fits the boat's limits. Recommend the least-impossible option - fewest
+        # blockers, then shortest crossing, the way the client heuristic fell back to the
+        # nearest spot - and label it, because a plan the boat cannot actually sail is not
+        # a recommendation.
+        winner = sorted(scored, key=lambda p: (len(p["blockers"]), p["distance_nm"]))[0] if scored else None
+    if winner and winner["blockers"]:
+        winner = {**winner, "fallback": True, "reasons": winner["reasons"] + ["no_viable_option"]}
+
+    return {
+        "strategy": "rule-based ranking over live conditions - not a trained model",
+        "rule": (
+            "score = bite probability + species match + depth affinity, minus crossing "
+            "distance and a penalty for the worst live sea-state reading (plus an extra "
+            "penalty under 7 m); spots outside the radius or over budget are excluded."
+        ),
+        "weights": TRIP_WEIGHTS,
+        "conditions": conditions,
+        "conditions_note": conditions_note,
+        "candidates_evaluated": len(scored),
+        "viable_options": len(viable),
+        "recommended": winner,
+        "alternatives": (viable or scored)[1:4],
+        "rejected": [{"id": p["id"], "name": p["name"], "blockers": p["blockers"]}
+                     for p in rejected],
+        "fetched_at": datetime.now(UTC).isoformat(),
+    }
