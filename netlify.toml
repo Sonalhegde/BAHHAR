@@ -1,5 +1,6 @@
 [build]
-  publish = "."
+  # The whole marketing site lives in website/ (HTML + its own image assets)
+  publish = "website"
   command = "echo 'No build required'"
 
 [[redirects]]

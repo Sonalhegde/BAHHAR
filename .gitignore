@@ -77,3 +77,9 @@ ios/Runner/GeneratedPluginRegistrant.m
 
 # Unoptimised photo sources — the site ships the .webp renditions
 assets/images/fish-*.png
+assets/images/omani-boat.png
+assets/images/khore-dhawas.png
+assets/images/daymaniyat-aerial.png
+website/assets/images/*.png
+website/assets/images/*.jpg
+!website/assets/images/app_icon.jpg

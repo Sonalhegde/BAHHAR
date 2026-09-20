@@ -21,15 +21,16 @@ from the Musandam fjords to the Dhofar monsoon coast.
 
 ## 🌐 Live deployment
 
-**Status: pending host authorization — not yet publicly deployed.** The marketing site is
-`landing-page.html` (with `index.html` redirecting to it). No production URL is listed here until
+**Status: pending host authorization — not yet publicly deployed.** The marketing site lives in the
+[`website/`](website) folder (`landing-page.html`, with `index.html` redirecting to it, plus `privacy.html`
+and `terms.html`). No production URL is listed here until
 it has actually been verified live (see [SPECIFICATION.md §10](SPECIFICATION.md)).
 
 | Target | How to serve | State |
 | :-- | :-- | :-- |
-| Netlify | `netlify.toml` publishes `.`, SPA-redirects `/*` → `/landing-page.html` | Ready — needs account connect |
-| Vercel | `.vercelignore` scopes upload to web assets | Ready — needs `vercel login`/token |
-| GitHub Pages | `https://sonalhegde.github.io/BAHHAR/` | Ready — needs Pages enabled on `main` |
+| Netlify | Root `netlify.toml` publishes `website/`, SPA-redirects `/*` → `/landing-page.html` | Ready — needs account connect |
+| Vercel | Set Vercel root directory to `website/`; `.vercelignore` scopes upload to web assets | Ready — needs `vercel login`/token |
+| GitHub Pages | Set Pages source to `/website` → `https://sonalhegde.github.io/BAHHAR/` | Ready — needs Pages enabled on `main` |
 
 Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 
@@ -133,10 +134,10 @@ BAHHAR/
 │   ├── features/           # auth, home, map, hotspot, trip_planner, my_catch, profile, ...
 │   ├── l10n/               # EN/AR localisations
 │   └── shared/             # Reusable widgets
-├── assets/                 # images, icons, fonts, screenshots
+├── assets/                 # Flutter app images, icons, fonts
+├── website/                # Marketing site: landing-page.html, index.html, privacy.html, terms.html, assets/images
 ├── test/                   # Flutter tests
 ├── .github/workflows/      # backend_ci.yml, flutter_ci.yml
-├── landing-page.html       # Marketing site  ·  index.html → redirect
 ├── netlify.toml · .vercelignore · firestore.rules · storage.rules
 └── SPECIFICATION.md        # ← unified master specification
 ```
