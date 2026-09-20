@@ -103,6 +103,33 @@ glass rendering on Safari.
 
 ---
 
+## E. Reconciliation against *Master Build Prompt v3 (Final)* (this pass)
+The authoritative v3 prompt was cross-checked line-by-line against the actual code
+(`pubspec.yaml`, `lib/`, `backend/main.py`, platform files). v3 supersedes the v1/v2 direction the
+repo was scaffolded from, so the consolidated `SPECIFICATION.md`/`README` were corrected to name
+v3 as governing and to record the deltas honestly rather than assert Google Maps as canonical.
+
+| v3 requirement | Code reality | Verdict | Action taken |
+| :-- | :-- | :-- | :-- |
+| §2 Maps = **MapLibre GL + OpenFreeMap**, keyless, "no Google Maps SDK" | `google_maps_flutter` in `pubspec.yaml` + `fishing_map_screen.dart` (also `hotspots_provider`/`firestore_service` import its `LatLng`) | ❌ Conflict | Documented as gap (§2.2/§9/README); **migration deferred** — cannot run `flutter analyze` here |
+| §3.1 deps `dio`, `freezed`/`json_serializable`, `flutter_dotenv`, `riverpod_annotation`, `flutter_launcher_icons` | none present; client uses `http` + `--dart-define` | ❌ Missing | Recorded as v3 target set in spec/README |
+| §3.2 `.env`: `ML_API_TOKEN`, `COPERNICUS_MARINE_*` | `.env.example` had `ML_API_AUTH_TOKEN`, no Copernicus, `GOOGLE_MAPS_API_KEY` required | ⚠️ Naming | `.env.example` updated to v3 names; Maps key demoted to transitional |
+| §9 cache 3rd-party responses server-side | in-memory TTL cache in `main.py` | ✅ Satisfied | Firestore persistence noted as enhancement |
+| §9 offline last-known + "last updated" | `MarineService` stale replay + Home banner | ✅ Done | — |
+| §5 design system (Premium White), §6 10 screens, nav | implemented | ✅ Match | — |
+| §9 accessibility icon/shape, Riverpod-only | implemented | ✅ Match | — |
+
+**Decision:** the MapLibre code migration is the one substantive v3 item **not** applied this pass.
+It is a large, version-sensitive Dart rewrite of the interactive map (annotation managers, style-
+loaded lifecycle, `LatLng` type change across 3 files, ProGuard/manifest/gradle cleanup) that can
+only be validated with a Flutter SDK. Shipping it unverified would risk a red `flutter_ci` and
+break `main` on merge — the same "no untested changes" rule used throughout this QA. A concrete,
+ready-to-run migration plan is provided in the PR description for execution on a Flutter machine.
+
+<!-- v3 reconciliation date: 2026-09-20 -->
+
+---
+
 ## Deferred (with reason) — carried into `SPECIFICATION.md §9`
 1. All Flutter runtime QA, widget/integration tests, device matrix, profiling — **no SDK locally**.
 2. Website E2E harness (Playwright/Cypress) — cannot validate without executing it.
@@ -118,5 +145,6 @@ glass rendering on Safari.
 - [x] Security check (rules + secret scan)
 - [~] Accessibility partial; a11y tooling score deferred
 - [x] Docs consolidated into one canonical `SPECIFICATION.md`
+- [x] Reconciled against *Master Build Prompt v3*: `SPECIFICATION.md`/`README`/`.env.example` corrected; MapLibre code migration deferred (§E)
 - [x] README features/stack/setup/env/deploy verified & corrected
 - [ ] Production deploy verified live (awaiting authorization)

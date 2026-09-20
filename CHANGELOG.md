@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   **[SPECIFICATION.md](SPECIFICATION.md)** and rewrote **[README.md](README.md)** to the canonical
   structure (removed un-implemented overclaims, fixed dead links).
 - Added **[QA_REPORT.md](QA_REPORT.md)** (test matrix, security/secret scan, deferred items).
+- Reconciled `SPECIFICATION.md`/`README`/`.env.example` against the authoritative **Master Build
+  Prompt v3 (Final)**: named v3 as governing, documented the MapLibre/OpenFreeMap-vs-Google-Maps
+  and missing-dependency gaps (§2.2), and added v3 env names (`ML_API_TOKEN`,
+  `COPERNICUS_MARINE_USERNAME/PASSWORD`) with `GOOGLE_MAPS_API_KEY` demoted to transitional.
 
 ### 🔧 Fixed
 - Landing pillars did not alternate (CSS `order` no-op).
