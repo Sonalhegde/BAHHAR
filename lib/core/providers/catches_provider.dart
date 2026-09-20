@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../features/auth/domain/user_model.dart';
 import '../models/catch_model.dart';
 import '../services/firebase_service.dart';
 import '../services/firestore_service.dart';
+import '../services/prefs_service.dart';
 import 'auth_provider.dart';
 
 /// Seed catches used when Firebase is not configured (offline demo mode).
@@ -74,11 +77,12 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
   }
 
   void _init() {
-    final user = _ref.read(authProvider);
+    final user = _ref.read<UserProfile?>(authProvider);
     if (!FirebaseService.isConfigured || user == null || user.isGuest) {
       state = AsyncValue.data(initialCatchesSeed);
       return;
     }
+    unawaited(_flushGuestQueue(user.id));
     _subscription?.cancel();
     _subscription = _firestore.fetchCatchesForUser(user.id).listen(
       (catches) {
@@ -96,11 +100,17 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
   /// is available and a [photoPath] is provided; otherwise stores locally in
   /// memory (offline demo mode).
   Future<void> addCatch(CatchModel entry, {String? photoPath}) async {
-    final user = _ref.read(authProvider);
+    final user = _ref.read<UserProfile?>(authProvider);
     final uid = user?.id ?? 'user_default';
 
     if (!FirebaseService.isConfigured || user == null || user.isGuest) {
       state = state.whenData((list) => [entry, ...list]);
+      // A catch logged before an account exists is the fisherman's own record of a fish
+      // they actually caught. It is written to the device queue so a restart cannot
+      // take it back, and it goes to Firestore under whoever signs in next.
+      if (user == null || user.isGuest) {
+        await PrefsService.addGuestCatch(jsonEncode(entry.toJson()));
+      }
       return;
     }
 
@@ -120,6 +130,43 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
     );
   }
 
+  /// Points the controller at whatever account is current now.
+  ///
+  /// The constructor covers an app that started already signed in. A fisherman who
+  /// signs in mid-session — which is the whole point of the guest queue — needs the
+  /// queued catches pushed and their cloud log pulled, and needs the previous
+  /// session's list gone from the screen while that happens.
+  void reload() {
+    final subscription = _subscription;
+    _subscription = null;
+    subscription?.cancel();
+    state = const AsyncValue.loading();
+    _init();
+  }
+
+  /// Writes any catches queued during guest sessions under [uid], then clears them.
+  ///
+  /// An entry that fails to write stays in the queue. A partial sync is survivable; an
+  /// entry deleted because its first attempt failed is a lost catch.
+  Future<void> _flushGuestQueue(String uid) async {
+    final queued = PrefsService.getGuestCatchQueue();
+    if (queued.isEmpty) return;
+    final remaining = <String>[];
+    for (final raw in queued) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map) throw const FormatException('not an object');
+        await _firestore.addCatch(
+          CatchModel.fromJson(Map<String, dynamic>.from(decoded))
+              .copyWith(userId: uid),
+        );
+      } catch (_) {
+        remaining.add(raw);
+      }
+    }
+    await PrefsService.setGuestCatchQueue(remaining);
+  }
+
   @override
   void dispose() {
     _subscription?.cancel();
@@ -130,7 +177,13 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
 final catchesProvider =
     StateNotifierProvider<CatchesController, AsyncValue<List<CatchModel>>>(
         (ref) {
-  return CatchesController(ref);
+  final controller = CatchesController(ref);
+  if (FirebaseService.isConfigured) {
+    // Guarded, not assumed: reading the auth state constructs FirebaseAuth, which has
+    // no platform backing in a widget test or an offline demo build.
+    ref.listen<UserProfile?>(authProvider, (_, __) => controller.reload());
+  }
+  return controller;
 });
 
 /// (totalCatches, totalTrips, topSpecies) computed from the real log — a trip
