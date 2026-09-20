@@ -43,23 +43,34 @@ Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 ### ✅ Implemented
 - **10 screens in working demo mode** — Splash, Auth, Onboarding, Home, Marine Chart, Hotspot
   Details, Smart Trip wizard, Trip Recommendation, Catch Log/History, Profile (+ 11 sub-screens) & Notifications.
-- **Live marine & tide data** (this pass) — `GET /api/v1/marine/conditions` aggregates Open-Meteo
-  (SST, wave, wind, pressure) + WorldTides; server-side TTL cache; Flutter shows a "last known
-  conditions" banner when offline/stale.
+- **Live marine, tide & weather data** — `GET /api/v1/marine/conditions` aggregates Open-Meteo
+  (SST, wave height/period/**direction**, **current speed + set**, **visibility**, wind, pressure,
+  UV) + WorldTides, and bands the day into five sea-state levels; `GET /api/v1/weather` returns
+  current conditions, 8 hours and 5 days. Server-side TTL cache; Flutter shows a "last known
+  conditions" banner when offline/stale and names the provider that answered. **No API key is
+  needed for any of it** — both run on keyless Open-Meteo by default.
+- **Trip optimiser** — `POST /api/v1/trip/optimize` ranks the planner's candidate spots against
+  the live water and returns its rule, its weights and its reasons. Rule-based, not a trained
+  model, and the response says so; the app falls back to its on-device heuristic when the
+  backend is unreachable *or had no water to rank against*.
+- **Persisted profile & preferences** — `fisherman_profiles/{uid}` read on sign-in and written on
+  every mutation, language/port/units in `shared_preferences`, guest catches queued and flushed on
+  sign-in, FCM handlers behind a Firebase-configured guard.
 - **ML prediction** — `POST /api/v1/predict` bite-probability (thermal + bathymetric + solunar).
 - **Geofencing** — `POST /api/v1/geofence/verify` for Daymaniyat, Ras Al Jinz, Hormuz corridor.
 - **Bilingual EN ⇄ AR** with RTL; **Premium White editorial** design system.
 - **Security rules** — per-user Firestore isolation + read-only reference collections; storage
-  upload limits. **Backend test suite: 9/9 passing.**
+  upload limits. **Backend test suite: 29 passing.**
 - **CI** — `backend_ci.yml` (pytest) and `flutter_ci.yml` (format, analyze, test).
 
 ### ⏳ Planned / blocked
 - **Blocked on external credentials:** Firebase project wiring, Copernicus Marine account, release
   keystore + Play Store listing, iOS runner. (Maps are keyless via MapLibre/OpenFreeMap — no API
   key needed.)
-- **Deferred in code:** `/api/v1/trip/optimize` (planner still uses a heuristic), extracted
-  placeholder widgets, geohash Firestore queries, `shared_preferences` persistence, FCM handlers,
-  guest-mode catch queue.
+- **Deferred in code:** Firestore geohash queries (client-side filtered — 12 seed hotspots do not
+  justify it yet), catch-photo background-isolate compression beyond `image_picker`'s 1600px/q82,
+  launcher-icon generation (configured, but needs the SDK and the platform icon trees), the
+  extracted placeholder widgets, and a trained trip model.
 
 Full status matrix & roadmap: [SPECIFICATION.md §9](SPECIFICATION.md).
 
@@ -94,7 +105,7 @@ flutter run --dart-define=ML_API_BASE_URL=http://<host>:8000
 ```bash
 cd backend
 pip install -r requirements.txt
-cp ../.env.example .env          # then set WORLDTIDES_API_KEY / ACCUWEATHER_API_KEY
+cp ../.env.example .env          # then set WORLDTIDES_API_KEY (optional: ACCUWEATHER_API_KEY)
 pytest tests/ -v                 # offline: every upstream call is monkeypatched
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -112,7 +123,7 @@ values**.
 | Variable | Where | Purpose |
 | :-- | :-- | :-- |
 | `WORLDTIDES_API_KEY` | `backend/.env` | Tide proxy — **backend only**, never in the app |
-| `ACCUWEATHER_API_KEY` | `backend/.env` | Weather proxy — **backend only**; unset until an account is provisioned, then `GET /api/v1/weather` serves the documented mock shape |
+| `ACCUWEATHER_API_KEY` | `backend/.env` | Weather proxy — **backend only**, and **optional**: unset, `GET /api/v1/weather` serves live Open-Meteo on the same contract; set, AccuWeather takes over and the payload names whichever answered |
 | `ACCUWEATHER_DAILY_CALL_BUDGET` | `backend/.env` | Optional cap on provider calls per day (free tier is a *daily* ceiling; 0 = no cap) |
 | `ML_API_BASE_URL` | app `.env` / `--dart-define` | Deployed FastAPI base URL |
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth (v3 name) |
@@ -152,7 +163,7 @@ BAHHAR/
 
 ```bash
 # Backend (offline — upstreams are monkeypatched)
-cd backend && pytest tests/ -v            # 9 passing
+cd backend && pytest tests/ -v            # 29 passing
 
 # Flutter
 flutter test

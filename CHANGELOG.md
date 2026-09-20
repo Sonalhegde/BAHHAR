@@ -9,6 +9,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### App building pass — one logo, live weather, extended ocean data, persisted profile, trip optimiser (2026-09-20)
+
+A brief written against the actual repo, so the first job was checking each claim in the code: the
+MapLibre migration, the RTL toggle, the Hammour/Grouper fix and the profile model were already
+done and were left alone. Everything below was not.
+
+**Added**
+- **`GET /api/v1/weather` is live.** With no key set it now serves **Open-Meteo** — the keyless
+  provider the marine proxy already uses — mapped onto the AccuWeather contract the client was
+  built against, so setting `ACCUWEATHER_API_KEY` later changes the source, not the app.
+  Degradation: AccuWeather → last good cached answer → live Open-Meteo → documented sample,
+  and `note` says which ran. Supersedes the mock-by-default described below.
+- **Flutter weather stack** — `WeatherConditions`/`WeatherHour`/`WeatherDay`/`WeatherAlert`,
+  `lib/core/services/weather_service.dart` mirroring `MarineService` (live fetch, last-known
+  replay, `isStale()`, plus `isSample()` so a mock can never read as a measurement) and
+  `WeatherCardWidget` on the Home dashboard **under** Ocean Conditions, same coordinate, one card
+  among the existing readouts rather than a new screen: air temp / UV / humidity chips, an
+  eight-hour strip and a five-day outlook.
+- **Ocean Conditions extended in the app** — `MarineConditions` gained `waveDirectionDeg`,
+  `currentSpeedKts`/`currentDirectionDeg` and `visibilityKm` with 16-point compass getters, and
+  the dashboard prints two rows of fisherman-worded chips (WAVE HEIGHT / WIND SPEED / WATER TEMP,
+  then WAVE FROM / CURRENT / VISIBILITY) over the sea-state band. Wave and wind bearings are the
+  direction they come **from**; the current is what it **sets toward** — modelled apart because
+  they routinely differ.
+- **`POST /api/v1/trip/optimize`** — ranks the client's own candidate spots against the cached
+  marine sample for the departure position (bite probability + species match + depth affinity,
+  minus crossing distance and the worst live sea-state reading), excluding anything outside the
+  radius or over the fuel budget, and returns `recommended`/`alternatives`/`rejected` with
+  `blockers`, plus `strategy`, `weights` and per-spot `reasons` **codes** so bilingual wording
+  stays the client's job. `trip_service.dart` calls it, keeping the heuristic as the fallback,
+  and `TripRecommendation.isMock` is now true when the backend had no water to rank against — a
+  ranking that flew blind is the offline case for the fisherman whatever URL produced it. The
+  endpoint is **rule-based**: `strategy` reads "not a trained model", which is why this is not
+  the "real ML endpoint" the brief asked for.
+- **Fisherman Profile persistence** — `fisherman_profiles/{uid}` read on sign-in and written on
+  every `updatePersonalInfo`/`addVesselId`/… mutation, mirroring the `catches` pattern, with
+  `merge: true` and a `createdAt` stamped only when absent. No parallel local store: the
+  in-memory `.demo` state still covers an unconfigured build.
+- **`shared_preferences`** behind `PrefsService` for language, port and units, so they survive a
+  restart instead of resetting; **FCM handlers** (`NotificationService`) and region
+  subscription, all behind `FirebaseService.isConfigured`; a **guest-mode catch queue** that holds
+  catches logged before sign-in and flushes on authentication — including mid-session, which
+  needed a `reload()` on the catches controller that nothing had.
+- **Launcher icons + website logo** — `flutter_launcher_icons` and `flutter_launcher_icons.yaml`
+  pointed at the 1024² `app_icon.jpg`; the landing page's sail SVG redrawn from the Flutter
+  painter's own geometry (see Fixed).
+- **Tests** — `test/features/home/weather_card_widget_test.dart` (data shape, warning
+  thresholds, provenance wording, missing fields, loading/error, Arabic) and
+  `test/core/models/marine_conditions_test.dart` (parsing, string numbers, null-vs-zero
+  visibility, separate wave/wind bearings, compass wrapping, JSON round-trip). Backend **29
+  passing** (from 16), covering the trip optimiser's exclusions and blockers, the weather
+  contract and the wind conversion.
+
+**Fixed**
+- **Wind was overstated 3.6× on live data.** Open-Meteo's default unit is km/h and the marine
+  proxy converted it with the m/s→kt factor, so a 20 km/h breeze (10.8 kt) arrived as 38.9 kt and
+  banded *high risk* — warning fishermen off benign water. `KM_PER_HOUR_TO_KNOTS` and
+  `METERS_PER_SECOND_TO_KNOTS` are now separate named constants; currents genuinely do arrive in
+  m/s and keep theirs.
+- **`firestore.rules` rejected every profile write.** The create rule asserted a nested
+  `personal`/`boat`/`gear` shape; `FishermanProfileModel.toJson()` writes those keys flat. The
+  rule now asserts the set the model actually writes.
+- **One logo, not two.** The app paints an open stroke-only sail over a separate wave squiggle;
+  the website drew a closed, filled teardrop. The Flutter geometry is canonical — it is the one
+  with a documented rationale — and the site's SVG is now the same two paths, normalised to a
+  100×90 viewBox, with the wrapper's sizing, filter and drop-shadow untouched. `app_icon.jpg`
+  was already byte-identical between the two asset trees, and the favicon and `og:image` still
+  point at it.
+- **`NotificationService.init()` could abort startup.** It caught `FirebaseException` only, so a
+  present-but-unusable push plugin (`UnsupportedError`, `PlatformException`) threw out of `main()`
+  before `runApp`. It now degrades to a `debugPrint`.
+
+**Changed**
+- **Landing-page copy held to what ships.** The weather pillar said AccuWeather; it now says
+  Open-Meteo, live, through the BAHHAR backend, with AccuWeather taking the same shape the day a
+  key is configured — in Arabic too. Two pre-existing overclaims found by grepping for
+  `trained|ML|water column`: "Our forecasts are trained on Omani ecosystems" → rule-based today,
+  trained on local catch data later, and "We model the Omani water column" → resolving the
+  upwelling front is planned, not shipped. Where the app grew past the page — the five-day
+  outlook — the page was already right and the card was built to match it.
+
+**Verified, and what was not**
+- `pytest tests/ -q` → **29 passed**. Every touched Dart file was re-read line by line and put
+  through a comment/string-stripping delimiter balance check (21 files, 0 errors).
+- **No Flutter or Dart SDK exists in this environment**, and `android/app/src/main/res` and the
+  iOS asset catalogs are absent from the checkout, so `flutter test`, `flutter analyze`,
+  `dart format` and `flutter_launcher_icons` could not be run and `flutter run` could not produce
+  the app demo. CI (`flutter_ci.yml`) is the gate for those three, and `flutter analyze` there runs
+  `--no-fatal-infos --no-fatal-warnings`, so it fails on errors only.
+
+**Not done, deliberately**
+- Catch-photo background-isolate compression — needs `flutter_image_compress`, which cannot be
+  resolved or verified without the SDK; `image_picker` already caps at 1600px/q82.
+- Geohash Firestore queries — 12 seed hotspots are comfortably client-side filtered, so the
+  `TODO(perf)` stays honest where it is.
+- `flutter_launcher_icons` was added and configured but **not run**, for the SDK reason above; the
+  generated icons are the one deliverable here that is genuinely outstanding rather than deferred.
+- Firebase/Copernicus/Apple Developer/Play Store wiring — blocked on credentials the user has to
+  supply; nothing was stubbed to pretend otherwise.
+
+---
+
 ### Landing page + backend — ocean information, AccuWeather, fisherman profile (2026-09-20)
 
 An additive brief: extend what exists rather than draw a second of anything. Three new panels on

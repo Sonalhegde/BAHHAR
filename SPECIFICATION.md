@@ -114,11 +114,11 @@ data source is live.
 | 1 | Splash / brand seal | `splash/splash_screen.dart` | Functional | Animated sail emblem, EN/AR, sovereignty subline |
 | 2 | Auth & registration | `auth/login_register_screen.dart` | Partial | UI complete; Firebase providers need credentials |
 | 3 | Onboarding carousel | `onboarding/onboarding_screen.dart` | Functional | 3 editorial slides |
-| 4 | Home dashboard | `home/home_dashboard_screen.dart` | **Wired** | Fishing score gauge, **live marine chips**, ranked hotspots, stale-data banner |
+| 4 | Home dashboard | `home/home_dashboard_screen.dart` | **Wired** | Fishing score gauge, **live marine chips** (wave/wind/current/visibility), **live Weather card**, ranked hotspots, stale-data banner |
 | 5 | Marine chart / map | `map/fishing_map_screen.dart` | Functional | **MapLibre GL + OpenFreeMap (keyless)** — v3 migration complete |
 | 6 | Hotspot details | `hotspot/hotspot_details_screen.dart` | Functional | Bathymetry, conditions, species, plan-trip CTA |
 | 7 | Smart trip wizard | `trip_planner/smart_trip_wizard_screen.dart` | Functional | 3–4-step: species → vessel/range → window → review |
-| 8 | Trip recommendation | `trip_planner/trip_recommendation_screen.dart` | Heuristic | Fuel/route uses local heuristic (see §9 roadmap) |
+| 8 | Trip recommendation | `trip_planner/trip_recommendation_screen.dart` | **Wired** | Ranked by `POST /api/v1/trip/optimize` over live conditions; falls back to the local heuristic when the backend is unreachable or had no water to rank against, and flags it (§6.6) |
 | 9 | Catch log & history | `my_catch/add_catch_screen.dart`, `catch_history_screen.dart` | Functional | Species/weight/length/GPS/gear/photo; Firestore-backed |
 | 10 | Profile, compliance, alerts | `profile/*`, `notifications/notifications_screen.dart` | Functional | 11 profile sub-screens; language switcher; regulatory links |
 
@@ -186,7 +186,8 @@ Async Uvicorn service (Dockerised). Endpoints:
 | `/api/v1/geofence/verify` | POST | Point-in-polygon against Oman MPAs (Daymaniyat `[23.82–23.90°N, 58.05–58.18°E]`, Ras Al Jinz, Hormuz corridor); returns status, reserve name, legal decree, gear/permit notes |
 | `/api/v1/marine/conditions` | GET | **Live aggregate** proxy (see §6) |
 | `/api/v1/tides` | GET | **Live tide** extremes + derived state (see §6) |
-| `/api/v1/trip/optimize` | POST | Waypoint & fuel routing — **not yet implemented** (roadmap §9) |
+| `/api/v1/weather` | GET | **Live atmospheric** weather: current + 8 hours + 5 days + alerts (see §6.5) |
+| `/api/v1/trip/optimize` | POST | Ranks the client's candidate spots against the live water (see §6.6) — **rule-based, not a trained model**, and the response says so |
 
 Species thermal envelopes (examples): Kingfish 24–28°C; Yellowfin 26–30°C.
 
@@ -197,19 +198,32 @@ Species thermal envelopes (examples): Kingfish 24–28°C; Yellowfin 26–30°C.
 Replaces the former fully-simulated `MarineService` with real data + offline resilience.
 
 ### 6.1 Upstreams
-- **Open-Meteo forecast API** (keyless): air temp, apparent temp, wind speed/dir/gust (km/h →
-  knots ×1.943844), cloud, pressure, weather code, day/night.
-- **Open-Meteo marine API** (keyless): sea surface temperature, wave height/period/direction.
+- **Open-Meteo forecast API** (keyless): air temp, apparent temp, wind speed/dir/gust,
+  cloud, pressure, weather code, UV, visibility, day/night — and the atmospheric half of
+  `/api/v1/weather` (§6.5), so the weather panel is live with **no key of any kind**.
+- **Open-Meteo marine API** (keyless): sea surface temperature, wave height/period/direction,
+  surface current as eastward/northward components.
 - **WorldTides v3** (`/api/v3?extremes`): high/low extremes → derived tide state.
+- **AccuWeather** (optional, `ACCUWEATHER_API_KEY`): only consulted for `/api/v1/weather`
+  when a key is present. It is not required, and no provider key ever reaches a device.
 
 ### 6.2 Server contract (`GET /api/v1/marine/conditions?lat&lon&include_tides`)
-Returns: `sea_temperature_c, wave_height_m, wave_period_s, wave_direction_deg, wind_speed_kts,
-wind_direction_deg, wind_gust_kts, air_temperature_c, apparent_temperature_c, cloud_cover_pct,
-pressure_msl_hpa, weather_code, is_day, tide_state, tide_height_m, tide_source, copyright,
-fetched_at, cached`. Upstream failure → HTTP **502**. `/api/v1/tides` → **503** when no key.
+Returns: `sea_temperature_c, wave_height_m, wave_period_s, wave_direction_deg,
+wave_direction, wind_speed_kts, wind_direction_deg, wind_direction, current_speed_kts,
+current_direction_deg, current_sets_to, visibility_km, wind_gust_kts, air_temperature_c,
+apparent_temperature_c, cloud_cover_pct, pressure_msl_hpa, weather_code, uv_index, is_day,
+tide_state, tide_height_m, tide_source, next_high_tide, sea_state{band,drivers},
+copyright, fetched_at, cached` (+ `day_rating` when `boat_length_m`/`gear` are passed).
+Two conventions are carried deliberately: wave and wind bearings are the direction the
+sea/wind come **from**, while `current_sets_to` is the direction the water goes **to**.
+`visibility_km` is `null` when upstream reported nothing, never `0` (which would read as fog).
+Wind arrives from Open-Meteo in km/h and is converted with `KM_PER_HOUR_TO_KNOTS`; currents
+arrive in m/s and use `METERS_PER_SECOND_TO_KNOTS` — mixing the two factors overstates wind
+3.6× and was the subject of a live-data fix. Upstream failure → HTTP **502**. `/api/v1/tides`
+→ **503** when no key.
 
 ### 6.3 Caching & tide derivation
-In-memory TTL cache (`WEATHER 600s`, `MARINE 1800s`, `TIDES 3600s`) — upstreams are hit at most
+In-memory TTL cache (`WEATHER 600s`, `MARINE 1800s`, `TIDES 3600s`, `ACCUWEATHER 900s`) — upstreams are hit at most
 once per window per coordinate, never per widget rebuild/scroll. This satisfies the v3 §9
 requirement to cache all third-party responses server-side; promoting it to a **Firestore**
 snapshot cache (survives restarts / shared across workers) is a listed enhancement (§9). `_tide_state_from_extremes()`
@@ -220,7 +234,38 @@ within a 45-min window of an extreme, otherwise **Rising/Falling**.
 Instance-based fetch through `ApiClient` (base URL `String.fromEnvironment('ML_API_BASE_URL',
 defaultValue: 'http://localhost:8000')`). On `ApiException` it replays the last-known snapshot
 with `isCached: true`; `MarineService.isStale()` drives the Home "Last updated … showing last
-known conditions" banner. Model `MarineConditions` has `fromJson`/`toJson`/`copyWith`.
+known conditions" banner. Model `MarineConditions` has `fromJson`/`toJson`/`copyWith`, plus
+`windDirectionCompass`/`waveDirectionCompass`/`currentSetsToCompass` (16-point, same table as
+the backend's `_compass_deg`) and `isRough`. The Home dashboard shows the six readings in two
+rows of fisherman-worded chips — WAVE HEIGHT / WIND SPEED / WATER TEMP, then WAVE FROM /
+CURRENT / VISIBILITY — with a sea-state band line under them.
+
+### 6.5 Weather proxy (`GET /api/v1/weather?lat&lon&region`)
+One call, one envelope: `current{temp_c, feels_like_c, condition, humidity_pct, wind_kmh,
+wind_dir, rain_probability_pct, uv_index, visibility_km}`, `hourly[]` (next 8 hours),
+`daily[]` (5 days), `alerts[]`, plus `source` (`accuweather` | `open-meteo` | `mock`),
+`attribution`, `note`, `fetched_at`, `cached`. Degradation order is AccuWeather → last good
+cached answer → live Open-Meteo → documented sample, and whichever ran, the response says so in
+`note`; a spent AccuWeather budget cannot blank the panel. Open-Meteo publishes no
+severe-weather alert feed for Omani waters, so `alerts` is empty and the app prints that
+absence rather than an all-clear.
+
+Client: `lib/core/services/weather_service.dart` mirrors `MarineService` exactly (live fetch,
+last-known replay, `isStale()`) and adds `isSample()` so a mock can never read as a
+measurement. `WeatherCardWidget` renders it on the Home dashboard under Ocean Conditions,
+from the same coordinate, and takes the `AsyncValue` so its loading/error/data shapes are
+tested without the provider graph.
+
+### 6.6 Trip optimiser (`POST /api/v1/trip/optimize`)
+Takes the client's own candidate spots plus the boat's economics, scores each against the
+cached marine sample for the departure position, and returns `recommended`, `alternatives`,
+`rejected` with `blockers`, `strategy`, `weights`, `conditions` and per-spot `reasons` codes
+(`species_match`, `sea_state_*`, `no_viable_option`…). Codes, not sentences — bilingual wording
+stays the client's job. It is **rule-based and says so in `strategy`**; the trained model the
+old `TODO(ml-backend)` pointed at does not exist yet.
+`lib/core/services/trip_service.dart` calls it and falls back to the on-device heuristic when
+the backend is unreachable *or when the backend had no water to rank against*, and
+`TripRecommendation.isMock` records which happened.
 
 ---
 
@@ -247,10 +292,16 @@ with placeholder values only. **`.env` must never be committed** and is listed i
 
 ## 8. Data Model & Security Rules
 
-Firestore collections: `users/{uid}`, `user_preferences/{uid}`, `catches/{id}`, `trips/{id}`,
-plus read-only reference collections (`species`, `hotspots`, `regions`, `regulations`,
-`restricted_zones`, `protected_areas`) and backend-refreshed snapshots (`marine_conditions`,
-`weather`).
+Firestore collections: `users/{uid}`, `user_preferences/{uid}`, `fisherman_profiles/{uid}`,
+`catches/{id}`, `trips/{id}`, plus read-only reference collections (`species`, `hotspots`,
+`regions`, `regulations`, `restricted_zones`, `protected_areas`) and backend-refreshed snapshots
+(`marine_conditions`, `weather`).
+
+`fisherman_profiles/{uid}` is the flat document `FishermanProfileModel.toJson()` writes — personal
+info plus *reference ids* to the vessel/crew/gear/document/licence collections, so a boat shared
+by two skippers is stored once. It is read on sign-in and rewritten on every profile mutation
+(`merge: true`), which is why the create rule asserts exactly that key set: a rule written for a
+nested `personal`/`boat`/`gear` shape rejected writes the model never makes.
 
 `firestore.rules`: users read/write only their own `catches`/`trips`/`preferences`/profile
 (ownership checked on both `resource.data.userId` and `request.resource.data.userId`); reference
@@ -263,10 +314,20 @@ collections are authenticated-read / `write: if false`. `storage.rules` limit ca
 
 **Complete / wired:** backend predict + geofence + health; live marine + tide proxy with TTL
 cache and 502/503 semantics; Flutter `MarineService` live fetch + offline fallback + stale
-banner; **MapLibre GL + OpenFreeMap map migration (v3) — Google Maps fully removed**; core
-utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10 screens in demo mode; Android
-build/sign/ProGuard config; `firestore.rules` + `storage.rules`; landing-page redesign; backend
-pytest suite (**9/9 passing**).
+banner; extended Ocean Conditions (wave direction, current speed/set, visibility, sea-state
+band) with the fisherman-worded chip row on Home; **live `/api/v1/weather` on keyless
+Open-Meteo** plus `WeatherService`/`WeatherCardWidget` on the same screen; **`POST
+/api/v1/trip/optimize`** wired into `trip_service.dart` with the heuristic as offline fallback;
+Fisherman Profile Firestore read/write; `shared_preferences` persistence for
+language/port/units; guest-mode catch queue flushed on sign-in; FCM handlers behind a
+`FirebaseService.isConfigured` guard; **MapLibre GL + OpenFreeMap map migration (v3) — Google
+Maps fully removed**; core utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10
+screens in demo mode; Android build/sign/ProGuard config; `firestore.rules` + `storage.rules`;
+landing-page redesign; backend pytest suite (**29 passing**).
+
+> The Dart side of the items above is verified by CI (`flutter analyze`, `flutter test`), not
+> locally: this checkout has no Flutter SDK, no `android/app/src/main/res` tree and no iOS
+> project, so `flutter run` cannot be exercised here.
 
 **Blocked on external credentials (cannot be done in-repo):** Firebase project wiring
 (`google-services.json`, `firebase_options.dart`, enable Auth/Firestore/Storage/FCM), Copernicus
@@ -274,19 +335,26 @@ Marine account (Phase 5), Apple Developer account (iOS), app signing keystore + 
 
 **Deferred functional gaps (by design / high effort):**
 - Phase-5 Copernicus Marine integration (chlorophyll/SST fronts) — account not yet provisioned.
-- `/api/v1/trip/optimize` — trip planner still uses a deterministic heuristic.
+  No placeholder field implies it is live.
+- `/api/v1/trip/optimize` is **rule-based**, not the trained model the original
+  `TODO(ml-backend)` asked for; `strategy` in the response states this. The learned ranker
+  waits on enough local catch data to train on.
+- Bilingual wording for the optimiser's `reasons` codes — the server returns codes, and the
+  client wording table has not been written, so no screen reads them yet.
+- Firestore geohash queries — still client-side filtered (`TODO(perf)`); justified to defer at
+  the 12-hotspot seed size, revisit when that count grows.
+- Catch-photo background-isolate compression beyond `image_picker`'s 1600px/q82 — needs
+  `flutter_image_compress`, which cannot be resolved or verified without a Flutter SDK.
+- Launcher icons — dependency and `flutter_launcher_icons.yaml` are configured; generation
+  needs the SDK and the platform `res`/`xcassets` trees absent from this checkout.
 - Extracted placeholder widgets (§3) — main screens inline working equivalents.
-- Firestore geohash queries — currently client-side filtered (`TODO(perf)`).
-- `shared_preferences` persistence for language/port/units; guest-mode catch queue.
-- Push notification (FCM) handler wiring.
-- Catch-photo background-isolate compression beyond `image_picker` 1600px/q82.
 
 **Longer term (CHANGELOG "Unreleased"):** tide-model enhancements, social/leaderboards, offline
 OSM maps, CV fish-ID, iOS release, IoT/fish-finder overlays.
 
 ---
 
-## 10. Marketing Website (`landing-page.html`)
+## 10. Marketing Website (`website/landing-page.html`)
 
 Self-contained static landing site. Rebuilt to the "Landing Redesign" spec: full-bleed hero with
 real Omani photography + CSS ocean-scene fallback, transparent→frosted sticky header, verified
@@ -295,6 +363,13 @@ custom nautical-chart SVG, species grid with 8 anatomically distinct fish silhou
 flag SVG, GSAP + ScrollTrigger reveals (IntersectionObserver fallback so content is visible if
 scripts fail), mobile hamburger (44px targets), email-capture form, working EN ⇄ AR RTL toggle,
 `prefers-reduced-motion` gating. `index.html` redirects to it.
+
+The copy is cross-checked against the shipped API shape rather than the ambition: the Ocean
+Conditions and Weather pillars name the provider that actually answers (`Open-Meteo`, live,
+through the BAHHAR backend), say that AccuWeather takes the same contract only once a key is
+configured, and say plainly that no severe-weather alert feed exists for Omani waters instead of
+implying an all-clear. Where the app now shows something the page under-described — the five-day
+outlook in the Weather card — the page was brought in line with the code, not the reverse.
 
 **Deployment:** `website/vercel.json` (deployed with Vercel root directory set to `website/`)
 rewrites `/*` → `/landing-page.html` and sets security headers; a `.vercelignore` excludes non-web
@@ -317,6 +392,9 @@ cp ../.env.example .env         # then set WORLDTIDES_API_KEY
 pytest tests/ -v                # 9 passing
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
+
+`pytest tests/ -v` needs no credentials: the weather and marine tests stub their upstreams, and
+`/api/v1/weather` works with no key at all.
 
 Full environment/IDE setup: [DEVELOPER_SETUP.md](DEVELOPER_SETUP.md). Release publication:
 [ANDROID_PUBLICATION_GUIDE.md](ANDROID_PUBLICATION_GUIDE.md).
