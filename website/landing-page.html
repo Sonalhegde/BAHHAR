@@ -19,7 +19,6 @@
         :root {
             /* Oman flag */
             --oman-red: #da291c;
-            --oman-white: #ffffff;
             --oman-green: #00843d;
 
             /* Brand — deep navy + Omani-sea teal (LinkedIn restraint + maritime authority) */
@@ -30,13 +29,17 @@
             --seafoam: #3fb0a3;
             --sand: #d8b98c;
 
-            /* Neutrals — warm paper base, single teal accent */
-            --paper: #faf8f4;
-            --off: #f1ece2;
-            --line: #e3ddd0;
+            /* Neutrals — one light base and one deeper step, both cool. The three Omani
+               photographs carry every warm tone on this page; the chrome underneath them should
+               not compete with them. Previously this page shipped a warm paper, a warm cream and
+               several pure-white surfaces at once, and the body gradient drifted through all
+               three as you scrolled. */
+            --bg-primary: #f4f8fa;      /* the page, and any surface raised out of a tinted band */
+            --bg-secondary: #ecf2f5;    /* the alternating band, and surfaces inside a --bg-primary section */
+            --line: #d9e3e9;
             --ink: #182430;
             --body: #4b5a67;
-            --muted: #7f8b95;
+            --muted: #5f6d78;                   /* was #7f8b95 - 3.3:1 on the new base, now 4.98 */
             --scrim: 24, 36, 48;                  /* readable wash over full-bleed photos */
 
             /* Type */
@@ -56,7 +59,7 @@
             font-family: var(--f-body);
             line-height: 1.65;
             color: var(--ink);
-            background: var(--paper);
+            background: var(--bg-primary);
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
         }
@@ -152,7 +155,7 @@
         }
         #header.scrolled::before { opacity: 0; }
         #header.scrolled {
-            background: rgba(255, 255, 255, 0.72);
+            background: rgba(244, 248, 250, 0.82);
             backdrop-filter: blur(16px) saturate(160%);
             -webkit-backdrop-filter: blur(16px) saturate(160%);
             border-bottom: 1px solid rgba(18, 38, 58, 0.08);
@@ -180,6 +183,9 @@
         #header.scrolled .nav-links a:hover { color: var(--navy); }
         .nav-links a::after { content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 2px; background: var(--seafoam); transition: width 0.28s ease; }
         .nav-links a:hover::after { width: 100%; }
+        /* Seafoam is a dark-band accent: on the frosted header it is a 2.5:1 rule under navy text,
+           so the underline takes the accent that is legible on light. */
+        #header.scrolled .nav-links a::after { background: var(--teal); }
 
         .utility-bar { display: flex; align-items: center; gap: 10px; padding-left: 20px; border-left: 1px solid rgba(255,255,255,0.22); transition: border-color 0.35s ease; }
         #header.scrolled .utility-bar { border-left-color: rgba(18,38,58,0.12); }
@@ -301,7 +307,7 @@
            would otherwise leave the eyebrow line clipped on short viewports. */
         section[id] { scroll-margin-top: 92px; }
         .band { padding: 110px 0; }
-        .band-light { background: var(--off); }
+        .band-light { background: var(--bg-secondary); }
         .section-head { max-width: 720px; margin: 0 auto 64px; text-align: center; }
         .section-head.left { margin-inline-start: 0; text-align: start; }
         .eyebrow { font-family: var(--f-display); font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
@@ -331,7 +337,7 @@
         .stats-band::after {
             background: linear-gradient(180deg,
                 rgba(9,22,34,0.94) 0%, rgba(9,22,34,0.58) 30%, rgba(9,22,34,0.64) 56%,
-                rgba(9,22,34,0.88) 74%, var(--off) 88%);
+                rgba(9,22,34,0.88) 74%, var(--bg-secondary) 88%);
         }
         .stats-band .photo-note { padding: 30px 0 46px; color: var(--body); }
         .photo-note { margin-top: 34px; text-align: center; font-size: 12.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.72); }
@@ -343,7 +349,7 @@
 
         /* Why cards — consistent glass on light */
         .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
-        .feature-card { padding: 38px 32px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); box-shadow: var(--shadow-sm); transition: transform 0.45s var(--ease), box-shadow 0.45s ease; }
+        .feature-card { padding: 38px 32px; border-radius: 16px; background: var(--bg-primary); border: 1px solid var(--line); box-shadow: var(--shadow-sm); transition: transform 0.45s var(--ease), box-shadow 0.45s ease; }
         .feature-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
         .icon-badge { width: 58px; height: 58px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: linear-gradient(150deg, rgba(15,122,122,0.1), rgba(63,176,163,0.16)); margin-bottom: 22px; }
         .icon-badge svg { width: 30px; height: 30px; stroke: var(--teal); }
@@ -353,7 +359,9 @@
         /* Alternating full-bleed story pillars (Khimji pattern) */
         .pillar { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 90px); align-items: center; padding: 72px 0; }
         .pillar.flip .pillar-media { order: -1; }
-        .pillar-eyebrow { font-family: var(--f-display); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--seafoam); margin-bottom: 14px; }
+        /* Seafoam only earns its keep over photographs and navy. On the light base it is 2.5:1,
+           so the eyebrows on light use teal (4.8:1) and match .eyebrow above the other sections. */
+        .pillar-eyebrow { font-family: var(--f-display); font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; }
         .pillar h3 { font-size: clamp(26px, 3.2vw, 38px); font-weight: 700; line-height: 1.15; margin-bottom: 16px; color: var(--navy); }
         .pillar p { font-size: 17px; color: var(--body); margin-bottom: 22px; max-width: 480px; }
         .pillar ul { list-style: none; display: grid; gap: 12px; margin-bottom: 28px; }
@@ -364,7 +372,7 @@
         .pillar .device { width: 270px; }
 
         /* Nautical chart illustration (fixes broken map) */
-        .chart-wrap { width: 100%; max-width: 460px; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--line); background: #eaf1f0; position: relative; z-index: 1; }
+        .chart-wrap { width: 100%; max-width: 460px; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--line); background: var(--bg-secondary); position: relative; z-index: 1; }
         .chart-wrap svg { display: block; width: 100%; height: auto; }
                 .chart-wrap iframe { display: block; width: 100%; height: 520px; border: 0; }
                 @media (max-width: 520px) { .chart-wrap iframe { height: 440px; } }
@@ -378,16 +386,16 @@
         .species-band .eyebrow { color: var(--seafoam); }
         .species-band h2 { color: #fff; }
         .species-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
-        .species-card { padding: 30px 22px; border-radius: 14px; text-align: center; background: rgba(255,255,255,0.94); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 10px 30px rgba(12,24,34,0.22); transition: transform 0.45s var(--ease), box-shadow 0.45s ease; display: flex; flex-direction: column; align-items: center; }
+        .species-card { padding: 30px 22px; border-radius: 14px; text-align: center; background: var(--bg-primary); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(12,24,34,0.22); transition: transform 0.45s var(--ease), box-shadow 0.45s ease; display: flex; flex-direction: column; align-items: center; }
         .species-card:hover { transform: translateY(-6px); box-shadow: 0 16px 38px rgba(12,24,34,0.3); }
         .species-card:hover .fish { transform: translateX(-6px); }
-        .fish { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; background: var(--off); transition: transform 0.5s var(--ease); }
+        .fish { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; background: var(--bg-secondary); transition: transform 0.5s var(--ease); }
         .species-card strong { font-family: var(--f-display); display: block; font-size: 17px; font-weight: 700; color: var(--navy); margin: 8px 0 4px; }
         .species-card small { font-size: 14px; color: var(--muted); font-family: var(--f-ar); direction: rtl; }
         /* Editorial cell: breaks the photo grid and resolves a duplicate instead of padding it.
            It used to be a 9% teal wash carrying dark navy copy straight over the Daymaniyat
            photograph - 1.4:1, unreadable. Paper, like its neighbours, with a rule to say so. */
-        .species-card.note { background: var(--paper); border: 1px solid var(--line); border-inline-start: 3px solid var(--teal); align-items: flex-start; text-align: start; justify-content: center; padding: 26px 24px; }
+        .species-card.note { background: var(--bg-primary); border: 1px solid var(--line); border-inline-start: 3px solid var(--teal); align-items: flex-start; text-align: start; justify-content: center; padding: 26px 24px; }
         .species-card.note:hover { transform: translateY(-6px); }
         .species-card.note strong { margin: 0 0 9px; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); }
         .species-card.note p { font-size: 14.5px; line-height: 1.6; color: var(--body); }
@@ -397,23 +405,23 @@
         .regions-layout { display: grid; grid-template-columns: minmax(0, 430px) minmax(0, 1fr); gap: clamp(32px, 5vw, 68px); align-items: start; }
         /* A map must not mirror with the text, so the chart keeps an LTR context */
         .chart-panel { position: sticky; top: 96px; direction: ltr; }
-        .chart-frame { padding: 16px 16px 10px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm); }
+        .chart-frame { padding: 16px 16px 10px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg-primary); box-shadow: var(--shadow-sm); }
         .oman-chart { display: block; width: 100%; height: auto; overflow: visible; }
-        .chart-sea { fill: #e7f0ed; }
+        .chart-sea { fill: #e4eef4; }   /* pale blue, not mint: the chart is the one surface allowed a second light tone */
         .graticule line { stroke: rgba(15, 122, 122, 0.13); stroke-width: 0.7; }
-        .land-base { fill: #f7f3ec; stroke: #f7f3ec; stroke-width: 3; pointer-events: none; }
-        .land-layer { fill: #f7f3ec; }
+        .land-base { fill: #fbfdfe; stroke: #fbfdfe; stroke-width: 3; pointer-events: none; }
+        .land-layer { fill: #fbfdfe; }
         .gov { stroke: rgba(31, 77, 107, 0.42); stroke-width: 0.8; transition: fill 0.4s var(--ease); }
         .gov.inland { opacity: 0.72; }
         .gov[data-region] { cursor: pointer; }
         .gov[data-region]:hover { fill: rgba(63, 176, 163, 0.24); }
         .gov.is-active { fill: rgba(63, 176, 163, 0.36); }
-        .water { font-family: var(--f-body); font-size: 8.6px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; fill: #6f9aa8; }
+        .water { font-family: var(--f-body); font-size: 8.6px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; fill: rgba(31, 77, 107, 0.82); }   /* 5.0:1 on the sea; the old 0.72 alpha was 2.7 */
         [dir="rtl"] .water { font-size: 9.4px; letter-spacing: normal; text-transform: none; }
         .reserve circle { fill: rgba(15, 122, 122, 0.10); stroke: var(--teal); stroke-width: 0.9; stroke-dasharray: 2.6 2.6; }
         .pin a { outline: none; }
         .pin .hit { fill: transparent; }
-        .pin .dot { fill: #fff; stroke: var(--teal); stroke-width: 1.5; transition: fill 0.3s ease, stroke-width 0.2s ease; }
+        .pin .dot { fill: var(--bg-primary); stroke: var(--teal); stroke-width: 1.5; transition: fill 0.3s ease, stroke-width 0.2s ease; }
         .pin .num { font-family: var(--f-display); font-size: 8.4px; font-weight: 700; fill: var(--teal); text-anchor: middle; }
         .pin .name { font-family: var(--f-display); font-size: 10px; font-weight: 700; fill: var(--navy); text-anchor: middle; paint-order: stroke; stroke: rgba(255, 255, 255, 0.88); stroke-width: 2.8px; }
         [dir="rtl"] .pin .name { font-family: var(--f-ar); font-size: 11px; }
@@ -421,20 +429,20 @@
         .pin.is-active .num { fill: #fff; }
         .pin a:focus-visible .dot { stroke-width: 2.8; }
         .scalebar line { stroke: rgba(31, 77, 107, 0.6); stroke-width: 0.9; }
-        .scalebar text { font-family: var(--f-body); font-size: 7.8px; font-weight: 600; fill: rgba(31, 77, 107, 0.72); letter-spacing: 0.04em; }
+        .scalebar text { font-family: var(--f-body); font-size: 7.8px; font-weight: 600; fill: rgba(31, 77, 107, 0.82); letter-spacing: 0.04em; }
         [dir="rtl"] .scalebar text { font-size: 8.6px; letter-spacing: normal; }
         .chart-cap { margin: 14px 4px 2px; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
         .chart-cap b { color: var(--body); font-weight: 600; }
 
         .region-list { display: grid; gap: 16px; }
         .region {
-            padding: 24px 26px 22px; border-radius: 16px; background: rgba(18, 38, 58, 0.045);
+            padding: 24px 26px 22px; border-radius: 16px; background: var(--bg-primary);
             border: 1px solid transparent; border-inline-start: 2px solid rgba(15, 122, 122, 0.20);
             transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
         }
-        .region.is-active { background: rgba(255, 255, 255, 0.94); border-color: var(--line); border-inline-start-color: var(--teal); box-shadow: var(--shadow-md); }
+        .region.is-active { background: var(--bg-primary); border-color: var(--line); border-inline-start-color: var(--teal); box-shadow: var(--shadow-md); }
         .region > header { display: flex; align-items: baseline; gap: 13px; margin-bottom: 7px; }
-        .region-num { font-family: var(--f-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--seafoam); font-variant-numeric: tabular-nums; }
+        .region-num { font-family: var(--f-display); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--teal); font-variant-numeric: tabular-nums; }
         .region h3 { font-size: 21px; font-weight: 700; }
         [dir="rtl"] .region h3 { font-size: 22px; }
         .region-meta { font-size: 13px; color: var(--muted); }
@@ -442,7 +450,7 @@
         .region p { font-size: 16px; color: var(--body); }
         .region .region-species { margin-top: 12px; font-size: 15px; font-weight: 600; color: var(--navy); }
         .region .region-species span { display: block; font-family: var(--f-display); font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); margin-bottom: 2px; }
-        .region .region-legal { margin-top: 12px; padding: 12px 16px; border-radius: 10px; background: rgba(15, 122, 122, 0.07); font-size: 14.5px; }
+        .region .region-legal { margin-top: 12px; padding: 12px 16px; border-radius: 10px; background: var(--bg-secondary); font-size: 14.5px; }
         .region .region-legal a { color: var(--teal); text-underline-offset: 3px; }
         .region .text-link { margin-top: 13px; font-size: 15px; }
         @media (max-width: 900px) {
@@ -473,8 +481,10 @@
         .footer-col ul { list-style: none; display: grid; gap: 12px; }
         .footer-col a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; transition: color 0.2s ease; }
         .footer-col a:hover { color: var(--seafoam); }
-        /* Honest safety note with a heading and a place of its own, under the CTA */
-        .before-you-go { margin-top: 30px; padding: 26px 30px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.62); max-width: 860px; }
+        /* Honest safety note with a heading and a place of its own, under the CTA.
+           It used to be 62% white over the navy footer, which composited to a mid grey and put
+           body-coloured copy at 2.7:1. An opaque surface is both on-palette and readable. */
+        .before-you-go { margin-top: 30px; padding: 26px 30px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-primary); max-width: 860px; }
         .before-you-go h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
         .before-you-go p { font-size: 15.5px; color: var(--body); }
         .before-you-go a { color: var(--teal); text-underline-offset: 3px; }
@@ -541,19 +551,18 @@
             .btn-solid::after { display: none; }  /* the shine sweep */
         }
 
-        /* ============ WARM PAPER TONE ============
-           The page sits on a near-white warm neutral; depth comes from the three
-           Omani photographs, not from tinting the whole site dark. Declared last so
-           it settles the tone without rewriting the base rules that consume tokens. */
-        body { background: linear-gradient(180deg, #fcfbf8 0%, var(--paper) 40%, #f7f3ec 100%); }
+        /* ============ LIGHT BASE ============
+           One flat colour, not a gradient: the old body gradient ran near-white through paper to
+           cream over the height of the page, so every section that does not paint its own
+           background showed whatever slice of it happened to sit behind it. Declared last so it
+           settles the tone without rewriting the base rules that consume the tokens. */
+        body { background: var(--bg-primary); }
         section, footer { position: relative; z-index: 1; }
         .eyebrow { color: var(--teal); }
         .text-link { color: var(--teal); }
         .icon-badge { background: linear-gradient(150deg, rgba(15,122,122,0.08), rgba(63,176,163,0.16)); }
         .icon-badge svg { stroke: var(--teal); }
-        .feature-card { background: rgba(255,255,255,0.86); }
-        .glass-panel--on-light { background: rgba(255,255,255,0.62); border-color: rgba(18,38,58,0.09); }
-        .chart-wrap { background: #eaf1f0; border-color: var(--line); }
+        .glass-panel--on-light { background: rgba(244,248,250,0.66); border-color: rgba(18,38,58,0.09); }
     </style>
 </head>
 <body>

@@ -14,16 +14,19 @@
             --navy: #12263a;
             --teal: #0f7a7a;
             --seafoam: #3fb0a3;
-            --paper: #faf8f4;
-            --line: #e3ddd0;
+            /* Cool light base, shared with the landing page - the photographs carry the warm
+               tones there, so the chrome should not compete with them anywhere on the site. */
+            --bg-primary: #f4f8fa;
+            --bg-secondary: #ecf2f5;
+            --line: #d9e3e9;
             --body: #4b5a67;
-            --muted: #7f8b95;
+            --muted: #5f6d78;                   /* was #7f8b95 - 3.3:1 on this base, now 4.98 */
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             color: var(--navy);
-            background: linear-gradient(180deg, #fcfbf8 0%, var(--paper) 60%, #f7f3ec 100%);
+            background: var(--bg-primary);
             line-height: 1.7;
             -webkit-font-smoothing: antialiased;
         }

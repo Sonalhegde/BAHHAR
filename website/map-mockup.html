@@ -11,15 +11,17 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; }
+        /* Cool light base, matching --bg-secondary on the landing page: this mock sits inside a
+           light section there, so a warm panel here read as a different website through the phone. */
         body {
             font-family: 'Public Sans', system-ui, sans-serif;
-            background: #eaf1f0;
+            background: #ecf2f5;
             overflow: hidden;
         }
         #map { position: absolute; inset: 0; width: 100%; height: 100%; }
         .header {
             position: absolute; top: 0; left: 0; right: 0;
-            background: rgba(250, 248, 244, 0.94);
+            background: rgba(244, 248, 250, 0.94);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             padding: 14px 20px; z-index: 1000;
             border-bottom: 1px solid rgba(24, 36, 48, 0.07);
@@ -30,7 +32,7 @@
         .filter:focus-visible { outline: 2px solid #0f7a7a; outline-offset: 3px; }
         .legend {
             position: absolute; bottom: 14px; left: 14px;
-            background: rgba(255, 255, 255, 0.96);
+            background: rgba(244, 248, 250, 0.96);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             padding: 13px 15px; border-radius: 12px;
             box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 1000;
@@ -53,11 +55,11 @@
         .moderate-marker { background: #b98f4f; box-shadow: 0 2px 8px rgba(185, 143, 79, 0.4); }
         /* Leaflet's default container grey shows through every tile that has not
            arrived yet, which read as a grid of empty cells. Match the sea tone. */
-        .leaflet-container { font-family: 'Public Sans', system-ui, sans-serif; background: #dfeae7; }
-        /* Stock OSM tiles put roads in saturated orange/red, which fought the warm-paper
-           chrome around this mock; calming them keeps one accent in the frame. */
+        .leaflet-container { font-family: 'Public Sans', system-ui, sans-serif; background: #dfe8ee; }
+        /* Stock OSM tiles put roads in saturated orange/red, which fought the cool chrome
+           around this mock; calming them keeps one accent in the frame. */
         .leaflet-tile-pane { filter: saturate(0.62) contrast(0.97) brightness(1.02); }
-        .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,0.82); }
+        .leaflet-control-attribution { font-size: 10px; background: rgba(244, 248, 250, 0.86); }
         .leaflet-control-attribution a { color: #0f7a7a; }
     </style>
 </head>
