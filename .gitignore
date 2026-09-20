@@ -70,3 +70,10 @@ android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 ios/Flutter/flutter_export_environment.sh
 ios/Runner/GeneratedPluginRegistrant.h
 ios/Runner/GeneratedPluginRegistrant.m
+
+# Local Vercel deploy scratch space
+.vercel-tmp/
+.vercel/
+
+# Unoptimised photo sources — the site ships the .webp renditions
+assets/images/fish-*.png
