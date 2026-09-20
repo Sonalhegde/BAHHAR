@@ -9,6 +9,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🗺️ Landing page — the fishing coast, plus a fix / i18n / motion pass (2026-09-20)
+
+Four separate commits: `fix(website)`, `feat(i18n)`, `feat` (regions section), `perf(motion)`.
+
+**Added**
+- **`#regions` — "Six governorates, six different fisheries"**: a new full-bleed chapter between
+  Species intelligence and the closing CTA. Musandam → Al Batinah → Muscat → A'Sharqiyah →
+  Al Wusta → Dhofar, written from the verified reference table only: no invented coordinates,
+  permit fees or catch limits, the Dhofar season worded as "usually counted … confirm the current
+  year", and both protected reserves (Daymaniyat, Hallaniyat) referred to MAFWR rather than
+  restated as rules, tied to the existing Legal Compliance / chart features.
+- **Interactive coastline chart, not six cards**: governorate outlines projected Web Mercator from
+  an ADM-1 geojson at ~440 m tolerance into a 51.4–61.2 E / 15.9–27.1 N frame, with 2° graticule,
+  named water bodies, a latitude-true scale bar, dashed reserve rings drawn explicitly as symbols,
+  and the six regions pinned north-to-south. The chart is sticky while the chapters scroll and both
+  directions are coupled — tapping a governorate jumps to its chapter, and an IntersectionObserver
+  tints whichever chapter is in view. Every pin is a real anchor and every chapter stays in the DOM,
+  so the section navigates with no JavaScript at all.
+- **Regions links** in the desktop nav, the slide-out menu and the footer Product list; the nav and
+  footer dictionaries now resolve by `href` instead of by child index, so adding an item cannot
+  silently shift a translation onto the wrong link.
+
+**Motion** — reveals trimmed from 34 px / 0.9 s to 30 px / 0.66 s, which is also the distance the
+no-JS CSS state uses and the two previously disagreed about; the six feature chapters now alternate
+their slide side (mirrored under RTL) instead of every block rising identically; and
+`prefers-reduced-data` now drops the full-viewport grain layer, the glare and glow, the button
+shine and all scroll-linked parallax — but not the photographs, because the page ships no
+lower-resolution variant to degrade to and says so in the stylesheet.
+
+**Before → after, per section**
+
+| Section | Before | After |
+|---|---|---|
+| Utility bar | Toggle printed the word "عربي" twice in one label; a decorative flag sat next to it | Flag chip reads *Oman*, the toggle is a single `<button>` with an `aria-label`, and its state is kept in `localStorage` |
+| Hero | `<img src="">` — the Musandam photograph never loaded, only the CSS waves | Real 274 KB photograph with parallax, a documented reason for shipping no hero clip, and a `prefers-reduced-data` branch |
+| Stats | Counters rendered `0` before script executed | Real values in the markup (`12+`, `50+`, `24/7`, `100%`), counted up on reveal |
+| Species | Hammour and Grouper listed as two animals; `عقرب`/`فراخ` guesses; symmetric 4×2 | Duplicate merged into an editorial tile that says why, names taken from `lib/core/constants/fish_species.dart`, *Lutjanus* printed instead of guessing a snapper name |
+| Regions | Absent — the site named three spots and no geography | New chapter, six governorates, coastline chart |
+| CTA | An orphaned unheaded "General instructions…" paragraph in the footer | `Before you go` aside under the CTA, with the MAFWR link and the limits of what the app decides |
+| Footer | Changelog link pointed at `#top` | Points at the repository CHANGELOG; privacy/terms verified serving; honest Arabic-coverage note added |
+| `map-mockup.html` | White tile grid under a coloured overlay, green/amber/purple markers, attribution removed, dead `Filter ▾` `<div>` | Sea-toned canvas, desaturated tiles, teal/sand palette, OpenStreetMap attribution restored, working species filter |
+
+**Section 8 — button & UX audit, completed**
+
+| Element | Expected behaviour | Verified? |
+|---|---|---|
+| Nav: Why Oman / Features / Species / Regions / Get Access | Scrolls to the correct anchor | ✅ All five resolve (46 links on the page, zero dead). Anchored sections now clear the fixed header via `scroll-margin-top` |
+| Language toggle | Actually switches language + RTL | ✅ Switches `dir`/`lang`, mirrors arrows, keeps the choice across reloads; every headline and paragraph translated, device mockups pinned LTR with the gap stated on the page |
+| Hero "Get Early Access" | Submits email, shows success state | ✅ Re-verified after the redesign: success row shows, invalid-address alert is localised |
+| Live-conditions "Plan this trip →" | Goes to trip planner / `#access` | ⚠️ By design. It is text inside the hero phone mock, which is `role="img"` artwork — an illustration of the app, not a control. Reported rather than wired to a half-fictional tap target |
+| Each feature section's "Explore ___ →" | Resolves to a real destination | ✅ All six reach `#access`; the two new coast links reach `#pillar-live` / `#pillar-charts`, whose ids were created so they could not be dead |
+| Footer Product / Resources / Legal | Every link resolves | ✅ Changelog fixed (was a no-op `#top`); `privacy.html` and `terms.html` confirmed present and serving 200 |
+| Trip planner Back / Next | Changes state if interactive | ⚠️ Preview artwork inside the wizard mock (`role="img"`); the real wizard is the Flutter screen |
+| "Set a bite alert" | Real action or clearly a preview | ⚠️ Same: drawn inside the live-conditions mock, not tappable |
+| "＋ Add document" | Real action or clearly a preview | ⚠️ Same: drawn inside the wallet mock, not tappable |
+| "Call now" | `tel:` if real, not tappable-but-broken if mock | ✅ Not clickable (mock artwork), so it cannot be broken. The one genuinely interactive control on the mock page — the species `Filter` — was a dead `<div>` and is now a working `<button>` |
+
 ### ✨ Added
 - **Live marine & tide data integration** — FastAPI proxy `GET /api/v1/marine/conditions` +
   `GET /api/v1/tides` aggregating Open-Meteo (weather + marine, keyless) and WorldTides v3,

@@ -75,6 +75,9 @@ ios/Runner/GeneratedPluginRegistrant.m
 .vercel-tmp/
 .vercel/
 
+# Local analysis scratch (chart projection scripts, generated path data) — never commit
+.tmp/
+
 # Unoptimised photo sources — the site ships the .webp renditions
 assets/images/fish-*.png
 assets/images/omani-boat.png
