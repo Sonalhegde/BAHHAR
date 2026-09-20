@@ -120,37 +120,44 @@ final omaniHotspotsSeed = [
 /// Center used for the initial hotspot fetch — Muscat/Seeb coastal waters.
 const LatLng defaultMapCenter = LatLng(23.6143, 58.5453);
 
-/// True when the data layer fell back to the bundled seed because Firebase
-/// is not configured. UI shows a visible banner while this is set.
-final offlineDataModeProvider = StateProvider<bool>((ref) => false);
-
 /// Hotspots straight from FirestoreService; falls back to seed data only when
 /// Firebase is not configured (offline demo mode). Real Firestore/network
 /// errors propagate to the UI as an error state with retry.
+///
+/// Every fallback path returns [omaniHotspotsSeed] itself, which is how
+/// [offlineDataModeProvider] recognises offline mode without this provider
+/// writing to another one.
 final hotspotsProvider = FutureProvider<List<HotspotModel>>((ref) async {
   if (!FirebaseService.isConfigured) {
-    ref.read(offlineDataModeProvider.notifier).state = true;
     return omaniHotspotsSeed;
   }
   final service = FirestoreService();
   try {
     // 1200 km covers the full Omani coast from Musandam to Dhofar.
-    final hotspots =
-        await service.fetchHotspots(defaultMapCenter, 1200);
-    ref.read(offlineDataModeProvider.notifier).state = false;
-    if (hotspots.isEmpty) {
-      // Firestore reachable but collection empty (e.g. not seeded yet).
-      ref.read(offlineDataModeProvider.notifier).state = true;
-      return omaniHotspotsSeed;
-    }
-    return hotspots;
+    final hotspots = await service.fetchHotspots(defaultMapCenter, 1200);
+    // Firestore reachable but collection empty (e.g. not seeded yet).
+    return hotspots.isEmpty ? omaniHotspotsSeed : hotspots;
   } on FirebaseUnavailableException {
-    ref.read(offlineDataModeProvider.notifier).state = true;
     return omaniHotspotsSeed;
   }
   // Any other error (permissions, network) intentionally propagates so the
   // UI can show a retry state instead of silently swapping in fake data.
 });
+
+/// True when the data layer fell back to the bundled seed because live data was
+/// unavailable. UI shows a visible banner while this is set.
+///
+/// Derived from [hotspotsProvider] rather than written to it: Riverpod forbids
+/// mutating a provider while a different one is initialising, and
+/// `hotspotsProvider` is watched from inside several other providers' build
+/// phases. Identity comparison is safe because real data is always a fresh list
+/// instance while every fallback returns the seed list itself.
+final offlineDataModeProvider = Provider<bool>((ref) => ref
+    .watch(hotspotsProvider)
+    .maybeWhen(
+      data: (spots) => identical(spots, omaniHotspotsSeed),
+      orElse: () => false,
+    ));
 
 final selectedRegionFilterProvider = StateProvider<String?>((ref) => null);
 final selectedSpeciesFilterProvider = StateProvider<String?>((ref) => null);
