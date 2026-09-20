@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/notification_service.dart';
+import '../services/prefs_service.dart';
+
 // ─── User Preferences ────────────────────────────────────────────────────────
 
 class UserPreferences {
@@ -48,9 +51,14 @@ class UserPreferences {
 }
 
 class PreferencesNotifier extends StateNotifier<UserPreferences> {
-  PreferencesNotifier() : super(const UserPreferences());
+  PreferencesNotifier() : super(UserPreferences(
+        isMetric: PrefsService.getMetricUnits(),
+      ));
 
-  void toggleUnits() => state = state.copyWith(isMetric: !state.isMetric);
+  void toggleUnits() {
+    state = state.copyWith(isMetric: !state.isMetric);
+    _remember(PrefsService.setMetricUnits(state.isMetric));
+  }
   void setThemeMode(ThemeMode mode) => state = state.copyWith(themeMode: mode);
   void toggleWeatherAlerts(bool val) => state = state.copyWith(weatherAlerts: val);
   void toggleMarineAlerts(bool val) => state = state.copyWith(marineAlerts: val);
@@ -58,6 +66,16 @@ class PreferencesNotifier extends StateNotifier<UserPreferences> {
   void toggleHotspotUpdates(bool val) => state = state.copyWith(hotspotUpdates: val);
   void toggleLicenceExpiryReminders(bool val) => state = state.copyWith(licenceExpiryReminders: val);
   void toggleSafetyAlerts(bool val) => state = state.copyWith(safetyAlerts: val);
+}
+
+/// Fire-and-forget a preference write.
+///
+/// A setting that fails to persist is still the setting the fisherman chose for this
+/// session; refusing to toggle it because the device could not remember it would be
+/// the worse answer. Returns void on purpose, so no caller is tricked into awaiting a
+/// save that has already taken effect on screen.
+void _remember(Future<void> future) {
+  future.catchError((Object _) {});
 }
 
 final preferencesProvider =
@@ -68,11 +86,20 @@ final preferencesProvider =
 // ─── Language Provider ────────────────────────────────────────────────────────
 
 class LanguageNotifier extends StateNotifier<bool> {
-  LanguageNotifier() : super(false); // false = English, true = Arabic
+  // false = English, true = Arabic. Restored from the device, not re-asked each run.
+  LanguageNotifier() : super(PrefsService.getArabic());
 
-  void toggleLanguage() => state = !state;
-  void setArabic(bool val) => state = val;
-  void setEnglish() => state = false;
+  void toggleLanguage() {
+    state = !state;
+    _remember(PrefsService.setArabic(state));
+  }
+
+  void setArabic(bool val) {
+    state = val;
+    _remember(PrefsService.setArabic(val));
+  }
+
+  void setEnglish() => setArabic(false);
 }
 
 final isArabicProvider =
@@ -81,8 +108,19 @@ final isArabicProvider =
 // ─── Governorate Provider ─────────────────────────────────────────────────────
 
 class GovernorateNotifier extends StateNotifier<String> {
-  GovernorateNotifier() : super('Muscat');
-  void setGovernorate(String g) => state = g;
+  GovernorateNotifier() : super(PrefsService.getGovernorate());
+
+  /// Changing the port changes which coast the fisherman wants warnings about, so the
+  /// push topic follows it. Inert without Firebase, so a demo build pays nothing.
+  void setGovernorate(String g) {
+    final previous = state;
+    state = g;
+    _remember(PrefsService.setGovernorate(g));
+    if (previous != g) {
+      _remember(NotificationService.unsubscribeRegion(previous));
+      _remember(NotificationService.subscribeRegion(g));
+    }
+  }
 }
 
 final selectedGovernorateProvider =
