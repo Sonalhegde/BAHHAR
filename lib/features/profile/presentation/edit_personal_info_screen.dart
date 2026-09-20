@@ -122,7 +122,8 @@ class _EditPersonalInfoScreenState extends ConsumerState<EditPersonalInfoScreen>
     );
   }
 
-  void _save() {
+  Future<void> _save() async {
+    final isArabic = ref.read(isArabicProvider);
     final notifier = ref.read(fishermanProfileProvider.notifier);
     notifier.updatePersonalInfo(
       fullName: _nameCtrl.text.trim(),
@@ -142,7 +143,22 @@ class _EditPersonalInfoScreenState extends ConsumerState<EditPersonalInfoScreen>
         phoneNumber: _emergPhoneCtrl.text.trim(),
       ));
     }
-    context.pop();
+    // The mutators above write behind, so one awaited push is what actually tells this
+    // screen whether the record reached Firestore. Silent when Firebase is not
+    // configured at all — that is offline demo mode, and the edit is still real.
+    await notifier.save();
+    final failure = notifier.lastSyncError;
+    if (!mounted) return;
+    if (failure != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isArabic
+              ? 'تم الحفظ على هذا الجهاز فقط — تعذرت مزامنة الملف الشخصي'
+              : 'Saved on this device only — the profile could not be synced'),
+        ),
+      );
+    }
+    if (mounted) context.pop();
   }
 
   @override

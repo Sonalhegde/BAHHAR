@@ -8,6 +8,7 @@ import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
 import '../../features/auth/domain/user_model.dart';
 import '../models/catch_model.dart';
+import '../models/fisherman_profile_model.dart';
 import '../models/hotspot_model.dart';
 import 'firebase_service.dart';
 
@@ -110,6 +111,51 @@ class FirestoreService {
       'createdAt': FieldValue.serverTimestamp(),
       if (preferredLocale != null) 'preferredLocale': preferredLocale,
     }, SetOptions(merge: true));
+  }
+
+  // ── Fisherman profile ───────────────────────────────────────────────────────
+
+  /// Reads `fisherman_profiles/{uid}`.
+  ///
+  /// A missing document returns null rather than throwing: never having saved a
+  /// profile is the normal first-run state, not a failure, and the caller decides
+  /// what to start the fisherman with.
+  Future<FishermanProfileModel?> fetchFishermanProfile(String uid) async {
+    _ensureConfigured();
+    final doc = await _db.collection('fisherman_profiles').doc(uid).get();
+    if (!doc.exists) return null;
+    return FishermanProfileModel.fromJson({'uid': uid, ..._stringify(doc.data())});
+  }
+
+  /// Writes the whole profile.
+  ///
+  /// The document is FLAT because `FishermanProfileModel.toJson()` is flat, and
+  /// `firestore.rules` asserts that same flat shape on create; the two have to move
+  /// together or every first save is rejected with PERMISSION_DENIED.
+  ///
+  /// Merged, not replaced, so a field this build does not know about survives a save
+  /// from a build that does. A null `createdAt` is stamped here instead: with a merge
+  /// it would otherwise be written as null and stay null on every later save.
+  Future<void> saveFishermanProfile(FishermanProfileModel profile) async {
+    _ensureConfigured();
+    final data = profile.toJson();
+    data['createdAt'] ??=
+        DateTime.now().toUtc().toIso8601String(); // device clock, first write only
+    await _db
+        .collection('fisherman_profiles')
+        .doc(profile.uid)
+        .set(data, SetOptions(merge: true));
+  }
+
+  /// Firestore stores dates as [Timestamp]; the models speak ISO-8601 strings,
+  /// because that is the shape they were first built against offline. Normalising on
+  /// the way in keeps a cloud_firestore import out of every model.
+  Map<String, dynamic> _stringify(Map<String, dynamic>? data) {
+    if (data == null) return const {};
+    return data.map((key, value) => MapEntry(
+          key,
+          value is Timestamp ? value.toDate().toIso8601String() : value,
+        ));
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

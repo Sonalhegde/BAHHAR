@@ -73,6 +73,7 @@ class FishermanProfileModel {
   }
 
   FishermanProfileModel copyWith({
+    String? uid,
     String? fullName,
     String? fullNameArabic,
     String? civilId,
@@ -94,7 +95,7 @@ class FishermanProfileModel {
     String? profilePhotoUrl,
   }) {
     return FishermanProfileModel(
-      uid: uid,
+      uid: uid ?? this.uid,
       fullName: fullName ?? this.fullName,
       fullNameArabic: fullNameArabic ?? this.fullNameArabic,
       civilId: civilId ?? this.civilId,
