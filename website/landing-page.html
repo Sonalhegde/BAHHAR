@@ -509,6 +509,18 @@
             html { scroll-behavior: auto; }
             .js .reveal { opacity: 1; transform: none; }
         }
+        /* The visitor said "spend less on me". The three Omani photographs are the content and
+           stay at full resolution — this page ships no video and no lower-resolution variant, so
+           there is nothing to degrade to; that is the one honest byte left on the table, and the
+           place it plugs in. What does go: every decorative layer, and all scroll-linked motion. */
+        @media (prefers-reduced-data: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+            html { scroll-behavior: auto; }
+            .js .reveal { opacity: 1; transform: none; }
+            body::after { display: none; }        /* full-viewport grain: a multiply layer repainted on every scroll */
+            .device-glare, .hero-visual .glow { display: none; }
+            .btn-solid::after { display: none; }  /* the shine sweep */
+        }
 
         /* ============ WARM PAPER TONE ============
            The page sits on a near-white warm neutral; depth comes from the three
@@ -592,6 +604,15 @@
     <!-- ===================== HERO ===================== -->
     <section class="hero" id="top">
         <div class="hero-media">
+            <!-- Hero motion: a silent looping clip was the plan, and it is still the right treatment
+                 for this coast. It stays unshipped because the only honest footage we can point at is
+                 a licence this project does not hold - no Omani marine clip has been cleared here for
+                 commercial use - and a generated one is barred by the no-synthetic-imagery rule. So
+                 the hero carries the Musandam photograph at full resolution with scroll parallax
+                 instead, which the brief allows as the fallback; both prefers-reduced-motion and
+                 prefers-reduced-data drop the parallax. When a real, licensed clip under 5 MB
+                 exists, this img becomes:
+                 <video autoplay muted loop playsinline poster="assets/images/omani-boat.webp"> -->
             <img class="hero-photo" src="assets/images/omani-boat.webp" alt="Traditional Omani wooden boat on turquoise water below the Musandam cliffs" fetchpriority="high" decoding="async">
             <div class="hero-scene" aria-hidden="true">
                 <svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -1291,13 +1312,14 @@
 
     <style>
         .reveal.revealed { opacity: 1 !important; transform: none !important; }
-        .js .reveal { transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+        .js .reveal { transition: opacity 0.66s var(--ease), transform 0.66s var(--ease); }
     </style>
 
     <script>
     (function () {
         'use strict';
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var saveData = window.matchMedia('(prefers-reduced-data: reduce)').matches;
 
         /* ---- Sticky header ---- */
         var header = document.getElementById('header');
@@ -1388,15 +1410,24 @@
             setTimeout(function () { if (!fin) { fin = true; el.textContent = target + suffix; } }, dur + 500);
         }
 
-        /* ---- Reveal + counters: prefer GSAP ScrollTrigger, else IntersectionObserver ---- */
+        /* ---- Reveal + counters: prefer GSAP ScrollTrigger, else IntersectionObserver.
+           Scroll-linked parallax is the one effect a data-saver opts out of as well: it is what
+           keeps the hero scene and the device repainting while the page moves. ---- */
+        var animate = !reduce && !saveData;
         var revealEls = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
         function revealNow(el) { el.classList.add('revealed'); if (el.querySelector) { el.querySelectorAll('.stat-num[data-count]').forEach(runCount); } if (el.matches && el.matches('.stat-num[data-count]')) runCount(el); }
 
-        if (window.gsap && window.ScrollTrigger && !reduce) {
+        if (window.gsap && window.ScrollTrigger && animate) {
             gsap.registerPlugin(ScrollTrigger);
+            var rtlFlip = document.documentElement.dir === 'rtl' ? -1 : 1;
             revealEls.forEach(function (el) {
-                gsap.fromTo(el, { autoAlpha: 0, y: 34 }, {
-                    autoAlpha: 1, y: 0, duration: 0.9, ease: 'power3.out',
+                /* The feature chapters alternate their slide side so the page reads as a coast
+                   running past you, not as a stack of identical blocks arriving. */
+                var from = el.classList.contains('pillar')
+                    ? { autoAlpha: 0, y: 0, x: (el.classList.contains('flip') ? 30 : -30) * rtlFlip }
+                    : { autoAlpha: 0, y: 30, x: 0 };
+                gsap.fromTo(el, from, {
+                    autoAlpha: 1, y: 0, x: 0, duration: 0.66, ease: 'power3.out',
                     scrollTrigger: { trigger: el, start: 'top 86%' },
                     onEnter: function () { el.querySelectorAll('.stat-num[data-count]').forEach(runCount); }
                 });
