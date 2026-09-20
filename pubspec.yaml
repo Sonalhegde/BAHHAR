@@ -47,6 +47,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  # Generates the Android/iOS launcher icons from assets/images/app_icon.jpg so the
+  # installed icon, the in-app mark and the website mark are one drawing. Config lives
+  # in flutter_launcher_icons.yaml; run it with `dart run flutter_launcher_icons`.
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true

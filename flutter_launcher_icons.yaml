@@ -1,0 +1,30 @@
+# App launcher icons, generated from the same artwork the app and the website use.
+#
+#   dart run flutter_launcher_icons
+#
+# NOT YET RUN, and it cannot be from this checkout: there is no Flutter SDK installed
+# here and, more fundamentally, the repository carries no platform scaffolding to write
+# into — no `android/app/src/main/res/` tree and no `ios/Runner/Assets.xcassets`. The
+# generator needs those directories to exist. Once `flutter create --platforms=android,ios .`
+# has produced them (see SPECIFICATION.md §9, "blocked on external setup"), this file is
+# the whole job: run the command above and commit the mipmaps and Contents.json it writes.
+#
+# app_icon.jpg is already 1024x1024 with no transparency, which is what both platforms
+# require of a master icon, so no separate source art is needed.
+flutter_launcher_icons:
+  image_path: "assets/images/app_icon.jpg"
+
+  # Android: writes mipmap-{mdpi..xxxhdpi}/launcher_icon.png. The name has to match the
+  # `android:icon` entry in AndroidManifest.xml, which currently points at
+  # "@mipmap/ic_launcher"; either rename the generated set to ic_launcher or update the
+  # manifest when the scaffolding lands — one or the other, not both.
+  android: "launcher_icon"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/app_icon.jpg"
+
+  # iOS ignores background/foreground layers; remove_alpha is for PNG sources and is
+  # harmless for a JPEG, kept so a future PNG source does not fail the App Store check
+  # for alpha channels.
+  ios: true
+  remove_alpha_ios: true

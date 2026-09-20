@@ -183,7 +183,9 @@
 
         .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
         .logo-mark { width: 40px; height: 40px; flex-shrink: 0; filter: drop-shadow(0 0 7px rgba(63,176,163,0.55)); }
-        .logo-sail { fill: rgba(63,176,163,0.30) !important; }
+        /* The mark is stroke-only, matching the Flutter painter exactly, so there is deliberately
+           no fill rule for it here. A `fill:` on the sail path would close the open triangle along
+           its implied base and print a solid teal wedge where the app shows two loose strokes. */
         .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
         .logo-main { font-family: var(--f-display); font-size: 21px; font-weight: 800; color: #fff; letter-spacing: -0.02em; transition: color 0.35s ease; }
         .logo-sub { font-size: 10px; color: rgba(255,255,255,0.7); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; transition: color 0.35s ease; }
@@ -717,11 +719,13 @@
         <div class="container-wide">
             <nav>
                 <a href="#top" class="logo" aria-label="BAHHAR home">
-                    <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path class="logo-sail" d="M50 14 C40 34 34 50 34 62 L66 62 C66 50 60 34 50 14 Z" fill="rgba(255,255,255,0.14)" stroke="#3fb0a3" stroke-width="4"/>
-                        <path d="M50 14 L50 62" stroke="#3fb0a3" stroke-width="3"/>
-                        <path d="M22 74 Q36 66 50 74 T78 74" stroke="#3fb0a3" stroke-width="4" fill="none" stroke-linecap="round"/>
-                        <path d="M28 84 Q40 78 50 84 T72 84" stroke="#8fe3d5" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.7"/>
+                    <!-- Canonical mark: _BahharSailWavePainter in
+                         lib/shared/widgets/bahhar_logo_widget.dart, normalised to a 100x90 viewBox from
+                         that painter's own fractions (x/100, h = w * 0.9) and its stroke width of
+                         w * 0.085. Open sail + separate wave ripple, both stroked, nothing filled. -->
+                    <svg class="logo-mark" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M16,61.2 L50,7.2 L84,61.2" stroke="#3fb0a3" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12,68.4 Q22,55.8 32,68.4 Q42,81 52,68.4 Q62,55.8 72,68.4 Q82,81 88,68.4" stroke="#3fb0a3" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     <span class="logo-text">
                         <span class="logo-main">BAHHAR</span>
@@ -912,14 +916,14 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M3 18c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2"/><path d="M12 3v5m0 0 3-2m-3 2L9 6"/></svg>
                     </span>
                     <h3>Local thermoclines</h3>
-                    <p>Summer upwelling in Dhofar creates temperature layers that drive baitfish — a pattern global models simply ignore. We model the Omani water column.</p>
+                    <p>Summer upwelling in Dhofar creates temperature layers that drive baitfish — a pattern global models simply ignore. BAHHAR ranks spots on the live readings at each one and the depth it sits at; resolving the upwelling front itself is planned, not shipped.</p>
                 </article>
                 <article class="feature-card glass-panel--on-light reveal">
                     <span class="icon-badge">
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-5 8-6 11-4l3-3 1 4 3 1-3 3c-2 3-7 3-11-1z"/><circle cx="9" cy="11" r="0.6" fill="currentColor"/><path d="M6 15c-1 1-2 3-2 4"/></svg>
                     </span>
                     <h3>Regional species</h3>
-                    <p>Kingfish (الكنعد) and Hammour (الهامور) behave differently in the Arabian Sea than in the Red Sea. Our forecasts are trained on Omani ecosystems.</p>
+                    <p>Kingfish (الكنعد) and Hammour (الهامور) behave differently in the Arabian Sea than in the Red Sea. Our forecasts rank spots on thresholds set for Omani waters — rule-based today, trained on local catch data later.</p>
                 </article>
                 <article class="feature-card glass-panel--on-light reveal">
                     <span class="icon-badge">
@@ -1080,14 +1084,18 @@
                 <p class="readout-note">The band is the worst reading of the set, not an average of them: 1.2 m of swell on a 22 ft open boat is Moderate even while the wind looks harmless. Values are illustrative app output, not a live feed.</p>
             </div>
 
-            <!-- Pillar 3: Weather (new; AccuWeather, proxied by the backend) -->
+            <!-- Pillar 3: Weather. Live: the app's Home dashboard draws this from
+                 GET /api/v1/weather, which the backend answers from Open-Meteo (keyless)
+                 and from AccuWeather whenever a key is configured server-side. The two
+                 share one response shape, so the card does not know which one answered
+                 and this page does not have to pick a brand it has not earned. -->
             <div class="pillar reveal" id="pillar-weather">
                 <div class="pillar-body">
-                    <div class="pillar-eyebrow">Weather &mdash; AccuWeather</div>
+                    <div class="pillar-eyebrow">Weather &mdash; Open-Meteo, through the BAHHAR backend</div>
                     <h3>The sky over the water, on the same screen</h3>
                     <p>Marine data says what the sea is doing. The forecast says what the sky is about to do to it. BAHHAR carries both, so a morning decision is not made from two apps and a radio check.</p>
                     <ul>
-                        <li>Feels-like temperature, humidity, UV and visibility</li>
+                        <li>Feels-like temperature, humidity, UV index, wind and rain chance</li>
                         <li>Hour-by-hour strip and a five-day outlook</li>
                         <li>Severe-weather alerts appear only when one is actually issued</li>
                     </ul>
@@ -1131,7 +1139,7 @@
                     <div class="wx-day"><span>+3</span><em>31° / 25°</em></div>
                     <div class="wx-day"><span>+4</span><em>32° / 26°</em></div>
                 </div>
-                <p class="wx-attrib"><b>Weather data provided by AccuWeather.</b> AccuWeather is not connected yet: this is the response shape the app is built against, so switching to the live feed is a change of data source, not a rebuild. Requests go through BAHHAR's own backend &mdash; the provider key never reaches a device &mdash; and each region is cached server-side rather than fetched per visitor. No alert banner is drawn here, because one appears only when an alert is actually active.</p>
+                <p class="wx-attrib"><b>Weather data comes from Open-Meteo, live.</b> The app's Weather card reads it now, beside the ocean readouts on the same screen; AccuWeather takes the same response shape over the day a key is configured on the server, and the card then names whichever one answered. The figures on this page stay illustrative. Requests go through BAHHAR's own backend &mdash; the provider key never reaches a device &mdash; and each region is cached server-side rather than fetched per visitor. No alert banner is drawn here, and none is drawn in the app either: Open-Meteo publishes no severe-weather feed for Omani waters, so the card says the feed is absent instead of implying an all-clear.</p>
             </div>
 
             <!-- Pillar 4: Smart Trip -->
@@ -1185,7 +1193,7 @@
                  Gear enters at step 3 too: nets and bottom rigs are set in slack water, so a
                  2 kt tide cancels a bottom session rather than merely downgrading it. -->
             <div class="synthesis reveal" id="pillar-summary">
-                <p>Based on your boat, your gear, today's ocean conditions and the AccuWeather forecast, BAHHAR rates today:
+                <p>Based on your boat, your gear, today's ocean conditions and the live forecast, BAHHAR rates today:
                     <span class="verdict"><i class="mark" aria-hidden="true"></i>Moderate</span>
                 </p>
                 <p class="why"><b>Why:</b> a 1.2 m swell out of the north-east sets the band at Moderate on its own &mdash; the 14 kt wind and the 0.6 kt current would each have passed. Nothing else reaches a threshold that steps an open boat down, so your 22 ft skiff holds at Moderate. Put this same day in 2 kt of current and it drops a step again, and calls off a net set in slack water.</p>
@@ -1606,10 +1614,9 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="#top" class="logo" style="text-decoration:none;">
-                        <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path class="logo-sail" d="M50 14 C40 34 34 50 34 62 L66 62 C66 50 60 34 50 14 Z" fill="rgba(255,255,255,0.1)" stroke="#3fb0a3" stroke-width="4"/>
-                            <path d="M50 14 L50 62" stroke="#3fb0a3" stroke-width="3"/>
-                            <path d="M22 74 Q36 66 50 74 T78 74" stroke="#3fb0a3" stroke-width="4" fill="none" stroke-linecap="round"/>
+                        <svg class="logo-mark" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M16,61.2 L50,7.2 L84,61.2" stroke="#3fb0a3" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M12,68.4 Q22,55.8 32,68.4 Q42,81 52,68.4 Q62,55.8 72,68.4 Q82,81 88,68.4" stroke="#3fb0a3" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span class="logo-main">BAHHAR</span>
                     </a>
@@ -1876,9 +1883,9 @@
             ['#access .glass-button', 'احصل على وصول مبكر <span class="arrow" aria-hidden="true">→</span>'],
             ['#why .section-description', 'صُمّم بحّار من الأساس لبحر العرب وخليج عُمان — لا مجرد نموذج عالمي رُفع عليه علم.'],
             ['#why .cards-grid .feature-card:nth-child(1) h3', 'الطبقات الحرارية المحلية'],
-            ['#why .cards-grid .feature-card:nth-child(1) p', 'يخلق صعود المياه الباردة صيفاً في ظفار طبقات حرارية تجذب أسماك الطُّعم، وهو نمط تتجاهله النماذج العالمية تماماً؛ نحن نُنمذج عمود الماء العُماني.'],
+            ['#why .cards-grid .feature-card:nth-child(1) p', 'يخلق صعودُ المياه الباردة صيفاً في ظفار طبقاتٍ حرارية تجذب أسماك الطُّعم، وهو نمطٌ تتجاهله النماذج العالمية تماماً؛ يرتّب بحّار المواقعَ اليوم على القراءات الحيّة عند كلِّ موقع وعلى العمق الذي يَجلس عليه، أمّا رصدُ جبهة الصعود نفسه فمخطَّط ولم يدخل التطبيق بعد.'],
             ['#why .cards-grid .feature-card:nth-child(2) h3', 'الأسماك الإقليمية'],
-            ['#why .cards-grid .feature-card:nth-child(2) p', 'يتصرّف الكنعد والهامور في بحر العرب بشكل مختلف عن البحر الأحمر، لذا تنبؤاتنا مُدرَّبة على النظم البيئية العُمانية.'],
+            ['#why .cards-grid .feature-card:nth-child(2) p', 'يتصرّف الكنعد والهامور في بحر العرب بشكل مختلف عن البحر الأحمر، لذا ترتّب تنبؤاتُنا المواقعَ على عتباتٍ مضبوطة للمياه العُمانية — قائمة على القواعد اليوم، وتُدرَّب على بيانات الصيد المحلّية لاحقاً.'],
             ['#why .cards-grid .feature-card:nth-child(3) h3', 'الامتثال القانوني'],
             ['#why .cards-grid .feature-card:nth-child(3) p', 'المناطق المحمية مثل جزر الديمانيات تتطلب تصاريح؛ يضع بحّار حدوداً جغرافية ويعرض المرسوم السلطاني ذي الصلة قبل أن ترمي خطّافك.'],
             ['#features .section-head .eyebrow', 'الرفيق'],
@@ -1952,10 +1959,10 @@
             ['#ocean-readout .band-chip.b-current', MARK + 'تيّار قوي'],
             ['#ocean-readout .band-chip.b-risk', MARK + 'خطر مرتفع'],
             ['#ocean-readout .readout-note', 'التصنيف هو أسوأ قراءة في المجموعة لا متوسّطها: موجٌ بارتفاع 1.2 م على مركب مفتوح بطول 22 قدماً يبقى «معتدلاً» حتى وإن بدت الرياحُ لا تُذكر. القيم المعروضة نموذجٌ لمخرجات التطبيق، لا التغذية الحيّة.'],
-            ['#pillar-weather .pillar-eyebrow', 'الأحوال الجوية — AccuWeather'],
+            ['#pillar-weather .pillar-eyebrow', 'الأحوال الجوية — Open-Meteo عبر خلفيّة بحّار'],
             ['#pillar-weather h3', 'السماء فوق الماء، في الشاشة نفسها'],
             ['#pillar-weather .pillar-body p', 'البيانات المحيطية تُخبرك ما الذي يفعله البحر، والتنبّؤُ يُخبرك ما الذي ستفعله السماء به. يحمل بحّار الاثنين معاً، فلا يُبنى قرارُ الصباح على تطبيقين وخبرٍ من اللاسلكي.'],
-            ['#pillar-weather ul li:nth-child(1)', 'الحرارة المحسوس بها والرطوبة والأشعّة فوق البنفسجية والمدى البصري'],
+            ['#pillar-weather ul li:nth-child(1)', 'الحرارة المحسوس بها والرطوبة والأشعّة فوق البنفسجية والرياح واحتمال المطر'],
             ['#pillar-weather ul li:nth-child(2)', 'شريطٌ ساعة بساعة وتوقُّعٌ لخمسة أيام'],
             ['#pillar-weather ul li:nth-child(3)', 'تنبيهات الأحوال الشديدة لا تظهر إلا حين تُصدَر فعلاً'],
             ['#pillar-weather .text-link', 'استكشف شاشة الأحوال الجوية' + ARROW],
@@ -1973,7 +1980,7 @@
             ['#wx-readout .readout-where', 'مسقط — ساعة بساعة إلى ما بعد الظهر، ثم خمسة أيام'],
             ['#wx-readout .wx-day:nth-of-type(1) span', 'اليوم'],
             ['#wx-readout .wx-day:nth-of-type(2) span', 'غداً'],
-            ['#wx-readout .wx-attrib', '<b>الأحوال الجوية مقدَّمة من AccuWeather.</b> لم نربط AccuWeather بعد: هذا هو هيكلُ الاستجابة الذي يُبنى التطبيق على أساسه، فيكون الانتقالُ إلى التغذية الحيّة تغييراً لمصدر البيانات لا إعادةَ بناء. تذهب الطلبات إلى خلفيّة بحّار نفسها، فلا يصل مفتاحُ المزوّد إلى أيّ جهاز، وتُخزَّن كلُّ منطقة في الخادم بدل أن تُجلَب لكلّ زائر. ولا يظهر هنا شريطُ تنبيه، لأنّ شريطَ التنبيه لا يظهر إلا حين يكون تنبيهٌ سارياً.'],
+            ['#wx-readout .wx-attrib', '<b>الأحوال الجوية من Open-Meteo، حيّةً.</b> تقرأ بطاقةُ الأحوال في التطبيق هذه البيانات الآن، إلى جوار قراءات المحيط في الشاشة نفسها؛ وتنتقل AccuWeather إلى الهيكل نفسه من اليوم الذي يُضبط فيه مفتاحها على الخادم، فتُسمّي البطاقةُ أيّاً منهما أجاب. وتبقى الأرقامُ في هذه الصفحة نموذجاً توضيحياً. تذهب الطلبات إلى خلفيّة بحّار نفسها، فلا يصل مفتاحُ المزوّد إلى أيّ جهاز، وتُخزَّن كلُّ منطقة في الخادم بدل أن تُجلَب لكلّ زائر. ولا يظهر هنا شريطُ تنبيه، ولا يظهر في التطبيق أيضاً: لا تنشر Open-Meteo تغذيةً بالأحوال الشديدة للمياه العُمانية، فتقول البطاقة إنّ التغذية غائبة بدل أن تُشعر بأنّ كل شيءٍ آمن.'],
             ['#pillar-trip .pillar-eyebrow', 'تخطيط الرحلات الذكي'],
             ['#pillar-trip h3', 'اعرف مياهك قبل أن تُغادر الميناء'],
             ['#pillar-trip .pillar-body p', 'معالج من أربع خطوات يبني خطة كاملة وآمنة جويّاً حول مركبك ووقودك وأصنافك المستهدفة، ثم يمنحك نافذة الإقلاع المثالية.'],
@@ -1981,7 +1988,7 @@
             ['#pillar-trip ul li:nth-child(2)', 'توصيات نوافذ المدّ والقمر'],
             ['#pillar-trip ul li:nth-child(3)', 'تخطيط مسارات آمنة جويّاً'],
             ['#pillar-trip .text-link', 'استكشف تخطيط الرحلات' + ARROW],
-            ['#pillar-summary > p:first-child', 'بالنظر إلى مركبك وعتادك وأحوالِ المحيط اليوم وتنبّؤ AccuWeather، يُقيِّم بحّار هذا اليوم: <span class="verdict"><i class="mark" aria-hidden="true"></i>معتدل</span>'],
+            ['#pillar-summary > p:first-child', 'بالنظر إلى مركبك وعتادك وأحوالِ المحيط اليوم والتنبّؤاتِ الجوية الحيّة، يُقيِّم بحّار هذا اليوم: <span class="verdict"><i class="mark" aria-hidden="true"></i>معتدل</span>'],
             ['#pillar-summary .why', '<b>السبب:</b> موجٌ بارتفاع 1.2 م آتٍ من الشمال الشرقي يجعل التصنيف «معتدلاً» وحده، بينما كانت رياحٌ بـ14 عقدة وتيّارٌ بـ0.6 عقدة ليمرّا بلا خفض. ولم يبلغ شيءٌ آخرُ حدّاً من الحدود التي تُخفض مركباً مفتوحاً درجة، فمركبُك بطول 22 قدماً يبقى عند «معتدل». لو أُضيف إلى هذا اليوم تيّارٌ بـ2 عقدة لانخفض درجةً أخرى، ولأُلغيت شبكةٌ تُنزَل في ماءٍ راكد.'],
             ['#pillar-charts .pillar-eyebrow', 'الخرائط البحرية'],
             ['#pillar-charts h3', 'خرائط ملاحية تُقرأ كما يُقرأ البحر'],
