@@ -28,8 +28,7 @@ it has actually been verified live (see [SPECIFICATION.md §10](SPECIFICATION.md
 
 | Target | How to serve | State |
 | :-- | :-- | :-- |
-| Netlify | Root `netlify.toml` publishes `website/`, SPA-redirects `/*` → `/landing-page.html` | Ready — needs account connect |
-| Vercel | Set Vercel root directory to `website/`; `.vercelignore` scopes upload to web assets | Ready — needs `vercel login`/token |
+| Vercel (primary) | `website/vercel.json` (root directory `website/`) rewrites `/*` → `/landing-page.html` and sets security headers; `.vercelignore` scopes the upload to web assets | Deployed |
 | GitHub Pages | Set Pages source to `/website` → `https://sonalhegde.github.io/BAHHAR/` | Ready — needs Pages enabled on `main` |
 
 Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
@@ -138,7 +137,7 @@ BAHHAR/
 ├── website/                # Marketing site: landing-page.html, index.html, privacy.html, terms.html, assets/images
 ├── test/                   # Flutter tests
 ├── .github/workflows/      # backend_ci.yml, flutter_ci.yml
-├── netlify.toml · .vercelignore · firestore.rules · storage.rules
+├── website/vercel.json · .vercelignore · firestore.rules · storage.rules
 └── SPECIFICATION.md        # ← unified master specification
 ```
 

@@ -86,7 +86,7 @@ third-party API keys** — the WorldTides key never ships in the mobile binary (
 | ML/marine microservice | Python 3.11+ / FastAPI / Uvicorn / Docker | Async REST scoring + upstream proxying |
 | Models | Pydantic v2 (backend); Dart models are hand-written `fromJson`/`toJson` (equally valid per v3 status log) | Strict schema + JSON serialisation |
 | HTTP (client) | `http` routed via backend (equally valid per v3 status log — not migrated to `dio`) | Single client, cache + central auth |
-| Website | Self-contained HTML/CSS/JS + GSAP | Static landing page on Netlify/Vercel |
+| Website | Self-contained HTML/CSS/JS + GSAP | Static landing page on Vercel |
 
 ### 2.2 v3 reconciliation status
 The repo was originally scaffolded on the older Google-Maps direction. Per the v3 status log:
@@ -296,10 +296,10 @@ flag SVG, GSAP + ScrollTrigger reveals (IntersectionObserver fallback so content
 scripts fail), mobile hamburger (44px targets), email-capture form, working EN ⇄ AR RTL toggle,
 `prefers-reduced-motion` gating. `index.html` redirects to it.
 
-**Deployment:** `netlify.toml` publishes `.` and SPA-redirects `/*` → `/landing-page.html` with
-security headers; a `.vercelignore` excludes non-web and secret paths for Vercel uploads. GitHub
-Pages alternative: `https://sonalhegde.github.io/BAHHAR/`. Detailed host setup:
-[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) (kept as an operational how-to reference).
+**Deployment:** `website/vercel.json` (deployed with Vercel root directory set to `website/`)
+rewrites `/*` → `/landing-page.html` and sets security headers; a `.vercelignore` excludes non-web
+and secret paths. GitHub Pages alternative: `https://sonalhegde.github.io/BAHHAR/`. Detailed host
+setup: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) (kept as an operational how-to reference).
 
 ---
 
