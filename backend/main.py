@@ -686,3 +686,267 @@ async def tides(
     }
     _cache_set(cache_key, payload, TIDES_TTL_SECONDS)
     return {**payload, "cached": False}
+
+
+# ---------------------------------------------------------------------------
+# AccuWeather — the atmospheric half of the Ocean / Weather sections (brief §2)
+#
+# Two steps by design: a position resolves to AccuWeather's internal LocationKey once and
+# that key is cached for a day, then conditions, hourly and 5-day forecasts are called with
+# it. No device ever holds the key: the Flutter app and the landing page reach this backend
+# and nothing else.
+#
+# Until an account is provisioned, ACCUWEATHER_API_KEY is empty and the endpoint answers
+# with _accuweather_mock() — the same field names the mappers below produce from the real
+# payloads, so the client contract is fixed today and going live is a change of data source
+# rather than a rewrite. Every response says which source served it.
+#
+# The call arithmetic is why there is a budget below. One cached region costs four upstream
+# calls per refresh; at a 30-minute TTL that is 192 calls a day, and the published free-tier
+# ceiling has been quoted anywhere between ~50 and ~500 a day depending on the package.
+# So: one shared cache entry per region, a daily budget that can be set in .env once the
+# real number is confirmed, and a graceful fall back to the last good payload (then to the
+# mock) when the day's calls are spent — never a 5xx in front of a fisherman.
+# ---------------------------------------------------------------------------
+ACCUWEATHER_DAILY_CALL_BUDGET = int(os.environ.get("ACCUWEATHER_DAILY_CALL_BUDGET", "0") or 0)
+_ACCUEWEATHER_CALLS: Dict[str, int] = {}
+
+
+def _accuweather_calls_today() -> int:
+    return _ACCUEWEATHER_CALLS.get(date.today().isoformat(), 0)
+
+
+def _accuweather_budget_available(spend: int = 1) -> bool:
+    """0 or an unset budget means no cap (a paid plan); otherwise refuse before the call."""
+    if ACCUWEATHER_DAILY_CALL_BUDGET <= 0:
+        return True
+    return _accuweather_calls_today() + spend <= ACCUWEATHER_DAILY_CALL_BUDGET
+
+
+def _cache_get_stale(key: str) -> Optional[Any]:
+    """The last payload for a key, even past its TTL — used only when the day's calls are
+    spent, and always labelled by the caller so a stale figure is never read as a live one."""
+    hit = _CACHE.get(key)
+    return hit[1] if hit else None
+
+
+async def _accuweather_get(client: httpx.AsyncClient, path: str, params: Dict[str, Any]) -> Any:
+    """Single door to the provider: attaches the server-side key and counts the call."""
+    day = date.today().isoformat()
+    _ACCUEWEATHER_CALLS[day] = _ACCUEWEATHER_CALLS.get(day, 0) + 1
+    res = await client.get(
+        f"{ACCUWEATHER_BASE}{path}",
+        params={"apikey": ACCUWEATHER_API_KEY, "language": "en-us", **params},
+    )
+    res.raise_for_status()
+    return res.json()
+
+
+async def _resolve_accuweather_location_key(client: httpx.AsyncClient, lat: float, lon: float) -> str:
+    """Geoposition -> LocationKey, cached per region for a day (step one of the two)."""
+    cache_key = f"accuweather:lockey:{round(lat, 2)}:{round(lon, 2)}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return cached
+    data = await _accuweather_get(client, "/locations/v1/cities/geoposition/search", {"q": f"{lat},{lon}"})
+    key = str(data.get("Key") or "").strip()
+    if not key:
+        raise RuntimeError("AccuWeather returned no LocationKey for this position")
+    _cache_set(cache_key, key, ACCUWEATHER_LOCKEY_TTL_SECONDS)
+    return key
+
+
+def _metric_value(node: Any, *path: str) -> float:
+    """Walk AccuWeather's {Metric:{Value:…}} wrappers without tripping over a missing level."""
+    cursor: Any = node
+    for step in (*path, "Metric", "Value"):
+        if not isinstance(cursor, dict):
+            return 0.0
+        cursor = cursor.get(step)
+    return _as_float(cursor, 0.0)
+
+
+def _temperature(node: Any) -> float:
+    """Temperatures arrive in two shapes: {Metric:{Value}} on conditions and daily, and a
+    flat {Value} on the hourly forecast when metric=true was requested. Read either."""
+    if not isinstance(node, dict):
+        return 0.0
+    if node.get("Value") is not None:
+        return _as_float(node.get("Value"))
+    return _metric_value(node)
+
+
+def _map_accuweather_current(rows: Any) -> Dict[str, Any]:
+    item = rows[0] if isinstance(rows, list) and rows else {}
+    wind = item.get("Wind") or {}
+    return {
+        "temp_c": _temperature(item.get("Temperature")),
+        "feels_like_c": _temperature(item.get("RealFeelTemperature")),
+        "condition": item.get("WeatherText"),
+        "humidity_pct": _as_float(item.get("RelativeHumidity")),
+        "wind_kmh": _temperature(wind.get("Speed")),
+        "wind_dir": (wind.get("Direction") or {}).get("LocalizedEnglishName"),
+        "rain_probability_pct": _as_float(item.get("PrecipitationProbability")),
+        "uv_index": _as_float((item.get("UVIndex") or {}).get("Value")),
+        "visibility_km": round(_metric_value(item.get("Visibility")), 1),
+    }
+
+
+def _map_accuweather_hourly(rows: Any) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for item in rows if isinstance(rows, list) else []:
+        try:
+            stamp = datetime.fromisoformat(str(item.get("DateTime", "")))
+        except ValueError:
+            continue
+        out.append({
+            "time": stamp.strftime("%H:%M"),
+            "temp_c": _temperature(item.get("Temperature")),
+            "condition": item.get("Phrase"),
+            "rain_probability_pct": _as_float((item.get("RainProbability") or {}).get("Value")),
+        })
+    return out[:8]
+
+
+def _map_accuweather_daily(rows: Any) -> List[Dict[str, Any]]:
+    out: List[Dict[str, Any]] = []
+    for item in rows if isinstance(rows, list) else []:
+        temperature = item.get("Temperature") or {}
+        try:
+            day = datetime.fromisoformat(str(item.get("Date", ""))).date().isoformat()
+        except ValueError:
+            day = str(item.get("Date", ""))[:10]
+        out.append({
+            "date": day,
+            "high_c": _temperature(temperature.get("Maximum")),
+            "low_c": _temperature(temperature.get("Minimum")),
+            "condition": (item.get("Day") or {}).get("IconPhrase"),
+        })
+    return out[:5]
+
+
+async def _fetch_accuweather_alerts(client: httpx.AsyncClient, location_key: str) -> List[Dict[str, Any]]:
+    """Active severe-weather alerts. Any failure — including a plan that does not carry the
+    alerts route, which is worth confirming against the provisioned account before launch —
+    reads as 'no active alert'. It never reads as a placeholder alert: a banner that lies
+    about a warning is worse than one that stays hidden."""
+    try:
+        rows = await _accuweather_get(client, f"/alerts/v1/{location_key}/all", {})
+    except Exception:
+        return []
+    alerts: List[Dict[str, Any]] = []
+    for item in rows if isinstance(rows, list) else []:
+        if not isinstance(item, dict):
+            continue
+        alerts.append({
+            "title": item.get("Description") or (item.get("Type") or {}).get("Name") or "Weather alert",
+            "severity": (item.get("Severity") or {}).get("Name"),
+            "starts": item.get("Effective"),
+            "ends": item.get("Expires"),
+        })
+    return alerts
+
+
+_MOCK_CURRENT: Dict[str, Any] = {
+    "temp_c": 31, "feels_like_c": 34, "condition": "Sunny", "humidity_pct": 68,
+    "wind_kmh": 14, "wind_dir": "NE", "rain_probability_pct": 10, "uv_index": 8,
+    "visibility_km": 8,
+}
+
+
+def _accuweather_mock(lat: float, lon: float) -> Dict[str, Any]:
+    """The shape above, unrolled offline: the current block the landing page prints, an
+    eight-hour strip and a five-day outlook on a Muscat spring morning. Times are generated
+    from now so the sample never reads as a frozen screenshot."""
+    now = datetime.now(OMAN_TZ).replace(minute=0, second=0, microsecond=0)
+    temps = [27, 28, 29, 30, 31, 32, 33, 33]
+    hourly = [
+        {"time": (now + timedelta(hours=i)).strftime("%H:%M"), "temp_c": temps[i],
+         "condition": "Sunny", "rain_probability_pct": 10}
+        for i in range(8)
+    ]
+    days = [(33, 26, "Sunny"), (33, 26, "Sunny"), (32, 26, "Partly sunny"), (31, 25, "Partly sunny"), (32, 26, "Sunny")]
+    daily = [
+        {"date": (now.date() + timedelta(days=i)).isoformat(), "high_c": high, "low_c": low,
+         "condition": phrase}
+        for i, (high, low, phrase) in enumerate(days)
+    ]
+    return {"current": dict(_MOCK_CURRENT), "hourly": hourly, "daily": daily, "alerts": []}
+
+
+@app.get("/api/v1/weather")
+async def weather(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    region: str = Query("Muscat"),
+):
+    """Atmospheric weather: current conditions, an hourly strip, five days, active alerts.
+
+    Cached per region for ACCUWEATHER_TTL_SECONDS and shared by every visitor, so page load
+    does not equal provider call."""
+    cache_key = f"weather:{round(lat, 2)}:{round(lon, 2)}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return {**cached, "cached": True}
+
+    envelope: Dict[str, Any] = {
+        "latitude": lat,
+        "longitude": lon,
+        "region": region,
+        "attribution": ACCUWEATHER_ATTRIBUTION,
+        "alerts_endpoint_note": "An alert banner is drawn only when this list is non-empty.",
+    }
+
+    if not ACCUWEATHER_API_KEY:
+        payload = {
+            **envelope,
+            "source": "mock",
+            "note": "AccuWeather is not connected yet: this is the response shape the app is "
+                    "built against, so going live changes the data source, not the client.",
+            **_accuweather_mock(lat, lon),
+            "fetched_at": datetime.now(UTC).isoformat(),
+        }
+        _cache_set(cache_key, payload, ACCUWEATHER_TTL_SECONDS)
+        return {**payload, "cached": False}
+
+    if not _accuweather_budget_available(3):
+        stale = _cache_get_stale(cache_key)
+        payload = {
+            **envelope,
+            "source": "accuweather" if stale else "mock",
+            "stale": stale is not None,
+            "note": "Today's AccuWeather call budget is spent; this is the last response the "
+                    "backend fetched, served until the budget resets.",
+            **(stale or _accuweather_mock(lat, lon)),
+            "fetched_at": datetime.now(UTC).isoformat(),
+        }
+        payload.pop("cached", None)
+        return payload
+
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT, follow_redirects=True) as client:
+            location_key = await _resolve_accuweather_location_key(client, lat, lon)
+            current_raw, hourly_raw, daily_raw, alerts = await asyncio.gather(
+                _accuweather_get(client, f"/currentconditions/v1/{location_key}", {"details": "false"}),
+                _accuweather_get(client, f"/forecasts/v1/hourly/12hour/{location_key}", {"metric": "true", "details": "false"}),
+                _accuweather_get(client, f"/forecasts/v1/daily/5day/{location_key}", {"metric": "true", "details": "false"}),
+                _fetch_accuweather_alerts(client, location_key),
+            )
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"Upstream weather data unavailable: {exc}")
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail=f"AccuWeather response unusable: {exc}")
+
+    payload = {
+        **envelope,
+        "source": "accuweather",
+        "location_key": location_key,
+        "current": _map_accuweather_current(current_raw),
+        "hourly": _map_accuweather_hourly(hourly_raw),
+        "daily": _map_accuweather_daily(daily_raw),
+        "alerts": alerts,
+        "calls_today": _accuweather_calls_today(),
+        "fetched_at": datetime.now(UTC).isoformat(),
+    }
+    _cache_set(cache_key, payload, ACCUWEATHER_TTL_SECONDS)
+    return {**payload, "cached": False}

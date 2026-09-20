@@ -94,8 +94,8 @@ flutter run --dart-define=ML_API_BASE_URL=http://<host>:8000
 ```bash
 cd backend
 pip install -r requirements.txt
-cp ../.env.example .env          # then set WORLDTIDES_API_KEY
-pytest tests/ -v                 # 9 passing
+cp ../.env.example .env          # then set WORLDTIDES_API_KEY / ACCUWEATHER_API_KEY
+pytest tests/ -v                 # offline: every upstream call is monkeypatched
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 Swagger: http://localhost:8000/docs
@@ -112,6 +112,8 @@ values**.
 | Variable | Where | Purpose |
 | :-- | :-- | :-- |
 | `WORLDTIDES_API_KEY` | `backend/.env` | Tide proxy — **backend only**, never in the app |
+| `ACCUWEATHER_API_KEY` | `backend/.env` | Weather proxy — **backend only**; unset until an account is provisioned, then `GET /api/v1/weather` serves the documented mock shape |
+| `ACCUWEATHER_DAILY_CALL_BUDGET` | `backend/.env` | Optional cap on provider calls per day (free tier is a *daily* ceiling; 0 = no cap) |
 | `ML_API_BASE_URL` | app `.env` / `--dart-define` | Deployed FastAPI base URL |
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth (v3 name) |
 | `COPERNICUS_MARINE_USERNAME` / `COPERNICUS_MARINE_PASSWORD` | `backend/.env` | Phase-5 data — not yet provisioned |
