@@ -83,3 +83,5 @@ assets/images/daymaniyat-aerial.png
 website/assets/images/*.png
 website/assets/images/*.jpg
 !website/assets/images/app_icon.jpg
+.vercel
+.env*

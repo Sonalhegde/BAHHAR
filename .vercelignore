@@ -1,20 +1,10 @@
-# Secrets — never upload
-.env
-.env.*
-backend/.env
+# Static landing site on Vercel: upload ONLY the website/ folder.
+# The project's Root Directory is `website`, so Vercel serves website/* at the site root
+# and reads its deploy config from website/vercel.json.
 
-# Tooling / non-web
-.git
-.github
-node_modules
-.vercel
+# Deny everything by default ...
+*
 
-# Mobile/backend source not needed for the static landing site
-android
-ios
-lib
-test
-backend
-macos
-linux
-windows
+# ... then allow the static site folder and its contents (nothing else).
+!website
+!website/**

@@ -17,13 +17,15 @@ npm i -g vercel
 # 2. Authorize (opens a browser to log in)
 vercel login
 
-# 3. Deploy the website/ folder to production
-vercel deploy website --prod
+# 3. From the repo ROOT: deploy the production site
+vercel deploy --prod
 ```
 
-Because `vercel.json` lives inside `website/`, deploy that folder as the project root. The
-first run links the directory to a new/selected Vercel project; subsequent runs reuse the link
-(stored in `website/.vercel/`, which is git-ignored).
+Deploy from the **repository root**, not from `website/`. The Vercel project's **Root Directory
+is `website`**, so the uploaded tree must contain a `website/` folder; running
+`vercel deploy website --prod` instead nests nothing where Vercel expects `website/` and serves
+404s. `.vercelignore` (repo root) restricts the upload to `website/` only, so the transfer stays
+~1 MB. The repo-root link is stored in `.vercel/` (git-ignored).
 
 ### Option B — Vercel dashboard (Git integration)
 
@@ -50,7 +52,7 @@ first run links the directory to a new/selected Vercel project; subsequent runs 
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
@@ -64,11 +66,13 @@ first run links the directory to a new/selected Vercel project; subsequent runs 
   (`/privacy.html`, `/terms.html`, `/assets/...`) are served first because Vercel checks the
   filesystem before applying rewrites. `/` is served by `index.html`, which redirects to
   `landing-page.html`.
-- **headers** — the same security headers previously set by `netlify.toml`.
+- **headers** — the same security headers previously set by `netlify.toml`, except
+  `X-Frame-Options`, which must be `SAMEORIGIN`: `DENY` also blocks the site's own
+  same-origin `<iframe src="map-mockup.html">` nautical chart.
 
 ### `.vercelignore` (repo root)
-Excludes secrets and non-web source (`.env*`, `lib/`, `test/`, `backend/`, `android/`, `ios/`,
-`.git/`) so only web assets are uploaded when deploying from the repository.
+Allow-list style: ignores everything (`*`) except `website/` and its contents, so a repo-root
+deploy uploads only the static site (~1 MB) and never the Flutter source, backend or secrets.
 
 ---
 
@@ -93,15 +97,16 @@ Excludes secrets and non-web source (`.env*`, `lib/`, `test/`, `backend/`, `andr
    git push origin main
    ```
 3. **Vercel auto-deploys** (Git integration) in ~30–60 seconds, or redeploy manually with
-   `vercel deploy website --prod`.
+   `vercel deploy --prod` from the repo root.
 
 ---
 
 ## 🔍 Troubleshooting
 
 ### Site shows 404
-Make sure the project's **Root Directory is `website`** (dashboard) or that you deployed the
-`website/` folder (CLI). The site has no root-level `index.html`.
+Make sure the project's **Root Directory is `website`** (Project → Settings → General) and that
+you deployed from the repo root so the uploaded tree contains `website/`. The site has no
+root-level `index.html`.
 
 ### Changes not showing
 - Hard-refresh (Ctrl+Shift+R) to bypass the CDN cache.
@@ -116,7 +121,8 @@ Make sure the project's **Root Directory is `website`** (dashboard) or that you 
 
 ## 🔐 Security Headers (Configured)
 
-- **X-Frame-Options** — prevents clickjacking
+- **X-Frame-Options (SAMEORIGIN)** — blocks cross-origin clickjacking while still allowing the
+  embedded same-origin map
 - **X-Content-Type-Options** — prevents MIME sniffing
 - **X-XSS-Protection** — legacy XSS filter
 - **Referrer-Policy** — controls referrer leakage

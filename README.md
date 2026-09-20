@@ -21,14 +21,17 @@ from the Musandam fjords to the Dhofar monsoon coast.
 
 ## 🌐 Live deployment
 
-**Status: pending host authorization — not yet publicly deployed.** The marketing site lives in the
-[`website/`](website) folder (`landing-page.html`, with `index.html` redirecting to it, plus `privacy.html`
-and `terms.html`). No production URL is listed here until
-it has actually been verified live (see [SPECIFICATION.md §10](SPECIFICATION.md)).
+**Status: live on Vercel —** [https://bahhar-blue.vercel.app](https://bahhar-blue.vercel.app)
+(verified: landing page, embedded Leaflet chart, hero and photo-band imagery all loading). The
+marketing site lives in the [`website/`](website) folder (`landing-page.html`, with `index.html`
+redirecting to it, plus `privacy.html`, `terms.html` and `map-mockup.html`). The bare
+`bahhar.vercel.app` subdomain is claimed by a different Vercel project, so this project's
+production alias is `bahhar-blue.vercel.app`; rename or retarget it under
+**Project → Settings → Domains**.
 
 | Target | How to serve | State |
 | :-- | :-- | :-- |
-| Vercel (primary) | `website/vercel.json` (root directory `website/`) rewrites `/*` → `/landing-page.html` and sets security headers; `.vercelignore` scopes the upload to web assets | Deployed |
+| Vercel (primary) | `website/vercel.json` (root directory `website/`) rewrites `/*` → `/landing-page.html` and sets security headers; `.vercelignore` uploads only `website/` | Deployed — <https://bahhar-blue.vercel.app> |
 | GitHub Pages | Set Pages source to `/website` → `https://sonalhegde.github.io/BAHHAR/` | Ready — needs Pages enabled on `main` |
 
 Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
