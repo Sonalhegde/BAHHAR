@@ -33,4 +33,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Pytest
-        run: pytest -v tests/
+        # `python -m pytest` (not bare `pytest`) puts the service directory on
+        # sys.path so tests can `import main`; pytest's own rootdir insertion
+        # only adds tests/, which caused ModuleNotFoundError: No module named 'main'.
+        env:
+          PYTHONPATH: .
+        run: python -m pytest -v tests/
