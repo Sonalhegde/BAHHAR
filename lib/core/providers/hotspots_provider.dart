@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
+import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
 import '../models/hotspot_model.dart';
 import '../services/firebase_service.dart';

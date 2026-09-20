@@ -84,23 +84,22 @@ third-party API keys** — the WorldTides key never ships in the mobile binary (
 | Geocoding/search | Nominatim (OpenStreetMap) — proxied via backend | Keyless; centralise rate-limit/cache |
 | Cloud | Firebase (Auth/Firestore/Storage/FCM/App Check) | Realtime sync, offline cache, OTP |
 | ML/marine microservice | Python 3.11+ / FastAPI / Uvicorn / Docker | Async REST scoring + upstream proxying |
-| Models | Pydantic v2 (backend); Freezed + json_serializable (v3 target for Dart) | Strict schema + JSON serialisation |
-| HTTP (client) | `dio` routed via backend (v3 target) | Interceptors, retries, central auth |
+| Models | Pydantic v2 (backend); Dart models are hand-written `fromJson`/`toJson` (equally valid per v3 status log) | Strict schema + JSON serialisation |
+| HTTP (client) | `http` routed via backend (equally valid per v3 status log — not migrated to `dio`) | Single client, cache + central auth |
 | Website | Self-contained HTML/CSS/JS + GSAP | Static landing page on Netlify/Vercel |
 
-### 2.2 Implementation gaps vs v3 (must reconcile)
-The repository predates the v3 prompt and was scaffolded on the older Google-Maps direction.
-Verified against `pubspec.yaml` / `lib/`, these are open deltas, tracked as roadmap items (§9):
+### 2.2 v3 reconciliation status
+The repo was originally scaffolded on the older Google-Maps direction. Per the v3 status log:
 
-- **Maps engine:** code uses `google_maps_flutter` (`fishing_map_screen.dart`, `hotspots_provider.dart`,
-  `firestore_service.dart` import its `LatLng`); v3 mandates **MapLibre GL + OpenFreeMap (keyless)**
-  with a generic `geo:` deep link for navigation. Migration requires a Flutter SDK to validate
-  (`flutter analyze`/`test`) and is deferred to a Flutter-equipped pass.
-- **Client deps:** `dio`, `freezed`/`json_serializable`+`build_runner`, `flutter_dotenv`,
-  `riverpod_annotation`/`riverpod_generator`, `flutter_launcher_icons` are not yet added; the
-  client currently uses `http` + hand-written `fromJson` and `--dart-define` (no dotenv).
-- **Marine cache:** server-side caching is implemented as an in-memory TTL map; v3 §9 is satisfied
-  (never per-rebuild), with Firestore-backed persistence listed as an enhancement.
+- **Maps engine — RESOLVED (this pass):** `google_maps_flutter` has been removed and the map,
+  `hotspots_provider` and `firestore_service` migrated to **MapLibre GL (`maplibre_gl ^0.27`) +
+  OpenFreeMap** (keyless). Android Maps `meta-data`/`play-services-maps`/ProGuard rules deleted.
+  No local Flutter SDK here, so **CI (`flutter_ci.yml`) is the verification gate** for `analyze`/`test`.
+- **Packaging choices — ACCEPTED, do NOT migrate:** `http` (not `dio`), hand-written JSON models
+  (not `freezed`/codegen), plain `flutter_riverpod` (not `riverpod_annotation`) are explicitly
+  called out in v3 as *equally valid implementations of the same requirement*, not divergences.
+- **Marine cache — SATISFIED:** server-side in-memory TTL cache meets v3 §9; Firestore-backed
+  persistence is a non-blocking enhancement (§9).
 
 ---
 
@@ -116,7 +115,7 @@ data source is live.
 | 2 | Auth & registration | `auth/login_register_screen.dart` | Partial | UI complete; Firebase providers need credentials |
 | 3 | Onboarding carousel | `onboarding/onboarding_screen.dart` | Functional | 3 editorial slides |
 | 4 | Home dashboard | `home/home_dashboard_screen.dart` | **Wired** | Fishing score gauge, **live marine chips**, ranked hotspots, stale-data banner |
-| 5 | Marine chart / map | `map/fishing_map_screen.dart` | Functional | Renders via `google_maps_flutter` today; **v3 target is MapLibre/OpenFreeMap (keyless)** — see §2.2 |
+| 5 | Marine chart / map | `map/fishing_map_screen.dart` | Functional | **MapLibre GL + OpenFreeMap (keyless)** — v3 migration complete |
 | 6 | Hotspot details | `hotspot/hotspot_details_screen.dart` | Functional | Bathymetry, conditions, species, plan-trip CTA |
 | 7 | Smart trip wizard | `trip_planner/smart_trip_wizard_screen.dart` | Functional | 3–4-step: species → vessel/range → window → review |
 | 8 | Trip recommendation | `trip_planner/trip_recommendation_screen.dart` | Heuristic | Fuel/route uses local heuristic (see §9 roadmap) |
@@ -237,7 +236,9 @@ with placeholder values only. **`.env` must never be committed** and is listed i
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth token (v3 name; supersedes the older `ML_API_AUTH_TOKEN`) |
 | `COPERNICUS_MARINE_USERNAME` / `COPERNICUS_MARINE_PASSWORD` | `backend/.env` | Phase-5 chlorophyll/SST-front data — **not yet provisioned** |
 | `FIREBASE_PROJECT_ID` / `FIREBASE_STORAGE_BUCKET` | app `.env` | Firebase project wiring |
-| `GOOGLE_MAPS_API_KEY` | `android/local.properties`, iOS `AppDelegate`, app `.env` | **Legacy / current-code only** — the `google_maps_flutter` build needs it; the v3 MapLibre/OpenFreeMap target is keyless and drops this entirely |
+
+> Maps need **no** key: the app renders OpenFreeMap tiles via MapLibre (the former
+> `GOOGLE_MAPS_API_KEY` was removed with the Google Maps dependency).
 
 `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`,
 `android/key.properties` and any service-account JSON are gitignored and supplied out-of-band.
@@ -262,22 +263,16 @@ collections are authenticated-read / `write: if false`. `storage.rules` limit ca
 
 **Complete / wired:** backend predict + geofence + health; live marine + tide proxy with TTL
 cache and 502/503 semantics; Flutter `MarineService` live fetch + offline fallback + stale
-banner; core utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10 screens in demo
-mode; Android build/sign/ProGuard config; `firestore.rules` + `storage.rules`; landing-page
-redesign; backend pytest suite (**9/9 passing**).
+banner; **MapLibre GL + OpenFreeMap map migration (v3) — Google Maps fully removed**; core
+utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10 screens in demo mode; Android
+build/sign/ProGuard config; `firestore.rules` + `storage.rules`; landing-page redesign; backend
+pytest suite (**9/9 passing**).
 
 **Blocked on external credentials (cannot be done in-repo):** Firebase project wiring
 (`google-services.json`, `firebase_options.dart`, enable Auth/Firestore/Storage/FCM), Copernicus
 Marine account (Phase 5), Apple Developer account (iOS), app signing keystore + Play Store listing.
-A Google Maps API key is required only by the *current* `google_maps_flutter` build and disappears
-once the v3 MapLibre/OpenFreeMap migration lands.
 
 **Deferred functional gaps (by design / high effort):**
-- **v3 stack reconciliation (see §2.2):** migrate the map from `google_maps_flutter` to **MapLibre
-  GL + OpenFreeMap** (keyless), and add the v3 client dependency set (`dio`, `freezed`/
-  `json_serializable`+`build_runner`, `flutter_dotenv`, `riverpod_annotation`/`riverpod_generator`,
-  `flutter_launcher_icons`). Deferred because it must be validated with `flutter analyze`/`test` in
-  a Flutter-equipped environment (not available in the current setup).
 - Phase-5 Copernicus Marine integration (chlorophyll/SST fronts) — account not yet provisioned.
 - `/api/v1/trip/optimize` — trip planner still uses a deterministic heuristic.
 - Extracted placeholder widgets (§3) — main screens inline working equivalents.

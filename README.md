@@ -2,7 +2,7 @@
 
 **Smart fishing & marine-intelligence companion for the Sultanate of Oman.**
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.24%2B-blue.svg)](https://flutter.dev/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.29%2B-blue.svg)](https://flutter.dev/)
 [![Python](https://img.shields.io/badge/FastAPI-3.11%2B-green.svg)](https://fastapi.tiangolo.com/)
 [![Backend tests](https://img.shields.io/badge/backend%20tests-9%20passing-brightgreen.svg)](backend/tests/test_api.py)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
@@ -51,12 +51,9 @@ Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 - **CI** — `backend_ci.yml` (pytest) and `flutter_ci.yml` (format, analyze, test).
 
 ### ⏳ Planned / blocked
-- **v3 stack reconciliation:** the map still renders with `google_maps_flutter`; the authoritative
-  *Master Build Prompt v3* mandates **MapLibre GL + OpenFreeMap (keyless)** and the `dio` / `freezed`
-  / `flutter_dotenv` / `riverpod_annotation` client dependency set. Migration must be validated in a
-  Flutter-equipped environment. Details: [SPECIFICATION.md §2.2](SPECIFICATION.md).
 - **Blocked on external credentials:** Firebase project wiring, Copernicus Marine account, release
-  keystore + Play Store listing, iOS runner (a Google Maps key is needed only until the MapLibre move).
+  keystore + Play Store listing, iOS runner. (Maps are keyless via MapLibre/OpenFreeMap — no API
+  key needed.)
 - **Deferred in code:** `/api/v1/trip/optimize` (planner still uses a heuristic), extracted
   placeholder widgets, geohash Firestore queries, `shared_preferences` persistence, FCM handlers,
   guest-mode catch queue.
@@ -67,17 +64,18 @@ Full status matrix & roadmap: [SPECIFICATION.md §9](SPECIFICATION.md).
 
 ## 🧱 Tech stack
 
-Flutter 3.24+/Dart 3.5+ · Riverpod 2.x · GoRouter 14.x · Maps: `google_maps_flutter` today →
-**MapLibre GL + OpenFreeMap (v3 target, keyless)** · Firebase
-(Auth/Firestore/Storage/FCM/App Check) · Pydantic v2 / Freezed · Python 3.11+ / FastAPI / Uvicorn / Docker ·
-static HTML/CSS/JS + GSAP website. (Verified against `pubspec.yaml` and `backend/requirements.txt`.)
+Flutter 3.29+/Dart 3.7+ · Riverpod 2.x · GoRouter 14.x · **MapLibre GL + OpenFreeMap (keyless
+vector tiles — no Google Maps SDK, no API key)** · Firebase
+(Auth/Firestore/Storage/FCM/App Check) · `http` client + hand-written JSON models · Python 3.11+
+/ FastAPI / Uvicorn / Docker · static HTML/CSS/JS + GSAP website.
+(Verified against `pubspec.yaml` and `backend/requirements.txt`.)
 
 ---
 
 ## 🚀 Setup
 
 ### Prerequisites
-Flutter 3.24+, Dart 3.5+, Python 3.11+, and (for production) Firebase + Google Cloud accounts.
+Flutter 3.29+ / Dart 3.7+ (stable), Python 3.11+, and (for production) Firebase + Google Cloud accounts.
 
 ### Flutter client
 ```bash
@@ -115,7 +113,9 @@ values**.
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth (v3 name) |
 | `COPERNICUS_MARINE_USERNAME` / `COPERNICUS_MARINE_PASSWORD` | `backend/.env` | Phase-5 data — not yet provisioned |
 | `FIREBASE_PROJECT_ID` / `FIREBASE_STORAGE_BUCKET` | app `.env` | Firebase wiring |
-| `GOOGLE_MAPS_API_KEY` | app `.env` / `android/local.properties` / iOS | **Transitional** — current `google_maps_flutter` build only; dropped by the v3 MapLibre/OpenFreeMap target |
+
+Maps are keyless (MapLibre + OpenFreeMap) — the former `GOOGLE_MAPS_API_KEY` was removed with the
+Google Maps dependency.
 
 Also supplied out-of-band (gitignored): `android/app/google-services.json`,
 `ios/Runner/GoogleService-Info.plist`, `android/key.properties`.

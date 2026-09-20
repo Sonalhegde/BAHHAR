@@ -4,7 +4,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
+import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
 import '../../features/auth/domain/user_model.dart';
 import '../models/catch_model.dart';

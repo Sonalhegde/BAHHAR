@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`.vercelignore`** to scope Vercel uploads to web assets (never secrets or app source).
 - Backend test suite expanded to **9 passing** cases (marine/tide proxy + tide-state derivation).
 
+### 🔄 Changed
+- **Maps migrated from Google Maps to MapLibre GL + OpenFreeMap** (Master Build Prompt v3 §2/§3.5):
+  removed `google_maps_flutter`, added `maplibre_gl ^0.27`; rewrote `fishing_map_screen.dart` to a
+  `MapLibreMap` (keyless `positron` style) rendering probability-coloured hotspot circles via the
+  controller's circle API; repointed `LatLng` imports in `hotspots_provider`/`firestore_service`.
+  Deleted the Android Maps `meta-data` (`MAPS_API_KEY`), `play-services-maps` dependency and
+  Google Maps ProGuard rules. Raised the SDK floor to Flutter 3.29 / Dart 3.7 (v3 §3.0). No maps
+  API key is required anymore. **Verified via `flutter_ci.yml`** (no local Flutter SDK).
+
 ### 📚 Documentation
 - Consolidated the four overlapping specification docs into a single unified
   **[SPECIFICATION.md](SPECIFICATION.md)** and rewrote **[README.md](README.md)** to the canonical

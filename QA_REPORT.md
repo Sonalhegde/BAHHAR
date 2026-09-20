@@ -111,20 +111,21 @@ v3 as governing and to record the deltas honestly rather than assert Google Maps
 
 | v3 requirement | Code reality | Verdict | Action taken |
 | :-- | :-- | :-- | :-- |
-| §2 Maps = **MapLibre GL + OpenFreeMap**, keyless, "no Google Maps SDK" | `google_maps_flutter` in `pubspec.yaml` + `fishing_map_screen.dart` (also `hotspots_provider`/`firestore_service` import its `LatLng`) | ❌ Conflict | Documented as gap (§2.2/§9/README); **migration deferred** — cannot run `flutter analyze` here |
-| §3.1 deps `dio`, `freezed`/`json_serializable`, `flutter_dotenv`, `riverpod_annotation`, `flutter_launcher_icons` | none present; client uses `http` + `--dart-define` | ❌ Missing | Recorded as v3 target set in spec/README |
-| §3.2 `.env`: `ML_API_TOKEN`, `COPERNICUS_MARINE_*` | `.env.example` had `ML_API_AUTH_TOKEN`, no Copernicus, `GOOGLE_MAPS_API_KEY` required | ⚠️ Naming | `.env.example` updated to v3 names; Maps key demoted to transitional |
+| §2 Maps = **MapLibre GL + OpenFreeMap**, keyless, "no Google Maps SDK" | **Migrated this pass** — `google_maps_flutter` removed, `maplibre_gl ^0.27` added; map + `LatLng` imports rewritten; Android Maps key/dep/ProGuard deleted | ✅ Resolved | Pending CI verify (no local Flutter SDK) |
+| §3.1 deps `dio`, `freezed`/`json_serializable`, `flutter_dotenv`, `riverpod_annotation`, `flutter_launcher_icons` | client uses `http` + hand-written JSON + plain `flutter_riverpod` | ✅ Accepted | v3 status log: equally valid — **not** migrated (leave working code alone) |
+| §3.2 `.env`: `ML_API_TOKEN`, `COPERNICUS_MARINE_*` | `.env.example` had `ML_API_AUTH_TOKEN`, no Copernicus, `GOOGLE_MAPS_API_KEY` required | ✅ Reconciled | `.env.example` updated to v3 names; Maps key removed entirely (keyless) |
 | §9 cache 3rd-party responses server-side | in-memory TTL cache in `main.py` | ✅ Satisfied | Firestore persistence noted as enhancement |
 | §9 offline last-known + "last updated" | `MarineService` stale replay + Home banner | ✅ Done | — |
 | §5 design system (Premium White), §6 10 screens, nav | implemented | ✅ Match | — |
 | §9 accessibility icon/shape, Riverpod-only | implemented | ✅ Match | — |
 
-**Decision:** the MapLibre code migration is the one substantive v3 item **not** applied this pass.
-It is a large, version-sensitive Dart rewrite of the interactive map (annotation managers, style-
-loaded lifecycle, `LatLng` type change across 3 files, ProGuard/manifest/gradle cleanup) that can
-only be validated with a Flutter SDK. Shipping it unverified would risk a red `flutter_ci` and
-break `main` on merge — the same "no untested changes" rule used throughout this QA. A concrete,
-ready-to-run migration plan is provided in the PR description for execution on a Flutter machine.
+**Decision:** the MapLibre code migration is **executed this pass** (v3 status log confirms it was
+an approved, settled decision — leftover `google_maps_flutter` was to be removed, and the
+`http`/hand-written-JSON/plain-Riverpod packaging choices are valid and were left untouched).
+Because there is **no Flutter SDK in this environment**, the Dart changes cannot be `analyze`/`test`
+ed locally; **`flutter_ci.yml` is the verification gate** and will run `dart format`, `flutter
+analyze` and `flutter test` on push. Code was written against the verified `maplibre_gl 0.27` API
+(`MapLibreMap`, `addCircle(s)`/`clearCircles`/`getCircleLatLng`, `onCircleTapped`, `CircleOptions`).
 
 <!-- v3 reconciliation date: 2026-09-20 -->
 
