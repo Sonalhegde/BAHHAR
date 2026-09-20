@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Landing page — the hero seam, one light background, and the RTL pass (2026-09-20)
+
+A five-point brief, worked as five commits: `fix: remove leftover gradient blobs and blend hero
+photo transitions`, `style: unify all light backgrounds to blue-tint system`,
+`fix: RTL layout overlap issues`, `fix(i18n): Arabic species labels follow the catalogue…`, plus
+the `feat(i18n)` toggle the brief still thought was missing — it had already shipped (see the
+audit table).
+
+**Fixed**
+- **The hero/stats overlay.** The faint circular "blobs" over the Khore Dhawas photograph were
+  decorative radial gradients left behind from the plain-white hero that preceded it — deleted, not
+  retuned. One deliberate `linear-gradient` wash now sits on the photo, and the hard cream seam
+  under the stats band is gone: the wash reaches full opacity in the last part of the section and
+  meets the next section's background at the seam.
+- **One light background instead of three.** The root cause was the body itself: a `linear-gradient`
+  drifting from warm paper through pure white to cream as you scrolled. `--bg-primary #f4f8fa` and
+  `--bg-secondary #ecf2f5` now replace `--paper`, `--off` and `--oman-white`, which are **deleted,
+  not aliased**, so a forgotten `var(--paper)` cannot survive the pass. The same tokens went into
+  `map-mockup.html`, `privacy.html` and `terms.html`, which still ran the warm gradient — a
+  "complete" pass that stopped at the landing page would have reintroduced exactly the drift the
+  brief objected to.
+- **Contrast, measured rather than assumed.** White → blue tint is a small delta that adds up: an
+  automated census (every leaf text element, ancestor backgrounds composited, AA thresholds by
+  size) reported **30 real failures**, all seafoam or teal on a light surface. Six groups fixed —
+  the frosted-header nav underline, `.pillar-eyebrow`, `.region`, `.region-num`, `.region-legal`,
+  and the chart's 8.6 px scale-bar labels at 2.7:1. Seafoam turned out to be a dark-band accent
+  only: 1.97–2.47:1 on every light surface, where teal clears 4.8.
+- **RTL, which is where the real Arabic bugs were.** Gradients do not mirror: `.hero-overlay` was a
+  physical 90° wash, so the Arabic headline moved to its thin end and sat on sunlit rock — median
+  white-on-photo contrast **5.37 against 12.27 in English**, restored to **14.06** with a 270°
+  twin. Also mirrored: the header corner glow (`100% 0%` → `0% 0%`), the mobile drawer (pinned to
+  `right`, so it arrived from the side opposite its own button), the nav underline, the utility-bar
+  separator, and the species-card hover nudge.
+- **Arabic species labels, against the app's own catalogue.** Arabic mode was echoing the English
+  grid's gloss, so each card printed the same word twice (`الكنعد` over `كنعد (Kanaad)`); the second
+  line is now the scientific name from `lib/core/constants/fish_species.dart`, and the English
+  glosses take the catalogue's definite forms. The construct-state phrase (`من كنعد مسندم إلى ثمد
+  ظفار`) is deliberately left bare. The footer note also claimed the live chart tiles stay English;
+  OpenStreetMap serves whatever language it holds for a place, so the note now says that.
+
+**Audit — brief claim vs. current source**
+
+| Claim in the brief | Verified against the source | Action |
+|---|---|---|
+| Arabic toggle is `href="#"`, non-functional | False — a `<button onclick="toggleLanguage()">` with `dir`/`lang` switching and `localStorage` persistence had shipped earlier | Nothing to build; the mirroring layer was the live gap |
+| Leftover gradient blobs over the hero photo | True | Deleted, single linear wash, seams blended |
+| White **and** cream in use inconsistently | True, three shades including the body gradient | Unified across four files |
+| AA still passes on the new tint | Not assumed | 30 measured failures → **0** (151 EN / 145 AR elements) |
+| Duplicate `عربي` in the toggle label | Already fixed — chip reads *Oman*, one button | None |
+| Empty `<img src="">` for the fishermen photo | Already fixed — real `webp` src | None |
+| Footer Changelog → `#top` | Already fixed — points at the repository `CHANGELOG.md` | None |
+| Stats render literal `0` in the source | Already fixed — markup carries `12+ / 50+ / 24/7 / 100%`, JS only counts up | None |
+| `ثمد` wrong for Yellowfin Tuna | Correct but indefinite | Now `الثمد`, matching the catalogue |
+| `عقرب` ("scorpion") for Grouper | Never on this page — it is `الهامور` | None |
+| `فراخ` ("chicks") for Snapper | Never on this page — Latin *Lutjanus* stands in, with the reason printed on the tile | None |
+| `قرفص` for Barracuda, unverified | The catalogue says **القد** | `القد` kept; the brief's suggestion was wrong, not unconfirmed |
+
+**RTL evidence** — rect-collision probe (pairwise leaf-text intersection > 45 % of the smaller box)
+plus overflow and computed-style checks, EN and AR at 1600 px and 390 px: **0 collisions** and no
+horizontal scroll in any of the four, arrows flip (`matrix(-1, 0, 0, 1, 0, 0)`), the dense
+live-conditions / trip-planner / catch-log mockups stay pinned `dir="ltr"` on purpose, and stats
+numerals are Western — the Gulf convention, confirmed as a choice rather than an oversight.
+Captured English/Arabic pairs for the hero, a feature pillar and the species grid.
+
 ### 🗺️ Landing page — the fishing coast, plus a fix / i18n / motion pass (2026-09-20)
 
 Four separate commits: `fix(website)`, `feat(i18n)`, `feat` (regions section), `perf(motion)`.
