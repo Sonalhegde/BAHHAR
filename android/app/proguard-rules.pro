@@ -19,11 +19,6 @@
 -keep class com.google.firebase.firestore.** { *; }
 -keepclassmembers class com.google.firebase.firestore.** { *; }
 
-# Google Maps
--keep class com.google.android.gms.maps.** { *; }
--keep class com.google.android.libraries.maps.** { *; }
--dontwarn com.google.android.gms.maps.**
-
 # Google Sign-In
 -keep class com.google.android.gms.auth.** { *; }
 -keep class com.google.android.gms.common.** { *; }

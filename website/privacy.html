@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — BAHHAR</title>
+    <meta name="description" content="How BAHHAR collects, stores and protects your data in the Sultanate of Oman.">
+    <link rel="icon" type="image/jpeg" href="assets/images/app_icon.jpg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #12263a;
+            --teal: #0f7a7a;
+            --seafoam: #3fb0a3;
+            --paper: #faf8f4;
+            --line: #e3ddd0;
+            --body: #4b5a67;
+            --muted: #7f8b95;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            color: var(--navy);
+            background: linear-gradient(180deg, #fcfbf8 0%, var(--paper) 60%, #f7f3ec 100%);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 96px; }
+        h1, h2 { font-family: 'Plus Jakarta Sans', 'Public Sans', system-ui, sans-serif; letter-spacing: -0.02em; line-height: 1.2; }
+        h1 { font-size: clamp(30px, 4.4vw, 42px); font-weight: 800; margin-bottom: 14px; }
+        h2 { font-size: 21px; font-weight: 700; margin: 44px 0 12px; }
+        p, li { font-size: 16.5px; color: var(--body); }
+        ul { padding-left: 22px; display: grid; gap: 8px; margin: 12px 0; }
+        .lede { font-size: 18px; color: var(--body); margin-bottom: 8px; }
+        .updated { font-size: 14px; color: var(--muted); }
+        .draft {
+            margin: 28px 0 0; padding: 16px 18px; border-left: 3px solid var(--teal);
+            background: rgba(15,122,122,0.06); font-size: 15px; color: var(--body);
+        }
+        .back { display: inline-block; margin-bottom: 36px; font-weight: 600; color: var(--teal); text-decoration: none; }
+        .back:hover { text-decoration: underline; }
+        footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+        footer a { color: var(--teal); }
+        @media (max-width: 520px) { .wrap { padding: 48px 20px 72px; } }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <a class="back" href="landing-page.html">← Back to BAHHAR</a>
+        <h1>Privacy Policy</h1>
+        <p class="updated">Draft version 0.1 — not yet reviewed. Last updated: September 2026.</p>
+        <p class="lede">BAHHAR is a fishing forecast and logbook companion for Omani waters. This page explains what the app and this website collect, why, and what you can ask us to change.</p>
+
+        <div class="draft">
+            <strong>Draft for review.</strong> Placeholders marked <em>[to confirm]</em> need a legal and operational decision before publication. Nothing here is a legal commitment until the final text is approved and dated.
+        </div>
+
+        <h2>1. Information we collect</h2>
+        <ul>
+            <li><strong>Account data.</strong> Phone number for sign-in by one-time password, and, if you choose it, your name, e-mail address and photo from the sign-in provider you use.</li>
+            <li><strong>Profile and preferences.</strong> Home port, preferred species, language and units, so forecasts can be tuned to you.</li>
+            <li><strong>Catch log entries.</strong> Photos you take, the weight, length and species you record, and the position and conditions of the trip. Entries are yours; they power your own analytics.</li>
+            <li><strong>Trip, crew and vessel details.</strong> The information you type into the trip planner and the documents wallet, including names you add as crew.</li>
+            <li><strong>Documents you store.</strong> Images of licences, vessel registration and permits that you upload yourself.</li>
+            <li><strong>Location while the app is in use.</strong> Approximate or precise device location, only while the app is open, to show nearby hotspots, distance from your port and your position on the chart.</li>
+            <li><strong>Notifications.</strong> A push token from Firebase Cloud Messaging if you allow bite alerts and expiry reminders.</li>
+            <li><strong>Waitlist e-mail on this website.</strong> Submitted addresses are held only in your own browser storage until a launch notification service is connected <em>[to confirm]</em>.</li>
+        </ul>
+
+        <h2>2. Why we process it</h2>
+        <ul>
+            <li>To build forecasts: tide, sea temperature, wave, wind, solunar pressure and species probability for the waters you fish.</li>
+            <li>To show your own logbook, analytics, licences and trip plans back to you.</li>
+            <li>To warn you when a permit is close to expiring, or when conditions change before your planned launch window.</li>
+            <li>To keep accounts secure and detect abuse.</li>
+        </ul>
+        <p>We do not sell personal data, and we do not use your catch photos or licence documents for anything other than providing the feature you asked for.</p>
+
+        <h2>3. Services that help us operate</h2>
+        <ul>
+            <li><strong>Google Firebase</strong> — authentication, Cloud Firestore, Cloud Storage and Cloud Messaging.</li>
+            <li><strong>Google Play Billing</strong> — subscription purchase and refund handling, if and when paid plans ship.</li>
+            <li><strong>Marine data providers</strong> — our own backend requests open marine model data and tide predictions. These requests carry coordinates, not your name or account identifier.</li>
+            <li><strong>Map tiles</strong> — open mapping services receive standard technical requests (address, user agent) when the chart loads.</li>
+        </ul>
+        <p>Hosting regions, sub-processors and retention periods for each of these <em>[to confirm]</em>.</p>
+
+        <h2>4. How your data is protected</h2>
+        <p>Data travels over TLS. In Firestore and Storage, your documents, catches and profile are stored under your own account identifier, and access rules allow the owner of that identifier to read or write nothing else. Catch photos and licence images are not publicly readable. We review these rules whenever the data model changes; no system can promise absolute security.</p>
+
+        <h2>5. Retention and deletion</h2>
+        <ul>
+            <li>You can delete any catch entry, trip, document or crew record inside the app at any time.</li>
+            <li>Deleting your account removes your profile, logs, stored documents and notification token <em>[to confirm: grace period before permanent deletion]</em>.</li>
+            <li>Forecast and tide data we fetch is scientific model output and is not personal data.</li>
+        </ul>
+
+        <h2>6. Your choices</h2>
+        <ul>
+            <li>Decline location and keep using the app by picking your port manually.</li>
+            <li>Turn off push notifications per alert type.</li>
+            <li>Sign in with phone only, so no third-party profile is linked.</li>
+            <li>Ask us for a copy of your data or for its deletion using the contact below.</li>
+        </ul>
+
+        <h2>7. Children</h2>
+        <p>BAHHAR is built for adult anglers and vessel operators. Children under 13 should not create an account; under 18 requires a parent or guardian's involvement <em>[to confirm against Omani requirements]</em>.</p>
+
+        <h2>8. Transfers outside Oman</h2>
+        <p>Our infrastructure providers operate data centres outside the Sultanate. Where your data leaves Oman, the provider's standard contractual and security terms apply <em>[to confirm]</em>.</p>
+
+        <h2>9. Changes to this policy</h2>
+        <p>If the way we handle data changes materially, we will update this page and state the change in the app and in the release notes.</p>
+
+        <h2>10. Contact</h2>
+        <p>Privacy questions and data requests: <em>[to confirm — publish a monitored address]</em>. Postal contact: <em>[to confirm]</em>.</p>
+
+        <footer>
+            <p>© 2026 BAHHAR • Sultanate of Oman. See also our <a href="terms.html">Terms of Service</a>.</p>
+        </footer>
+    </main>
+</body>
+</html>

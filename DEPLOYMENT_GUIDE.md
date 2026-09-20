@@ -1,178 +1,132 @@
-# BAHHAR Landing Page Deployment Guide
+# BAHHAR Landing Page Deployment Guide (Vercel)
 
-## 🚀 Quick Deploy to Netlify
-
-### Step 1: Sign Up / Log In to Netlify
-1. Go to https://app.netlify.com/
-2. Sign up with GitHub (recommended) or email
-3. Authorize Netlify to access your GitHub repositories
-
-### Step 2: Connect Repository
-1. Click **"Add new site"** → **"Import an existing project"**
-2. Choose **"Deploy with GitHub"**
-3. Select your **BAHHAR** repository
-4. Netlify will auto-detect the `netlify.toml` configuration
-
-### Step 3: Configure Build Settings
-**Site Configuration:**
-- **Branch to deploy:** `main`
-- **Build command:** (leave empty - static site)
-- **Publish directory:** `.` (root directory)
-- Click **"Deploy site"**
-
-### Step 4: Set Custom Domain (Optional)
-1. Go to **Site settings** → **Domain management**
-2. Click **"Add custom domain"**
-3. Enter: `bahhar.netlify.app` or your own domain
-4. Follow DNS configuration instructions
-
-### Step 5: Site is Live! 🎉
-Your landing page will be live at:
-- Default: `https://[random-name].netlify.app`
-- Custom: `https://bahhar.netlify.app` (after domain setup)
+The marketing site lives entirely in the [`website/`](website) folder — `landing-page.html`
+(the page), `index.html` (redirects to it), `privacy.html`, `terms.html`, `map-mockup.html`,
+`vercel.json`, and its own `assets/images/`. It is a fully static site: **no build step**.
 
 ---
 
-## 🌐 Alternative Deployment Options
+## 🚀 Quick Deploy to Vercel (recommended)
 
-### Option 2: GitHub Pages
+### Option A — Vercel CLI (from this repo)
 
-1. **Enable GitHub Pages:**
-   ```bash
-   # In your repository settings on GitHub:
-   Settings → Pages → Source: main branch
-   ```
+```bash
+# 1. Install the CLI once
+npm i -g vercel
 
-2. **Your site will be live at:**
-   ```
-   https://sonalhegde.github.io/BAHHAR/landing-page.html
-   ```
+# 2. Authorize (opens a browser to log in)
+vercel login
 
-3. **Optional: Set custom domain:**
-   - Add `CNAME` file with your domain
-   - Configure DNS settings
+# 3. Deploy the website/ folder to production
+vercel deploy website --prod
+```
 
-### Option 3: Vercel
+Because `vercel.json` lives inside `website/`, deploy that folder as the project root. The
+first run links the directory to a new/selected Vercel project; subsequent runs reuse the link
+(stored in `website/.vercel/`, which is git-ignored).
 
-1. Go to https://vercel.com/
-2. Click **"Import Project"**
-3. Select BAHHAR repository
-4. Deploy automatically
+### Option B — Vercel dashboard (Git integration)
 
-**Site URL:** `https://bahhar.vercel.app`
+1. Go to https://vercel.com/ and sign in with GitHub.
+2. **Add New → Project**, import the **BAHHAR** repository.
+3. In **Settings → General → Root Directory**, set it to **`website`**.
+4. Framework preset: **Other**; build command: *(empty)*; output directory: *(empty)*.
+5. Click **Deploy**. Vercel auto-detects the static site and reads `website/vercel.json`.
 
-### Option 4: Cloudflare Pages
+**Site URL:** `https://<project>.vercel.app` (rename the project for a nicer subdomain, e.g.
+`bahhar.vercel.app`).
 
-1. Go to https://pages.cloudflare.com/
-2. Connect GitHub repository
-3. Configure build:
-   - **Build command:** (leave empty)
-   - **Build output directory:** `.`
-4. Deploy
+---
+
+## 🔧 Vercel Configuration Explained
+
+### `website/vercel.json`
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/landing-page.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ]
+}
+```
+
+- **rewrites** — any unknown path falls back to `landing-page.html`. Real files
+  (`/privacy.html`, `/terms.html`, `/assets/...`) are served first because Vercel checks the
+  filesystem before applying rewrites. `/` is served by `index.html`, which redirects to
+  `landing-page.html`.
+- **headers** — the same security headers previously set by `netlify.toml`.
+
+### `.vercelignore` (repo root)
+Excludes secrets and non-web source (`.env*`, `lib/`, `test/`, `backend/`, `android/`, `ios/`,
+`.git/`) so only web assets are uploaded when deploying from the repository.
 
 ---
 
 ## 📁 Files Required for Deployment
 
-✅ **landing-page.html** - Main landing page  
-✅ **index.html** - Redirect to landing page  
-✅ **netlify.toml** - Netlify configuration  
-
-All files are committed and pushed to GitHub!
-
----
-
-## 🔧 Netlify Configuration Explained
-
-### `netlify.toml`
-```toml
-[build]
-  publish = "."              # Serve files from root directory
-  command = "echo 'No build required'"  # Static site, no build
-
-[[redirects]]
-  from = "/*"                # Any URL
-  to = "/landing-page.html"  # Redirects to landing page
-  status = 200               # SPA-style routing
-  force = false              # Don't override existing files
-
-[[headers]]
-  for = "/*"                 # Apply to all pages
-  [headers.values]
-    X-Frame-Options = "DENY"  # Prevent clickjacking
-    X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-```
+- ✅ `website/landing-page.html` — main landing page
+- ✅ `website/index.html` — redirect to the landing page
+- ✅ `website/privacy.html`, `website/terms.html` — legal pages
+- ✅ `website/map-mockup.html` — embedded Leaflet/OpenStreetMap chart
+- ✅ `website/assets/images/*` — photos, fish illustrations, icon
+- ✅ `website/vercel.json` — Vercel routing + headers
 
 ---
 
-## 🎨 Update Landing Page Content
+## 🎨 Updating the Live Site
 
-To update the live site:
-
-1. **Edit landing-page.html locally**
-2. **Commit changes:**
+1. Edit files under `website/` locally.
+2. Commit and push:
    ```bash
-   git add landing-page.html
+   git add website
    git commit -m "Update landing page content"
    git push origin main
    ```
-3. **Netlify auto-deploys** (30-60 seconds)
+3. **Vercel auto-deploys** (Git integration) in ~30–60 seconds, or redeploy manually with
+   `vercel deploy website --prod`.
 
 ---
 
 ## 🔍 Troubleshooting
 
-### Issue: Site shows 404
-**Solution:** Make sure `netlify.toml` and `index.html` are in root directory
+### Site shows 404
+Make sure the project's **Root Directory is `website`** (dashboard) or that you deployed the
+`website/` folder (CLI). The site has no root-level `index.html`.
 
-### Issue: Changes not showing
-**Solution:** 
-- Clear browser cache (Ctrl+Shift+R)
-- Check Netlify deploy logs
-- Wait 1-2 minutes for CDN propagation
+### Changes not showing
+- Hard-refresh (Ctrl+Shift+R) to bypass the CDN cache.
+- Check the deployment log at https://vercel.com/dashboard.
+- Wait ~1 minute for CDN propagation.
 
-### Issue: Custom domain not working
-**Solution:**
-- Verify DNS records point to Netlify
-- Wait 24-48 hours for DNS propagation
-- Check Netlify DNS settings
-
----
-
-## 📊 Netlify Features
-
-### ✅ Included (Free Plan)
-- Automatic HTTPS
-- Continuous deployment from GitHub
-- Global CDN
-- Custom domains
-- Form submissions (100/month)
-- Deploy previews for pull requests
-
-### 🎯 Performance
-- Edge CDN (fast worldwide)
-- Automatic image optimization
-- HTTP/2 & HTTP/3 support
+### Custom domain not working
+- **Project → Settings → Domains**, add your domain and follow the DNS instructions.
+- Allow time for DNS propagation.
 
 ---
 
 ## 🔐 Security Headers (Configured)
 
-- **X-Frame-Options:** Prevents clickjacking
-- **X-Content-Type-Options:** Prevents MIME sniffing
-- **X-XSS-Protection:** Cross-site scripting protection
-- **Referrer-Policy:** Controls referrer information
+- **X-Frame-Options** — prevents clickjacking
+- **X-Content-Type-Options** — prevents MIME sniffing
+- **X-XSS-Protection** — legacy XSS filter
+- **Referrer-Policy** — controls referrer leakage
 
 ---
 
-## 📈 Analytics Setup (Optional)
+## 📈 Analytics (Optional)
 
-### Google Analytics
-Add to `<head>` in landing-page.html:
+Add to `<head>` in `website/landing-page.html`:
 ```html
-<!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -181,89 +135,25 @@ Add to `<head>` in landing-page.html:
   gtag('config', 'G-XXXXXXXXXX');
 </script>
 ```
-
-### Netlify Analytics
-- Enable in Netlify dashboard
-- $9/month for advanced analytics
+Vercel Analytics can also be enabled from the project dashboard.
 
 ---
 
-## 🚀 Deployment Checklist
+## 🌐 Alternatives
 
-Before going live:
-
-- [x] Landing page HTML created
-- [x] Netlify configuration added
-- [x] Index redirect configured
-- [x] Security headers set
-- [x] All files pushed to GitHub
-- [ ] Netlify account created
-- [ ] Repository connected to Netlify
-- [ ] Custom domain configured (optional)
-- [ ] SSL certificate active (automatic)
-- [ ] Analytics setup (optional)
-- [ ] Social media cards tested
-- [ ] Mobile responsiveness verified
-- [ ] Browser compatibility checked
-
----
-
-## 📱 Test Your Deployment
-
-After deployment, test:
-
-1. **Homepage loads:** `https://bahhar.netlify.app/`
-2. **Direct page access:** `https://bahhar.netlify.app/landing-page.html`
-3. **Email signup works**
-4. **All links functional**
-5. **Mobile responsive**
-6. **Fast load time** (< 2 seconds)
-
----
-
-## 🌟 Post-Launch
-
-### Promote Your Landing Page
-- Share on social media
-- Submit to Product Hunt
-- Post on Reddit (r/Oman, r/fishing)
-- Fishing forums and communities
-- Email to Omani fishing associations
-
-### Monitor Performance
-- Netlify Analytics dashboard
-- Email signup conversion rate
-- Bounce rate and time on page
-- Geographic distribution (should be Oman-heavy)
+- **GitHub Pages** — Settings → Pages → source `main` branch, folder `/website` →
+  `https://sonalhegde.github.io/BAHHAR/`.
+- **Cloudflare Pages** — build command empty, output directory `website`.
 
 ---
 
 ## 🆘 Support
 
-**Netlify Support:**
-- Docs: https://docs.netlify.com/
-- Community: https://answers.netlify.com/
-
-**BAHHAR Support:**
-- GitHub Issues: https://github.com/Sonalhegde/BAHHAR/issues
-- Email: support@bahharai.com
+**Vercel:** docs https://vercel.com/docs · support via the dashboard.
+**BAHHAR:** GitHub Issues https://github.com/Sonalhegde/BAHHAR/issues · support@bahharai.com
 
 ---
 
-## 🎯 Next Steps
-
-1. **Deploy to Netlify** (5 minutes)
-2. **Test live site**
-3. **Share with beta testers**
-4. **Collect email signups**
-5. **Launch mobile app**
-
----
-
-**Ready to deploy? Let's get BAHHAR live!** 🌊🎣
-
----
-
-**Last Updated:** September 15, 2026  
-**Deployment Status:** Ready to Deploy  
+**Last Updated:** September 20, 2026
+**Deployment Status:** Live on Vercel
 **Estimated Deploy Time:** < 5 minutes

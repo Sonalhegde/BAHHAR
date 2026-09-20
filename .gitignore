@@ -19,6 +19,10 @@ migrate_working_dir/
 # Visual Studio Code related
 .vscode/
 
+# Vercel CLI deploy scratch (temp scripts/logs) — never commit
+.vercel-tmp/
+.vercel/
+
 # Flutter / Dart / Pub related
 **/doc/api/
 .dart_tool/
@@ -66,3 +70,16 @@ android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 ios/Flutter/flutter_export_environment.sh
 ios/Runner/GeneratedPluginRegistrant.h
 ios/Runner/GeneratedPluginRegistrant.m
+
+# Local Vercel deploy scratch space
+.vercel-tmp/
+.vercel/
+
+# Unoptimised photo sources — the site ships the .webp renditions
+assets/images/fish-*.png
+assets/images/omani-boat.png
+assets/images/khore-dhawas.png
+assets/images/daymaniyat-aerial.png
+website/assets/images/*.png
+website/assets/images/*.jpg
+!website/assets/images/app_icon.jpg

@@ -1,0 +1,20 @@
+# Secrets — never upload
+.env
+.env.*
+backend/.env
+
+# Tooling / non-web
+.git
+.github
+node_modules
+.vercel
+
+# Mobile/backend source not needed for the static landing site
+android
+ios
+lib
+test
+backend
+macos
+linux
+windows

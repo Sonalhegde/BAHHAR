@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
@@ -10,10 +10,13 @@ import '../../../core/models/hotspot_model.dart';
 import '../../../shared/glass/glass_container.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
 
-/// Real Google Maps fishing chart. Markers are colored by
+/// MapLibre fishing chart rendering keyless OpenFreeMap "positron" tiles
+/// (Master Build Prompt v3 §2/§3.5 — no Google Maps SDK, no API key).
+/// Hotspots are drawn as circles colored by
 /// AppColors.getProbabilityColor(hotspot.probability); the species chips
-/// filter markers through selectedSpeciesFilterProvider. Tapping a marker
-/// opens the same full-screen Hotspot Details push used by the home list.
+/// filter them through selectedSpeciesFilterProvider. Tapping a circle opens
+/// the inspector card, whose button pushes the same Hotspot Details screen
+/// used by the home list.
 class FishingMapScreen extends ConsumerStatefulWidget {
   const FishingMapScreen({super.key});
 
@@ -27,51 +30,84 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     zoom: 8.2,
   );
 
-  final Map<String, Marker> _markersById = {};
+  /// OpenFreeMap "positron" — closest keyless preset to the Premium White
+  /// direction (v3 §3.5). No API key, no billing.
+  static const String _openFreeMapStyleUrl =
+      'https://tiles.openfreemap.org/styles/positron';
+
+  MapLibreMapController? _controller;
+  bool _styleLoaded = false;
   HotspotModel? _selectedHotspot;
 
-  /// Kept for future camera animations (e.g. fly-to-hotspot from search);
-  /// referenced on dispose to satisfy the controller lifecycle.
-  GoogleMapController? _mapController;
+  /// Latest filtered hotspots; (re)drawn as circles once the style is ready.
+  List<HotspotModel> _current = const [];
+  String _lastDrawnSignature = '';
+  final Map<String, HotspotModel> _byGeoKey = {};
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _controller?.onCircleTapped.remove(_onCircleTapped);
     super.dispose();
   }
 
-  Set<Marker> _buildMarkers(List<HotspotModel> hotspots) {
-    _markersById.clear();
-    final bitmapCache = <Color, BitmapDescriptor>{};
+  void _onStyleLoaded() {
+    _styleLoaded = true;
+    _redrawCircles();
+  }
 
-    for (final h in hotspots) {
+  void _onCircleTapped(Circle circle) {
+    final controller = _controller;
+    if (controller == null) return;
+    final pos = controller.getCircleLatLng(circle);
+    final hotspot = _byGeoKey['${pos.latitude},${pos.longitude}'];
+    if (hotspot != null) setState(() => _selectedHotspot = hotspot);
+  }
+
+  Future<void> _redrawCircles() async {
+    final controller = _controller;
+    if (controller == null || !_styleLoaded) return;
+
+    final signature = _current.map((h) => h.id).join('|');
+    if (signature == _lastDrawnSignature) return;
+    _lastDrawnSignature = signature;
+
+    await controller.clearCircles();
+    _byGeoKey.clear();
+    if (_current.isEmpty) return;
+
+    final options = <CircleOptions>[];
+    for (final h in _current) {
       final color = h.legalStatus != LegalStatus.permitted
           ? AppColors.legalRestricted
           : AppColors.getProbabilityColor(h.probability);
-      final descriptor = bitmapCache.putIfAbsent(
-        color,
-        () => BitmapDescriptor.defaultMarkerWithHue(
-          _hueForColor(color),
-        ),
-      );
-      final marker = Marker(
-        markerId: MarkerId(h.id),
-        position: LatLng(h.latitude, h.longitude),
-        icon: descriptor,
-        infoWindow: InfoWindow(
-          title: h.name,
-          snippet: 'Bite probability ${h.probability}% • ${h.bestWindow}',
-        ),
-        onTap: () => setState(() => _selectedHotspot = h),
-      );
-      _markersById[h.id] = marker;
+      options.add(CircleOptions(
+        geometry: LatLng(h.latitude, h.longitude),
+        circleColor: _hex(color),
+        circleRadius: 9,
+        circleStrokeWidth: 2,
+        circleStrokeColor: '#FFFFFF',
+        circleOpacity: 0.95,
+      ));
+      _byGeoKey['${h.latitude},${h.longitude}'] = h;
     }
-    return _markersById.values.toSet();
+    await controller.addCircles(options);
   }
 
-  double _hueForColor(Color c) {
-    final hsv = HSVColor.fromColor(c);
-    return hsv.hue;
+  String _hex(Color c) {
+    final r = (c.r * 255).round().toRadixString(16).padLeft(2, '0');
+    final g = (c.g * 255).round().toRadixString(16).padLeft(2, '0');
+    final b = (c.b * 255).round().toRadixString(16).padLeft(2, '0');
+    return '#$r$g$b';
+  }
+
+  void _scheduleRedraw() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _redrawCircles());
+  }
+
+  void _clearSelection() {
+    if (_selectedHotspot != null) {
+      setState(() => _selectedHotspot = null);
+    }
   }
 
   @override
@@ -111,20 +147,24 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
           ),
         ),
         data: (hotspots) {
-          final markers = _buildMarkers(hotspots);
+          _current = hotspots;
+          _scheduleRedraw();
 
           return Stack(
             children: [
-              // Real interactive Google Map
+              // Live MapLibre map rendering keyless OpenFreeMap tiles.
               Positioned.fill(
-                child: GoogleMap(
+                child: MapLibreMap(
+                  styleString: _openFreeMapStyleUrl,
                   initialCameraPosition: _muscatSeeb,
-                  markers: markers,
-                  myLocationButtonEnabled: false,
-                  mapToolbarEnabled: false,
                   compassEnabled: true,
-                  onMapCreated: (controller) => _mapController = controller,
-                  onTap: (_) => setState(() => _selectedHotspot = null),
+                  myLocationEnabled: true,
+                  onStyleLoadedCallback: _onStyleLoaded,
+                  onMapCreated: (controller) {
+                    _controller = controller;
+                    controller.onCircleTapped.add(_onCircleTapped);
+                  },
+                  onMapClick: (point, coordinates) => _clearSelection(),
                 ),
               ),
 

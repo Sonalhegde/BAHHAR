@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAHHAR — Fishing Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; }
+        body {
+            font-family: 'Public Sans', system-ui, sans-serif;
+            background: #eaf1f0;
+            overflow: hidden;
+        }
+        #map { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .header {
+            position: absolute; top: 0; left: 0; right: 0;
+            background: rgba(250, 249, 247, 0.95);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 14px 20px; z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .header-content { display: flex; justify-content: space-between; align-items: center; }
+        .title { font-size: 17px; font-weight: 700; color: #182430; letter-spacing: -0.01em; }
+        .filter { font-size: 13px; color: #0f7a7a; font-weight: 600; }
+        .legend {
+            position: absolute; bottom: 14px; left: 14px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 13px 15px; border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12); z-index: 1000;
+        }
+        .legend-title { font-size: 10px; font-weight: 700; color: #5a6c7d; letter-spacing: 0.05em; margin-bottom: 9px; text-transform: uppercase; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #182430; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .legend-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+        .good { background: #2d7a5e; }
+        .moderate { background: #c49a3d; }
+        .protected { width: 34px; height: 13px; border-radius: 3px; background: rgba(139, 123, 184, 0.2); border: 1px dashed #8b7bb8; }
+        .leaflet-marker-icon { background: none; border: none; }
+        .custom-marker {
+            width: 34px; height: 34px; background: #2d7a5e; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 13px;
+            box-shadow: 0 2px 8px rgba(45, 122, 94, 0.45); border: 3px solid white;
+        }
+        .moderate-marker { background: #c49a3d; box-shadow: 0 2px 8px rgba(196, 154, 61, 0.45); }
+        .leaflet-container { font-family: 'Public Sans', system-ui, sans-serif; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="title">Fishing Map</div>
+            <div class="filter">Filter ▾</div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="legend">
+        <div class="legend-title">Legend</div>
+        <div class="legend-item"><div class="legend-dot good"></div><span>Excellent (70+)</span></div>
+        <div class="legend-item"><div class="legend-dot moderate"></div><span>Good (40–69)</span></div>
+        <div class="legend-item"><div class="protected"></div><span>Protected Area</span></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Real OpenStreetMap tiles centred on the Omani coast (Gulf of Oman / Daymaniyat)
+        var map = L.map('map', {
+            center: [23.72, 58.28],
+            zoom: 10,
+            zoomControl: false,
+            attributionControl: false,
+            scrollWheelZoom: false,   // don't hijack the landing page's scroll
+            dragging: true
+        });
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Daymaniyat Islands protected marine reserve
+        L.circle([23.8617, 58.0933], {
+            color: '#8b7bb8', fillColor: '#8b7bb8', fillOpacity: 0.15,
+            radius: 8000, weight: 2, dashArray: '5, 5'
+        }).addTo(map);
+
+        function marker(score, cls) {
+            return L.divIcon({
+                className: 'leaflet-marker-icon',
+                html: '<div class="custom-marker ' + cls + '">' + score + '</div>',
+                iconSize: [34, 34], iconAnchor: [17, 17]
+            });
+        }
+        L.marker([23.80, 58.12], { icon: marker('85', '') }).addTo(map);
+        L.marker([23.61, 58.54], { icon: marker('72', '') }).addTo(map);   // near Mutrah
+        L.marker([23.55, 58.28], { icon: marker('68', 'moderate-marker') }).addTo(map);
+    </script>
+</body>
+</html>
