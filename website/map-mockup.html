@@ -19,14 +19,15 @@
         #map { position: absolute; inset: 0; width: 100%; height: 100%; }
         .header {
             position: absolute; top: 0; left: 0; right: 0;
-            background: rgba(250, 249, 247, 0.95);
+            background: rgba(250, 248, 244, 0.94);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             padding: 14px 20px; z-index: 1000;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
+            border-bottom: 1px solid rgba(24, 36, 48, 0.07);
         }
         .header-content { display: flex; justify-content: space-between; align-items: center; }
         .title { font-size: 17px; font-weight: 700; color: #182430; letter-spacing: -0.01em; }
-        .filter { font-size: 13px; color: #0f7a7a; font-weight: 600; }
+        .filter { font: 600 13px/1 'Public Sans', system-ui, sans-serif; color: #0f7a7a; background: none; border: 0; padding: 6px 0; cursor: pointer; }
+        .filter:focus-visible { outline: 2px solid #0f7a7a; outline-offset: 3px; }
         .legend {
             position: absolute; bottom: 14px; left: 14px;
             background: rgba(255, 255, 255, 0.96);
@@ -38,25 +39,33 @@
         .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #182430; }
         .legend-item:last-child { margin-bottom: 0; }
         .legend-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
-        .good { background: #2d7a5e; }
-        .moderate { background: #c49a3d; }
-        .protected { width: 34px; height: 13px; border-radius: 3px; background: rgba(139, 123, 184, 0.2); border: 1px dashed #8b7bb8; }
+        .good { background: #0f7a7a; }
+        .moderate { background: #d8b98c; }
+        .protected { width: 34px; height: 13px; border-radius: 3px; background: rgba(15, 122, 122, 0.12); border: 1px dashed #0f7a7a; }
         .leaflet-marker-icon { background: none; border: none; }
         .custom-marker {
-            width: 34px; height: 34px; background: #2d7a5e; border-radius: 50%;
+            width: 34px; height: 34px; background: #0f7a7a; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             color: white; font-weight: 700; font-size: 13px;
-            box-shadow: 0 2px 8px rgba(45, 122, 94, 0.45); border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(15, 122, 122, 0.4); border: 3px solid white;
+            transition: opacity 0.25s ease;
         }
-        .moderate-marker { background: #c49a3d; box-shadow: 0 2px 8px rgba(196, 154, 61, 0.45); }
-        .leaflet-container { font-family: 'Public Sans', system-ui, sans-serif; }
+        .moderate-marker { background: #b98f4f; box-shadow: 0 2px 8px rgba(185, 143, 79, 0.4); }
+        /* Leaflet's default container grey shows through every tile that has not
+           arrived yet, which read as a grid of empty cells. Match the sea tone. */
+        .leaflet-container { font-family: 'Public Sans', system-ui, sans-serif; background: #dfeae7; }
+        /* Stock OSM tiles put roads in saturated orange/red, which fought the warm-paper
+           chrome around this mock; calming them keeps one accent in the frame. */
+        .leaflet-tile-pane { filter: saturate(0.62) contrast(0.97) brightness(1.02); }
+        .leaflet-control-attribution { font-size: 10px; background: rgba(255,255,255,0.82); }
+        .leaflet-control-attribution a { color: #0f7a7a; }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
             <div class="title">Fishing Map</div>
-            <div class="filter">Filter ▾</div>
+            <button class="filter" id="filterBtn" type="button" aria-live="polite">Filter: all species ▾</button>
         </div>
     </div>
 
@@ -76,18 +85,20 @@
             center: [23.72, 58.28],
             zoom: 10,
             zoomControl: false,
-            attributionControl: false,
             scrollWheelZoom: false,   // don't hijack the landing page's scroll
             dragging: true
         });
 
+        // Tile use requires visible credit to OpenStreetMap - kept on purpose.
+        // Leaflet writes this into the control with innerHTML, so the link is real markup.
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Daymaniyat Islands protected marine reserve
+        // Daymaniyat Islands Nature Reserve: protected, permit-controlled water
         L.circle([23.8617, 58.0933], {
-            color: '#8b7bb8', fillColor: '#8b7bb8', fillOpacity: 0.15,
+            color: '#0f7a7a', fillColor: '#0f7a7a', fillOpacity: 0.1,
             radius: 8000, weight: 2, dashArray: '5, 5'
         }).addTo(map);
 
@@ -98,9 +109,31 @@
                 iconSize: [34, 34], iconAnchor: [17, 17]
             });
         }
-        L.marker([23.80, 58.12], { icon: marker('85', '') }).addTo(map);
-        L.marker([23.61, 58.54], { icon: marker('72', '') }).addTo(map);   // near Mutrah
-        L.marker([23.55, 58.28], { icon: marker('68', 'moderate-marker') }).addTo(map);
+
+        // The three spots match the home-dashboard mock on the landing page.
+        var spots = [
+            { at: [23.80, 58.12], score: 85, species: 'Kingfish', name: 'Daymaniyat Drop-Off' },
+            { at: [23.61, 58.54], score: 72, species: 'Hammour', name: 'Mutrah Rocky Bank' },
+            { at: [23.55, 58.28], score: 68, species: 'Grouper', name: 'Al Bustan Reef', moderate: true }
+        ];
+        spots.forEach(function (s) {
+            s.marker = L.marker(s.at, { icon: marker(String(s.score), s.moderate ? 'moderate-marker' : ''), title: s.name }).addTo(map);
+        });
+
+        // Filter is a working control: cycle the target species, dim the rest.
+        var faces = ['all species'].concat(spots.map(function (s) { return s.species; }));
+        var face = 0;
+        var btn = document.getElementById('filterBtn');
+        btn.addEventListener('click', function () {
+            face = (face + 1) % faces.length;
+            var want = faces[face];
+            btn.textContent = 'Filter: ' + want + ' ▾';
+            spots.forEach(function (s) {
+                var el = s.marker.getElement();
+                if (el) el.querySelector('.custom-marker').style.opacity =
+                    (want === 'all species' || s.species === want) ? '1' : '0.3';
+            });
+        });
     </script>
 </body>
 </html>

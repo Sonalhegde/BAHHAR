@@ -178,6 +178,7 @@
         .flag-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.9); }
         header.scrolled .flag-chip { color: var(--body); }
         .flag-chip svg { width: 22px; height: 15px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.08); display: block; }
+        .flag-region { font-family: var(--f-display); letter-spacing: 0.04em; }
         .lang-switch {
             background: transparent; border: 1px solid rgba(255,255,255,0.4); color: #fff;
             padding: 7px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer;
@@ -289,6 +290,9 @@
 
         /* ---------- Section scaffolding ---------- */
         section { position: relative; }
+        /* Anchored sections clear the fixed header, whose 110px band padding alone
+           would otherwise leave the eyebrow line clipped on short viewports. */
+        section[id] { scroll-margin-top: 92px; }
         .band { padding: 110px 0; }
         .band-light { background: var(--off); }
         .section-head { max-width: 720px; margin: 0 auto 64px; text-align: center; }
@@ -385,7 +389,11 @@
         .footer-col ul { list-style: none; display: grid; gap: 12px; }
         .footer-col a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; transition: color 0.2s ease; }
         .footer-col a:hover { color: var(--seafoam); }
-        .footer-col .legal-note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.6; color: rgba(255,255,255,0.72); max-width: 280px; }
+        /* Honest safety note with a heading and a place of its own, under the CTA */
+        .before-you-go { margin-top: 30px; padding: 26px 30px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.62); max-width: 860px; }
+        .before-you-go h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+        .before-you-go p { font-size: 15.5px; color: var(--body); }
+        .before-you-go a { color: var(--teal); text-underline-offset: 3px; }
         .footer-bottom { padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; font-size: 14px; gap: 16px; flex-wrap: wrap; }
         .footer-bottom .made { display: inline-flex; align-items: center; gap: 8px; }
         .footer-bottom svg.flag { width: 22px; height: 15px; border-radius: 2px; }
@@ -491,9 +499,9 @@
                                     <path d="M8.5 6 v3 M7 7 l1.5 -1.4 l1.5 1.4"/>
                                 </g>
                             </svg>
-                            <span>EN / عربي</span>
+                            <span class="flag-region">Oman</span>
                         </span>
-                        <button class="lang-switch lang-toggle" onclick="toggleLanguage()" aria-label="Switch to Arabic">عربي</button>
+                        <button class="lang-switch lang-toggle" onclick="toggleLanguage()" aria-label="Switch language between English and Arabic">عربي</button>
                     </div>
                 </div>
                 <button class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
@@ -614,10 +622,10 @@
     <section class="stats photo-band stats-band">
         <div class="container">
             <div class="stats-grid">
-                <div class="stat reveal"><div class="stat-num" data-count="12" data-suffix="+">0</div><div class="stat-label">Fish species tracked</div></div>
-                <div class="stat reveal"><div class="stat-num" data-count="50" data-suffix="+">0</div><div class="stat-label">Verified hotspots</div></div>
-                <div class="stat reveal"><div class="stat-num" data-count="24" data-suffix="/7">0</div><div class="stat-label">Real-time conditions</div></div>
-                <div class="stat reveal"><div class="stat-num" data-count="100" data-suffix="%">0</div><div class="stat-label">Omani waters coverage</div></div>
+                <div class="stat reveal"><div class="stat-num" data-count="12" data-suffix="+">12+</div><div class="stat-label">Fish species tracked</div></div>
+                <div class="stat reveal"><div class="stat-num" data-count="50" data-suffix="+">50+</div><div class="stat-label">Verified hotspots</div></div>
+                <div class="stat reveal"><div class="stat-num" data-count="24" data-suffix="/7">24/7</div><div class="stat-label">Real-time conditions</div></div>
+                <div class="stat reveal"><div class="stat-num" data-count="100" data-suffix="%">100%</div><div class="stat-label">Omani waters coverage</div></div>
             </div>
             <p class="photo-note">Photograph: traditional boats over the shallows of Khore Dhawas, Muscat</p>
         </div>
@@ -1010,11 +1018,16 @@
         <div class="container">
             <div class="cta reveal">
                 <div class="cta-bg"></div>
-                <img class="cta-photo" data-src="assets/images/fish-market.webp" alt="Omani fishermen trading the day catch at a waterfront market">
+                <img class="cta-photo" src="assets/images/fish-market.webp" alt="Omani fishermen trading the day catch at a waterfront market" loading="lazy" decoding="async">
                 <h2>Ready to maximise your catch?</h2>
                 <p>Join the waitlist and be among the first Omani fishermen to fish smarter with BAHHAR at launch.</p>
                 <a href="#top" class="glass-button" style="padding:15px 34px;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">Get Early Access <span aria-hidden="true">→</span></a>
             </div>
+
+            <aside class="before-you-go reveal">
+                <h3>Before you go</h3>
+                <p>Sea state, permit rules and protected-area boundaries are set by Oman&rsquo;s <a href="https://gov.om/en/ministry-of-agriculture-fisheries-and-water-resources" target="_blank" rel="noopener">Ministry of Agriculture, Fisheries and Water Resources</a>, and they change. Cross-check live conditions before you leave the dock &mdash; BAHHAR informs the decision; it does not replace the ministry&rsquo;s current word or your own reading of the water.</p>
+            </aside>
         </div>
     </section>
 
@@ -1039,12 +1052,11 @@
                 </div>
                 <div class="footer-col">
                     <h4>Resources</h4>
-                    <ul><li><a href="https://github.com/Sonalhegde/BAHHAR" target="_blank" rel="noopener">Documentation</a></li><li><a href="https://github.com/Sonalhegde/BAHHAR" target="_blank" rel="noopener">GitHub</a></li><li><a href="#top">Changelog</a></li></ul>
+                    <ul><li><a href="https://github.com/Sonalhegde/BAHHAR" target="_blank" rel="noopener">Documentation</a></li><li><a href="https://github.com/Sonalhegde/BAHHAR" target="_blank" rel="noopener">GitHub</a></li><li><a href="https://github.com/Sonalhegde/BAHHAR/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></li></ul>
                 </div>
                 <div class="footer-col">
                     <h4>Legal</h4>
                     <ul><li><a href="privacy.html">Privacy Policy</a></li><li><a href="terms.html">Terms of Service</a></li></ul>
-                    <p class="legal-note">General instructions: always cross-check live weather and sea conditions before departure, respect marine protected areas and permit rules, and follow current fishing regulations.</p>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -1091,23 +1103,20 @@
         backdrop.addEventListener('click', function () { setMenu(false); });
         menu.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
 
-        /* ---- Lazy hero / CTA photography with graceful fallback ---- */
-        document.querySelectorAll('img[data-src]').forEach(function (img) {
-            img.addEventListener('load', function () { img.classList.add('loaded'); });
-            img.addEventListener('error', function () { img.style.display = 'none'; }); // reveal CSS scene behind
-            img.src = img.getAttribute('data-src');
-        });
-
-        /* ---- Hero coast photo: fade in when ready, fall back to the gradient if it fails ---- */
-        (function () {
-            var hp = document.querySelector('.hero-photo');
-            if (!hp) return;
-            if (hp.complete && hp.naturalWidth > 0) { hp.classList.add('loaded'); }
+        /* ---- Deferred photography: fade in when ready, fall back to the CSS scene if it fails ---- */
+        function bindPhoto(img) {
+            if (!img) return;
+            if (img.complete && img.naturalWidth > 0) { img.classList.add('loaded'); }
             else {
-                hp.addEventListener('load', function () { hp.classList.add('loaded'); });
-                hp.addEventListener('error', function () { hp.style.display = 'none'; });
+                img.addEventListener('load', function () { img.classList.add('loaded'); });
+                img.addEventListener('error', function () { img.style.display = 'none'; });
             }
-        })();
+        }
+        document.querySelectorAll('img[data-src]').forEach(function (img) {
+            img.src = img.getAttribute('data-src');   // still supported for deferred photos
+            bindPhoto(img);
+        });
+        document.querySelectorAll('.hero-photo, .cta-photo').forEach(bindPhoto);
 
         /* ---- Hero favourability gauge: a fresh random score on every page view ---- */
         window.heroGauge = (function () {
@@ -1303,10 +1312,11 @@
             ['.footer-col:nth-of-type(4) h4', 'قانوني'],
             ['.footer-col:nth-of-type(4) ul li:nth-child(1) a', 'سياسة الخصوصية'],
             ['.footer-col:nth-of-type(4) ul li:nth-child(2) a', 'شروط الخدمة'],
+            ['.before-you-go h3', 'قبل أن تُبحر'],
+            ['.before-you-go p', 'حالة البحر وأنظمة التصاريح وحدود المناطق المحمية تحددها <a href="https://gov.om/en/ministry-of-agriculture-fisheries-and-water-resources" target="_blank" rel="noopener">وزارة الزراعة والثروة السمكية وموارد المياه</a> في عُمان، وهي قابلة للتغيير. تحقق من الأحوال اللحظية قبل أن تُغادر المرسى؛ بحّار يُعينك على القرار ولا يُغني عن كلام الوزارة الحالي ولا عن قراءتك أنت للماء.'],
             ['.stats-band .photo-note', 'صورة: قوارب تقليدية فوق مياه خور دروّاس الضحلة، مسقط'],
             ['#species .photo-note', 'صورة: ضحلات جزر الديمانيات من الأعلى'],
             ['.footer-bottom p:first-child', '© 2026 بحّار • سلطنة عُمان. جميع الحقوق محفوظة.'],
-            ['.footer-col .legal-note', 'تعليمات عامة: تحقق دائمًا من الأحوال الجوية والبحرية اللحظية قبل الإبحار، والتزم بالمناطق البحرية المحمية وأنظمة التصاريح ولائحة الصيد.'],
             ['.footer-bottom .made-txt', 'صُنع للصيّادين العُمانيين']
         ];
         var arOn = false, store = [];
