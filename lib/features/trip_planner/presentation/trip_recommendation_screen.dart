@@ -116,7 +116,10 @@ class TripRecommendationScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    // Mock-data disclosure until the ML backend exists.
+                    // Where this plan came from, said plainly. The backend ranks the
+                    // catalogue against live water; the offline path ranks it against
+                    // nothing but the spots' own numbers, and a plan that flew blind
+                    // has to look like one that flew blind.
                     if (plan.isMock)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -129,11 +132,34 @@ class TripRecommendationScreen extends ConsumerWidget {
                                 GlassTokens.radiusSmall),
                           ),
                           child: Text(
-                            'Heuristic planner preview — recommendations '
-                            'will come from the ML backend once connected.',
+                            'Planned offline — no live sea conditions were available, '
+                            'so this ranking ignores the water.',
                             style: AppTextStyles.caption.copyWith(
                                 fontSize: 10,
                                 color: AppColors.signalCaution),
+                          ),
+                        ),
+                      ),
+
+                    // Every candidate tripped this boat's own radius or budget limit.
+                    // "Least-impossible" is not "sailable", and the screen says so.
+                    if (plan.noViableOption)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.signalAlertBg,
+                            borderRadius: BorderRadius.circular(
+                                GlassTokens.radiusSmall),
+                          ),
+                          child: Text(
+                            'No spot fits this boat\'s limits — widen the radius, '
+                            'raise the budget, or choose a closer port.',
+                            style: AppTextStyles.caption.copyWith(
+                                fontSize: 10,
+                                color: AppColors.signalAlert),
                           ),
                         ),
                       ),

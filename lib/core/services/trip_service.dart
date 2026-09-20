@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import '../models/hotspot_model.dart';
+import '../services/api_client.dart';
 import '../services/fuel_calculator_service.dart';
 import '../services/ml_prediction_service.dart';
 
@@ -97,6 +98,23 @@ class TripRecommendation {
   final List<TripWaypoint> waypoints;
   final bool isMock;
 
+  /// Why the optimiser ranked this spot first, as codes (`species_match`,
+  /// `sea_state_rough_sea`, `no_viable_option`…). Codes and not sentences because
+  /// this app is bilingual: the wording is the client's job — and that wording table
+  /// has not been written, so no screen reads these yet. They travel with the plan so
+  /// the sentences can be added without another round trip.
+  final List<String> reasons;
+
+  /// How the ranking was produced, in the backend's own words. Null when the local
+  /// heuristic produced the plan. Server prose, so it is not printed as-is in an
+  /// Arabic app — it is kept for the debug console and the same reason table above.
+  final String? strategy;
+
+  /// True when every candidate tripped one of the boat's own limits (outside the
+  /// radius, or over budget) and this is the least-impossible option rather than a
+  /// plan the boat can actually sail.
+  final bool noViableOption;
+
   const TripRecommendation({
     required this.hotspot,
     required this.distanceNm,
@@ -110,26 +128,151 @@ class TripRecommendation {
     required this.targetDepthRange,
     required this.waypoints,
     this.isMock = true,
+    this.reasons = const [],
+    this.strategy,
+    this.noViableOption = false,
   });
 }
 
 /// Trip planning orchestrator.
+///
+/// Ranks the hotspot catalogue through the backend's `/api/v1/trip/optimize`, which is
+/// the only version of this that knows what the water is actually doing. When the
+/// backend is unreachable the older on-device ranking runs instead, and the result is
+/// labelled `isMock` so the screen can say so — a plan computed without sea conditions
+/// must never arrive looking like one that had them.
 class TripService {
+  TripService({ApiClient? apiClient})
+      : _api = apiClient ??
+            ApiClient(
+              baseUrl: const String.fromEnvironment(
+                'ML_API_BASE_URL',
+                defaultValue: 'http://localhost:8000',
+              ),
+            );
+
+  final ApiClient _api;
+
   /// Plans a trip for [request] using the given candidate hotspots.
-  ///
-  // TODO(ml-backend): replace the heuristic below with a call to the real ML
-  // trip-planning endpoint once it exists, e.g.:
-  //   final res = await ApiClient().post('/v1/trips/plan', body: request.toJson());
-  //   return TripRecommendation.fromJson(res.data);
-  // Until then this returns a deterministic, believable mock so the UI is
-  // testable end to end (probability from MLPredictionService + fuel burn
-  // from FuelCalculatorService against the real hotspot catalogue).
   Future<TripRecommendation> planTrip(
     TripRequest request,
     List<HotspotModel> hotspots,
   ) async {
     final boat = _boatProfileFor(request.vesselType);
+    try {
+      final plan = await _planRemotely(request, hotspots, boat);
+      if (plan != null) return plan;
+    } on ApiException {
+      // No backend, no verdict: fall through to the on-device ranking.
+    }
+    return _planLocally(request, hotspots, boat);
+  }
 
+  /// Asks the backend to rank [hotspots] against live conditions.
+  ///
+  /// Returns null when the answer is unusable (no recommendation, or one naming a
+  /// spot this build's catalogue does not contain) rather than guessing at a plan.
+  Future<TripRecommendation?> _planRemotely(
+      TripRequest request, List<HotspotModel> hotspots, BoatProfile boat) async {
+    if (hotspots.isEmpty) return null;
+    final body = {
+      'target_species': request.targetSpecies,
+      'departure_lat': request.departureLat,
+      'departure_lon': request.departureLon,
+      'max_radius_nmi': request.maxRadiusNmi,
+      'max_budget_omr': request.maxBudgetOmr,
+      'duration_hours': request.durationHours,
+      // Boat economics come from the app's own table, so the server prices the trip
+      // with the same figures the fuel screen prints rather than a second copy of them.
+      'cruising_speed_kts': boat.cruisingSpeedKnots,
+      'liters_per_nmi': boat.litersPerNauticalMile,
+      'candidates': hotspots
+          .map((h) => {
+                'id': h.id,
+                'name': h.name,
+                'latitude': h.latitude,
+                'longitude': h.longitude,
+                'depth_meters': h.depthMeters,
+                'probability': h.probability,
+                'target_species': h.targetSpecies,
+              })
+          .toList(),
+    };
+
+    final res = await _api.post('/api/v1/trip/optimize',
+        body: body, timeout: const Duration(seconds: 20));
+    final recommended = res['recommended'];
+    if (recommended is! Map) return null;
+    final id = recommended['id'] as String?;
+    HotspotModel? spot;
+    for (final h in hotspots) {
+      if (h.id == id) {
+        spot = h;
+        break;
+      }
+    }
+    if (spot == null) return null;
+    final hotspot = spot;
+
+    double d(String key, double fallback) =>
+        recommended[key] is num ? (recommended[key] as num).toDouble() : fallback;
+
+    // The server ranks; the fisherman-friendly strike number stays the app's own,
+    // now fed with the live readings the ranking was scored against instead of the
+    // standing assumptions the local heuristic carries.
+    final conditions = res['conditions'];
+    // The backend still answers when it could not reach the water, and says so by
+    // sending no conditions at all. A ranking that flew blind is the offline case as
+    // far as the fisherman is concerned, whatever URL produced it.
+    final flewBlind = conditions is! Map;
+    final probability = MLPredictionService.predictStrikeProbability(
+      species: request.targetSpecies,
+      seaTempC: _asDouble(conditions, 'sea_temperature_c', 26.5),
+      windSpeedKts: _asDouble(conditions, 'wind_speed_kts', 12),
+      waveHeightM: _asDouble(conditions, 'wave_height_m', 1.0),
+      tideState: _asString(conditions, 'tide_state', 'Rising'),
+      depthMeters: hotspot.depthMeters,
+    ).probability;
+
+    return TripRecommendation(
+      hotspot: hotspot,
+      // The server reports the one-way crossing and the round trip separately; the
+      // card has always shown the round trip, which is what the fuel is for.
+      distanceNm: d('round_trip_nm', d('distance_nm', 0) * 2),
+      estimatedFuelLiters: d('fuel_liters', 0),
+      estimatedCostOmr: d('cost_omr', 0),
+      travelMinutes: d('travel_minutes', 0).round(),
+      probability: probability,
+      departurePort: request.departurePort,
+      departureSlotLabel: request.departureSlotLabel,
+      recommendedTackle: _tackleFor(request.targetSpecies),
+      targetDepthRange: _depthRangeFor(hotspot.depthMeters),
+      waypoints: _waypointsFor(
+          request, hotspot, d('travel_minutes', 0).round()),
+      isMock: flewBlind,
+      reasons: (recommended['reasons'] as List? ?? const [])
+          .whereType<String>()
+          .toList(),
+      strategy: res['strategy'] as String?,
+      noViableOption: recommended['fallback'] == true,
+    );
+  }
+
+  static double _asDouble(Object? map, String key, double fallback) {
+    if (map is Map && map[key] is num) return (map[key] as num).toDouble();
+    return fallback;
+  }
+
+  static String _asString(Object? map, String key, String fallback) {
+    if (map is Map && map[key] is String) return map[key] as String;
+    return fallback;
+  }
+
+  /// The original on-device ranking: the catalogue's static probability, plus species
+  /// and depth affinity, minus distance. It has no water in it, which is precisely why
+  /// the backend exists; it stays as the offline path.
+  TripRecommendation _planLocally(
+      TripRequest request, List<HotspotModel> hotspots, BoatProfile boat) {
     // Candidates within the user's cruising radius and budget.
     final candidates = <(HotspotModel, double, double, double, int)>[];
     for (final h in hotspots) {

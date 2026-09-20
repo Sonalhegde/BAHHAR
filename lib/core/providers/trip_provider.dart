@@ -44,9 +44,10 @@ final tripPlanProvider =
   return TripRequestNotifier();
 });
 
-/// Result of the wizard: calls TripService.planTrip against the loaded
-/// hotspot catalogue. Currently a believable mock — see TripService TODO
-/// for the real ML backend hookup.
+/// Result of the wizard: asks the backend to rank the loaded hotspot catalogue
+/// against live conditions, falling back to the on-device heuristic when the
+/// backend is unreachable. TripRecommendation.isMock records which of the two
+/// produced the answer, and the recommendation screen shows that to the fisherman.
 final tripPlanResultProvider =
     FutureProvider.autoDispose<TripRecommendation>((ref) async {
   final request = ref.watch(tripPlanProvider);
