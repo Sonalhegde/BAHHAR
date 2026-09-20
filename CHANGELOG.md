@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Landing page + backend — ocean information, AccuWeather, fisherman profile (2026-09-20)
+
+An additive brief: extend what exists rather than draw a second of anything. Three new panels on
+`website/landing-page.html` (Fisherman Profile, Weather, the synthesis banner) and an extended
+Ocean readout, with the same fields now returned by the FastAPI backend.
+
+**Added**
+- **Ocean Information readout** (`#ocean-readout`): wave direction, wave period, current speed and
+  the bearing it *sets toward*, visibility and an explicit *next high tide*, as real text rather
+  than more SVG so they can be translated and measured. Chlorophyll and water colour are absent on
+  purpose — Copernicus is planned, not live. `GET /api/v1/marine/conditions` gained
+  `wave_direction`, `wave_period_s`, `current_speed_kts`, `current_sets_to`, `visibility_km`,
+  `uv_index`, `next_high_tide`, `sea_state` and an optional `day_rating`.
+- **Five sea-state bands** (Good / Moderate / Rough sea / Strong current / High risk) with the
+  thresholds written once in a CSS comment and once in `_sea_state_band()`, and the rule printed
+  under the chips: *the worst single reading, never an average*. Colour is not the only carrier —
+  each band has a shape (hollow / triangle / square) and the active one carries `aria-current`.
+- **Weather pillar** against a real AccuWeather response shape, plus `GET /api/v1/weather`: a
+  two-step `locationKey` cached 24 h, current/hourly/daily/alerts cached 30/60 min per region,
+  the key held only in the backend's `.env`, a daily call budget that degrades to the last good
+  response and then to the documented mock rather than returning a 5xx, and attribution carried
+  inside the payload. No alert banner is drawn, because no alert is active.
+- **Fisherman Profile pillar** (`#pillar-profile`) in the brief's three groups — Fisherman / My
+  Boat / My Gear — with the vessel strings identical to the wallet's and the safety screen's, and
+  `fisherman_profiles/{userId}` added to `firestore.rules` under the same owner-only treatment as
+  `catches` and `trips`.
+- **Synthesis banner** between the trip planner and the charts, stating its own rule in four
+  steps and naming which step the fisherman's own boat changes.
+- **Nav** now carries Profile / Ocean / Weather alongside the existing five, with a 1200 px
+  tightening step so the longer row still fits before the 968 px hamburger.
+
+**Fixed**
+- **The Arabic dictionary was keyed by position** (`#features .pillar:nth-of-type(3) …`), so every
+  pillar inserted above another silently mis-translated the ones below it. All 128 pillar rows are
+  now keyed to stable `#pillar-*` ids; a dictionary probe reports **0 dead selectors and 0
+  multi-matching rows** across 259 entries.
+- `.cond dd .qual` never matched: five of the eight tiles carry the qualifier as a *sibling* of
+  `dd`, so those lines were rendering unstyled.
+- The flag wordmark (`Oman`) had no Arabic row at all; it now reads **عُمان**, while the brand
+  name stays Latin in both languages.
+
+**Verified**
+- WCAG census (every leaf text node, ancestor backgrounds composited, AA by size/weight), now
+  including the panels that sit inside `.pillar-media` because they paint their own opaque
+  surface: **284 elements EN / 278 AR, 0 failures**.
+- RTL collision + nav-overflow probe at 1500/1200/1024/990 px in both directions: no horizontal
+  scroll, nav ends 18 px clear of the utility bar at the tightest width, **0 text collisions**.
+  One collision is reported at 1024 px AR inside `#regions` (`الخريطة البحرية` over `الوزارة`) —
+  reproduced against `HEAD` before this pass, so it is pre-existing and left alone here.
+- `backend/tests/test_api.py`: **16 passing**, all upstream calls monkeypatched. New cases pin the
+  band thresholds, the worst-reading rule, the boat/gear step in `day_rating`, the Muscat-clock
+  high tide, and the mock weather contract (attribution present, `alerts == []`).
+
+**Not done, deliberately**
+- `documents_wallet_screen.dart` and `safety_center_screen.dart` still keep their own copy of the
+  vessel data. The canonical record and its rule are in place, but the Dart rewiring cannot be
+  compiled or tested in this environment (no Flutter/Dart SDK) and the app's providers are still
+  in-memory `.demo` state with no Firestore writes anywhere — pointing two screens at a record
+  that nothing persists yet would be a rewrite that cannot be verified.
+- The landing page is a static mock: the new panels read illustrative values, not the live
+  endpoints, and say so on their faces.
+
+---
+
 ### Landing page — the hero seam, one light background, and the RTL pass (2026-09-20)
 
 A five-point brief, worked as five commits: `fix: remove leftover gradient blobs and blend hero

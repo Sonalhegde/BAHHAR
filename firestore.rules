@@ -33,6 +33,20 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
+    // Fisherman profile: the single canonical record for personal / boat / gear
+    // data. Documents Wallet and the Safety Center READ this document instead of
+    // keeping their own copies of vessel registration, size and seats, so a field
+    // can only ever be edited in one place. Same per-user treatment as catches and
+    // trips: owner-only, and the uid must match the document id on create so a
+    // profile cannot be written into somebody else's slot.
+    match /fisherman_profiles/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated()
+                   && request.auth.uid == userId
+                   && request.resource.data.uid == userId
+                   && request.resource.data.keys().hasAll(['personal', 'boat', 'gear']);
+    }
+
     // Reference data collections: Read-only for authenticated clients, writable only via Admin/Backend
     match /species/{speciesId} {
       allow read: if isAuthenticated();

@@ -42,6 +42,15 @@
             --muted: #5f6d78;                   /* was #7f8b95 - 3.3:1 on the new base, now 4.98 */
             --scrim: 24, 36, 48;                  /* readable wash over full-bleed photos */
 
+            /* Status. The brief names signalGood/signalCaution/signalAlert; no such tokens
+               exist anywhere in this repo, so these three are derived from colours the page
+               already carries rather than invented: teal for calm, the flag's own red and the
+               sand both darkened until they clear AA on --bg-primary (the light sand itself is
+               1.9:1 and would have been unreadable as text). */
+            --signal-good: #0f7a7a;
+            --signal-caution: #8a5a17;
+            --signal-alert: #a32c22;
+
             /* Type */
             --f-display: 'Plus Jakarta Sans', 'Public Sans', system-ui, sans-serif;
             --f-body: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -191,6 +200,14 @@
         #header.scrolled .nav-links a:hover { color: var(--navy); }
         .nav-links a::after { content: ''; position: absolute; bottom: -6px; inset-inline-start: 0; width: 0; height: 2px; background: var(--seafoam); transition: width 0.28s ease; }
         .nav-links a:hover::after { width: 100%; }
+        /* Eight anchors now, because the brief asks that Profile/Ocean/Weather not be buried.
+           Below 1200px the row tightens its measure instead of dropping items; the hamburger
+           still takes over at 968px. */
+        @media (max-width: 1200px) {
+            .nav-right { gap: 18px; }
+            .nav-links { gap: 16px; }
+            .nav-links a { font-size: 13.5px; }
+        }
         /* Seafoam is a dark-band accent: on the frosted header it is a 2.5:1 rule under navy text,
            so the underline takes the accent that is legible on light. */
         #header.scrolled .nav-links a::after { background: var(--teal); }
@@ -320,7 +337,7 @@
         section { position: relative; }
         /* Anchored sections clear the fixed header, whose 110px band padding alone
            would otherwise leave the eyebrow line clipped on short viewports. */
-        section[id] { scroll-margin-top: 92px; }
+        section[id], .pillar[id] { scroll-margin-top: 92px; }
         .band { padding: 110px 0; }
         .band-light { background: var(--bg-secondary); }
         .section-head { max-width: 720px; margin: 0 auto 64px; text-align: center; }
@@ -385,6 +402,107 @@
         .pillar li::before { content: ''; width: 14px; height: 2px; background: var(--teal); transform: translateY(-6px); }
         .pillar-media { display: flex; justify-content: center; position: relative; }
         .pillar .device { width: 270px; }
+
+        /* ---- Ocean readout, weather view, profile record -------------------------------
+           The phone mocks beside these pillars are artwork: they cannot be translated, and
+           their text is not measured for contrast. Everything the brief asks to be *read*
+           therefore lives in real DOM, on the same surfaces the cards already use
+           (--bg-secondary inside a --bg-primary band, --line rules, 16px radius).
+
+           Status banding, stated rather than buried: the band is the WORST severity any single
+           field reaches, never an average of them - averaging hides a 2.5 m swell behind a
+           light wind. Thresholds, mirrored in backend/main.py::_sea_state_band so the page and
+           the API cannot drift apart:
+               good            wave < 1.0 m   and wind < 12 kt   and current < 1.0 kt
+               moderate        wave < 1.5 m   and wind < 18 kt   and current < 2.0 kt
+               rough sea       wave >= 1.5 m  or  wind >= 18 kt
+               strong current  current >= 2.0 kt on its own
+               high risk       wave >= 2.5 m  or  wind >= 28 kt  or an active warning
+           The active band is also named in words and carries a different mark shape, so the
+           reading never depends on colour alone. */
+        .readout {
+            margin-top: 46px; padding: clamp(20px, 3vw, 30px); border-radius: 18px;
+            background: var(--bg-secondary); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+        }
+        .readout-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 20px; }
+        .readout-head h4 { font-family: var(--f-display); font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); }
+        .readout-head .readout-where { font-size: 13px; color: var(--muted); }
+        .cond-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+        .cond { padding: 15px 17px; background: var(--bg-primary); }
+        .cond dt { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+        .cond dd { font-family: var(--f-display); font-size: 21px; font-weight: 700; color: var(--navy); line-height: 1.15; }
+        .cond dd .unit { font-family: var(--f-body); font-size: 12.5px; font-weight: 600; color: var(--body); margin-inline-start: 3px; }
+        /* .qual hangs off .cond, not off dd: five of the seven tiles carry it as a sibling of
+           the value, and a descendant-of-dd selector left those ones unstyled. */
+        .cond .qual { font-family: var(--f-body); font-size: 12.5px; font-weight: 600; color: var(--muted); display: block; margin-top: 2px; }
+        .bands { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+        .band-chip {
+            display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; min-height: 34px;
+            border-radius: 999px; border: 1px solid var(--line); background: var(--bg-primary);
+            font-size: 12.5px; font-weight: 600; color: var(--muted);
+        }
+        .band-chip .mark { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .band-chip[data-shape="triangle"] .mark { width: 0; height: 0; border-radius: 0; background: none; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid currentColor; }
+        .band-chip[data-shape="cross"] .mark { border-radius: 2px; }
+        .band-chip[data-shape="hollow"] .mark { background: none; border: 2px solid currentColor; }
+        /* Only the band the water is actually in gets a colour; the rest of the scale stays
+           neutral grey, so the legend is a reading and not five competing warnings. */
+        .band-chip[aria-current="true"] { color: var(--signal-caution); border-color: currentColor; border-width: 1.5px; }
+        .band-chip.b-good[aria-current="true"] { color: var(--signal-good); }
+        .band-chip.b-rough[aria-current="true"], .band-chip.b-current[aria-current="true"], .band-chip.b-risk[aria-current="true"] { color: var(--signal-alert); }
+        .readout-note { margin-top: 16px; font-size: 12.5px; line-height: 1.6; color: var(--muted); max-width: 760px; }
+
+        /* Both new media panels sit in a pillar column, so they take the chart's measure
+           (460px) rather than the phone's 270px, and drop the readout's section spacing. */
+        .pillar-media .readout { margin-top: 0; width: 100%; max-width: 460px; }
+        .pillar-media .record { width: 100%; max-width: 460px; }
+
+        /* Weather: current block, then the two strips the brief asks for. No alert box is
+           drawn, because the rule is that one appears only when the provider actually
+           reports an active alert - a permanent red banner in a screenshot would be a lie
+           about a safety feature. */
+        .wx-now { display: grid; grid-template-columns: auto 1fr; gap: clamp(20px, 4vw, 44px); align-items: center; }
+        .wx-figure { display: flex; align-items: flex-start; gap: 10px; font-family: var(--f-display); font-size: clamp(46px, 7vw, 62px); font-weight: 800; color: var(--navy); line-height: 1; }
+        .wx-figure .deg { font-size: 22px; font-weight: 700; color: var(--muted); }
+        .wx-cond { font-size: 15px; color: var(--body); margin-top: 8px; }
+        .wx-cond b { color: var(--navy); font-weight: 700; }
+        /* The weather card's four readings reuse the ocean readout's .cond tile, because the
+           brief asks for existing components to be reused and because two label:value columns
+           could not hold "الأشعّة فوق البنفسجية" without folding it onto four lines. */
+        .cond-grid.pair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .wx-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; margin-top: 24px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+        .wx-hour { padding: 12px 8px; background: var(--bg-primary); text-align: center; }
+        .wx-hour span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: 0.03em; }
+        .wx-hour b { display: block; font-family: var(--f-display); font-size: 17px; font-weight: 700; color: var(--navy); margin-top: 5px; }
+        .wx-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin-top: 14px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+        .wx-day { padding: 13px 8px; background: var(--bg-primary); text-align: center; }
+        .wx-day span { display: block; font-size: 12px; font-weight: 700; color: var(--navy); letter-spacing: 0.02em; }
+        .wx-day em { display: block; font-style: normal; font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+        .wx-attrib { margin-top: 16px; font-size: 12.5px; color: var(--muted); }
+        .wx-attrib b { color: var(--body); font-weight: 700; }
+
+        /* Profile record: the three groups the client asked for, shown as the single source
+           the wallet and the safety centre read from. Rows are labelled, not input boxes -
+           this is a marketing page, and a fake form field invites a tap that cannot happen. */
+        .record { display: grid; gap: 18px; }
+        .record-group { padding: 20px 22px; border-radius: 14px; background: var(--bg-primary); border: 1px solid var(--line); }
+        .record-group h5 { font-family: var(--f-display); font-size: 12.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal); margin-bottom: 12px; }
+        .record-group dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 24px; }
+        .record-group dl > div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+        .record-group dt { color: var(--muted); }
+        .record-group dd { color: var(--navy); font-weight: 600; text-align: end; }
+        .record-shared { font-size: 11.5px; font-weight: 600; color: var(--teal); letter-spacing: 0.02em; }
+
+        /* Synthesis banner: the payoff, with its reasoning printed next to the verdict. */
+        .synthesis { margin-top: 46px; padding: clamp(22px, 3vw, 32px); border-radius: 18px; background: var(--bg-secondary); border: 1px solid var(--line); box-shadow: var(--shadow-sm); display: grid; gap: 14px; }
+        .synthesis p { font-size: clamp(17px, 2.1vw, 21px); line-height: 1.5; color: var(--body); max-width: 900px; }
+        .synthesis p b { color: var(--navy); font-weight: 700; }
+        .synthesis .verdict { display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px 3px 10px; border-radius: 999px; background: rgba(138, 90, 23, 0.12); color: var(--signal-caution); font-family: var(--f-display); font-size: 0.92em; font-weight: 800; letter-spacing: 0.02em; }
+        /* The verdict carries the same shape code as the band legend above it, so the rating is
+           not distinguishable by colour alone here either. */
+        .synthesis .verdict .mark { width: 0; height: 0; flex-shrink: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid currentColor; }
+        .synthesis .why { font-size: 14px; color: var(--muted); max-width: 900px; }
+        .synthesis .why b { color: var(--body); font-weight: 700; }
 
         /* Nautical chart illustration (fixes broken map) */
         .chart-wrap { width: 100%; max-width: 460px; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--line); background: var(--bg-secondary); position: relative; z-index: 1; }
@@ -537,6 +655,9 @@
             .pillar { grid-template-columns: 1fr; gap: 40px; padding: 52px 0; }
             .pillar-media { order: -1; }
             .species-grid { grid-template-columns: repeat(2, 1fr); }
+            .cond-grid { grid-template-columns: repeat(2, 1fr); }
+            .wx-now { grid-template-columns: 1fr; }
+            .pillar-media .readout, .pillar-media .record { max-width: none; }
             .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
             .footer-brand { grid-column: 1 / -1; }
         }
@@ -545,6 +666,11 @@
             .capture { flex-direction: column; }
             .capture .btn-solid { width: 100%; }
             .species-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+            .cond-grid { grid-template-columns: 1fr 1fr; }
+            .wx-strip { grid-template-columns: repeat(3, 1fr); }
+            .wx-days { grid-template-columns: 1fr; }
+            .wx-day { display: flex; justify-content: space-between; gap: 12px; padding: 11px 14px; }
+            .wx-day em { margin-top: 0; }
             .fish { height: 120px; }
             .footer-bottom { flex-direction: column; justify-content: center; text-align: center; }
         }
@@ -606,6 +732,9 @@
                     <ul class="nav-links">
                         <li><a href="#why">Why Oman</a></li>
                         <li><a href="#features">Features</a></li>
+                        <li><a href="#pillar-profile">Profile</a></li>
+                        <li><a href="#pillar-live">Ocean</a></li>
+                        <li><a href="#pillar-weather">Weather</a></li>
                         <li><a href="#species">Species</a></li>
                         <li><a href="#regions">Regions</a></li>
                         <li><a href="#access">Get Access</a></li>
@@ -639,6 +768,9 @@
     <aside class="mobile-menu" id="mobileMenu" aria-hidden="true">
         <a href="#why">Why Oman</a>
         <a href="#features">Features</a>
+        <a href="#pillar-profile">My Profile</a>
+        <a href="#pillar-live">Ocean</a>
+        <a href="#pillar-weather">Weather</a>
         <a href="#species">Species</a>
         <a href="#regions">Regions</a>
         <a href="#" class="lang-toggle" onclick="toggleLanguage();return false;">عربي</a>
@@ -808,8 +940,202 @@
                 <h2>Everything between the dock and the double hook-up</h2>
             </div>
 
-            <!-- Pillar 1: Smart Trip -->
-            <div class="pillar reveal">
+            <!-- Pillar 1: Fisherman Profile — the canonical record the wallet and the safety
+                 centre below read from, not a third copy of the same boat. One source in the
+                 app is fisherman_profiles/{userId}; the vessel name, length and registration
+                 number shown here are deliberately the same strings the Documents Wallet and
+                 Safety Center mocks already print (Al Bustan • 22 ft, MSQ-2210), so the page
+                 cannot show one boat disagreeing with itself. -->
+            <div class="pillar reveal" id="pillar-profile">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Fisherman Profile</div>
+                    <h3>Your boat and your gear, entered once</h3>
+                    <p>Name, home port, vessel and gear live in one record. The trip planner's fuel estimate, the safety checklist's seat count and the wallet's registration expiry all read from it, so the app never asks you the same question twice.</p>
+                    <ul>
+                        <li>Personal details and home fishing port</li>
+                        <li>Boat type, length, engine and registration number</li>
+                        <li>Gear: nets, hooks, lines and what else you carry</li>
+                    </ul>
+                    <a class="text-link" href="#access">Explore your profile <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="record">
+                        <div class="record-group">
+                            <h5>Fisherman</h5>
+                            <dl>
+                                <div><dt>Name</dt><dd>Sam</dd></div>
+                                <div><dt>Age</dt><dd>38</dd></div>
+                                <div><dt>Mobile</dt><dd>+968 9•• ••••</dd></div>
+                                <div><dt>Home port</dt><dd>Al Bustan</dd></div>
+                            </dl>
+                        </div>
+                        <div class="record-group">
+                            <h5>My boat <span class="record-shared">shared with Wallet &amp; Safety</span></h5>
+                            <dl>
+                                <div><dt>Type</dt><dd>Open skiff</dd></div>
+                                <div><dt>Length</dt><dd>6.7 m · 22 ft</dd></div>
+                                <div><dt>Engine</dt><dd>Twin 60 hp</dd></div>
+                                <div><dt>Registration</dt><dd>MSQ-2210</dd></div>
+                            </dl>
+                        </div>
+                        <div class="record-group">
+                            <h5>My gear</h5>
+                            <dl>
+                                <div><dt>Gear type</dt><dd>Trolling &amp; bottom</dd></div>
+                                <div><dt>Net</dt><dd>Gill · 45 m</dd></div>
+                                <div><dt>Nets carried</dt><dd>3</dd></div>
+                                <div><dt>Lines &amp; hooks</dt><dd>6 rods</dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pillar 2: Ocean Information (extends the Live Marine Conditions pillar; mirrors
+                 home_dashboard_screen and GET /api/v1/marine/conditions) -->
+            <div class="pillar flip reveal" id="pillar-live">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Ocean Information</div>
+                    <h3>See the water the way the fish feel it</h3>
+                    <p>Sea temperature, wave height, wind, tide state and solunar pressure collapse into a single opportunity score, refreshed constantly so the number you launch against is the number you sail with.</p>
+                    <ul>
+                        <li>Hour-by-hour bite forecast with a peak window</li>
+                        <li>Sea surface temperature, wave, wind and tide in one view</li>
+                        <li>Wave direction and period, current and visibility beside them</li>
+                        <li>Offline snapshots for the days you lose signal</li>
+                    </ul>
+                    <a class="text-link" href="#access">Explore live conditions <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="device">
+                        <div class="device-frame">
+                            <div class="device-island"></div>
+                            <div class="device-screen">
+                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live marine conditions and bite forecast">
+                                    <defs><linearGradient id="screenBgC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
+                                    <rect width="300" height="620" fill="url(#screenBgC)"/>
+                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="17" font-weight="700" fill="#ffffff">Marine Conditions</text>
+                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">Mutrah Bank • updated 2 min ago</text>
+                                    <text x="20" y="122" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">BITE FORECAST BY HOUR</text>
+                                    <g fill="#3fd0c0">
+                                        <rect x="20" y="184" width="26" height="26" rx="4" opacity="0.55"/>
+                                        <rect x="58" y="170" width="26" height="40" rx="4" opacity="0.7"/>
+                                        <rect x="96" y="148" width="26" height="62" rx="4"/>
+                                        <rect x="134" y="124" width="26" height="86" rx="4"/>
+                                        <rect x="172" y="156" width="26" height="54" rx="4" opacity="0.7"/>
+                                        <rect x="210" y="178" width="26" height="32" rx="4" opacity="0.55"/>
+                                        <rect x="248" y="190" width="26" height="20" rx="4" opacity="0.45"/>
+                                    </g>
+                                    <g font-family="Public Sans" font-size="9" fill="#a9c4d6">
+                                        <text x="33" y="228" text-anchor="middle">04</text><text x="71" y="228" text-anchor="middle">06</text><text x="109" y="228" text-anchor="middle">08</text><text x="147" y="228" text-anchor="middle">10</text><text x="185" y="228" text-anchor="middle">12</text><text x="223" y="228" text-anchor="middle">14</text><text x="261" y="228" text-anchor="middle">16</text>
+                                    </g>
+                                    <rect x="20" y="248" width="260" height="72" rx="12" fill="#fff"/>
+                                    <text x="36" y="274" font-family="Public Sans" font-size="10" font-weight="700" fill="#7a8794" letter-spacing="1">PEAK WINDOW</text>
+                                    <text x="36" y="300" font-family="Public Sans" font-size="18" font-weight="700" fill="#12263a">05:45 – 07:45</text>
+                                    <text x="264" y="300" text-anchor="end" font-family="Public Sans" font-size="13" font-weight="700" fill="#0f7a7a">High</text>
+                                    <g font-family="Public Sans">
+                                        <rect x="20" y="332" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="362" font-size="12" fill="#7a8794">Sea surface temp</text><text x="264" y="362" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">27.4 °C</text>
+                                        <rect x="20" y="392" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="422" font-size="12" fill="#7a8794">Tide</text><text x="264" y="422" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">Rising 1.8 m</text>
+                                        <rect x="20" y="452" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="482" font-size="12" fill="#7a8794">Moon / solunar</text><text x="264" y="482" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">Waxing 62%</text>
+                                    </g>
+                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Set a bite alert</text>
+                                </svg>
+                            </div>
+                            <div class="device-glare"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ocean Information readout. The fields the brief asked to add - wave direction,
+                 wave period, current speed and direction, visibility, and an explicit next high
+                 tide - as real text rather than more SVG, so they can be translated and measured
+                 for contrast. All four are already returned by GET /api/v1/marine/conditions
+                 (wave_direction_deg, wave_period_s, current, visibility), so nothing here is a
+                 field the backend would have to invent. Chlorophyll and water colour are absent
+                 on purpose: the Copernicus Marine integration is planned, not live, and one
+                 plausible-looking number in that tile would be a fabricated reading. -->
+            <div class="readout reveal" id="ocean-readout">
+                <div class="readout-head">
+                    <h4>Ocean information</h4>
+                    <span class="readout-where">Al Bustan &mdash; sample read from the app's Ocean screen</span>
+                </div>
+                <dl class="cond-grid">
+                    <div class="cond"><dt>Sea surface temp</dt><dd>27.4<span class="unit">°C</span></dd></div>
+                    <div class="cond"><dt>Wave height</dt><dd>1.2<span class="unit">m</span></dd></div>
+                    <div class="cond"><dt>Wave direction</dt><dd>NE<span class="qual">from the north-east</span></dd></div>
+                    <div class="cond"><dt>Wave period</dt><dd>7<span class="unit">s</span></dd><span class="qual">between swells</span></div>
+                    <div class="cond"><dt>Wind</dt><dd>14<span class="unit">kt</span></dd><span class="qual">from NE</span></div>
+                    <div class="cond"><dt>Current</dt><dd>0.6<span class="unit">kt</span></dd><span class="qual">setting south</span></div>
+                    <div class="cond"><dt>Tide</dt><dd>Rising 1.8<span class="unit">m</span></dd><span class="qual">next high 18:42</span></div>
+                    <div class="cond"><dt>Visibility</dt><dd>8<span class="unit">km</span></dd></div>
+                </dl>
+                <div class="bands" role="list" aria-label="Sea state bands">
+                    <span class="band-chip b-good" data-shape="hollow" role="listitem"><i class="mark" aria-hidden="true"></i>Good</span>
+                    <span class="band-chip b-moderate" data-shape="triangle" role="listitem" aria-current="true"><i class="mark" aria-hidden="true"></i>Moderate</span>
+                    <span class="band-chip b-rough" data-shape="cross" role="listitem"><i class="mark" aria-hidden="true"></i>Rough sea</span>
+                    <span class="band-chip b-current" data-shape="cross" role="listitem"><i class="mark" aria-hidden="true"></i>Strong current</span>
+                    <span class="band-chip b-risk" data-shape="cross" role="listitem"><i class="mark" aria-hidden="true"></i>High risk</span>
+                </div>
+                <p class="readout-note">The band is the worst reading of the set, not an average of them: 1.2 m of swell on a 22 ft open boat is Moderate even while the wind looks harmless. Values are illustrative app output, not a live feed.</p>
+            </div>
+
+            <!-- Pillar 3: Weather (new; AccuWeather, proxied by the backend) -->
+            <div class="pillar reveal" id="pillar-weather">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Weather &mdash; AccuWeather</div>
+                    <h3>The sky over the water, on the same screen</h3>
+                    <p>Marine data says what the sea is doing. The forecast says what the sky is about to do to it. BAHHAR carries both, so a morning decision is not made from two apps and a radio check.</p>
+                    <ul>
+                        <li>Feels-like temperature, humidity, UV and visibility</li>
+                        <li>Hour-by-hour strip and a five-day outlook</li>
+                        <li>Severe-weather alerts appear only when one is actually issued</li>
+                    </ul>
+                    <a class="text-link" href="#access">Explore the weather view <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="readout">
+                        <div class="wx-now">
+                            <div>
+                                <div class="wx-figure">31<span class="deg">°C</span></div>
+                                <div class="wx-cond">Sunny &middot; feels like <b>34°</b></div>
+                            </div>
+                            <dl class="cond-grid pair">
+                                <div class="cond"><dt>Humidity</dt><dd>68<span class="unit">%</span></dd></div>
+                                <div class="cond"><dt>Wind</dt><dd>14<span class="unit">km/h</span></dd><span class="qual">from NE</span></div>
+                                <div class="cond"><dt>Rain</dt><dd>10<span class="unit">%</span></dd></div>
+                                <div class="cond"><dt>UV index</dt><dd>8<span class="qual">very high</span></dd></div>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="readout reveal" id="wx-readout">
+                <div class="readout-head">
+                    <h4>Forecast</h4>
+                    <span class="readout-where">Muscat &mdash; hourly for the morning, then five days</span>
+                </div>
+                <div class="wx-strip">
+                    <div class="wx-hour"><span>05:00</span><b>27°</b></div>
+                    <div class="wx-hour"><span>07:00</span><b>29°</b></div>
+                    <div class="wx-hour"><span>09:00</span><b>31°</b></div>
+                    <div class="wx-hour"><span>11:00</span><b>33°</b></div>
+                    <div class="wx-hour"><span>13:00</span><b>33°</b></div>
+                    <div class="wx-hour"><span>15:00</span><b>32°</b></div>
+                </div>
+                <div class="wx-days">
+                    <div class="wx-day"><span>Today</span><em>33° / 26°</em></div>
+                    <div class="wx-day"><span>Tomorrow</span><em>33° / 26°</em></div>
+                    <div class="wx-day"><span>+2</span><em>32° / 26°</em></div>
+                    <div class="wx-day"><span>+3</span><em>31° / 25°</em></div>
+                    <div class="wx-day"><span>+4</span><em>32° / 26°</em></div>
+                </div>
+                <p class="wx-attrib"><b>Weather data provided by AccuWeather.</b> AccuWeather is not connected yet: this is the response shape the app is built against, so switching to the live feed is a change of data source, not a rebuild. Requests go through BAHHAR's own backend &mdash; the provider key never reaches a device &mdash; and each region is cached server-side rather than fetched per visitor. No alert banner is drawn here, because one appears only when an alert is actually active.</p>
+            </div>
+
+            <!-- Pillar 4: Smart Trip -->
+            <div class="pillar flip reveal" id="pillar-trip">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Smart Trip Planning</div>
                     <h3>Know your waters before you leave port</h3>
@@ -848,8 +1174,25 @@
                 </div>
             </div>
 
-            <!-- Pillar 2: Marine Charts (real embedded Leaflet/OpenStreetMap chart) -->
-            <div class="pillar flip reveal" id="pillar-charts">
+            <!-- Synthesis banner (brief §5): the payoff the client asked for, printed as a rule
+                 rather than a mystery number. It mirrors backend/main.py::_day_rating:
+                   1. start from today's ocean band - the worst single reading among
+                      wave height, wind and current (see the thresholds above);
+                   2. wind >= 18 kt or swell >= 2.5 m drops the rating one step on its own;
+                   3. an open boat under 7 m (Sam's is 6.7 m) drops it a further step when the
+                      current reaches 2 kt, where a cabin cruiser would hold;
+                   4. the rating never averages its inputs, so calm air cannot mask a big sea.
+                 Gear enters at step 3 too: nets and bottom rigs are set in slack water, so a
+                 2 kt tide cancels a bottom session rather than merely downgrading it. -->
+            <div class="synthesis reveal" id="pillar-summary">
+                <p>Based on your boat, your gear, today's ocean conditions and the AccuWeather forecast, BAHHAR rates today:
+                    <span class="verdict"><i class="mark" aria-hidden="true"></i>Moderate</span>
+                </p>
+                <p class="why"><b>Why:</b> a 1.2 m swell out of the north-east sets the band at Moderate on its own &mdash; the 14 kt wind and the 0.6 kt current would each have passed. Nothing else reaches a threshold that steps an open boat down, so your 22 ft skiff holds at Moderate. Put this same day in 2 kt of current and it drops a step again, and calls off a net set in slack water.</p>
+            </div>
+
+            <!-- Pillar 5: Marine Charts (real embedded Leaflet/OpenStreetMap chart) -->
+            <div class="pillar reveal" id="pillar-charts">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Marine Charts</div>
                     <h3>Nautical charts that read like the sea does</h3>
@@ -868,8 +1211,64 @@
                 </div>
             </div>
 
-            <!-- Pillar 3: Catch Log -->
-            <div class="pillar reveal">
+            <!-- Pillar 7: Safety, Crew & Vessels (mirrors safety_center / crew / vessels screens).
+                 The vessel line it displays - seats, name, length - is read from the same
+                 fisherman_profiles/{userId} record as the pillar above, not a second copy. -->
+            <div class="pillar flip reveal" id="pillar-safety">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Safety, Crew &amp; Vessels</div>
+                    <h3>A pre-departure routine that fits on one screen</h3>
+                    <p>A checklist built around Omani conditions rather than generic boating advice, with your crew manifest and vessel details carried across every trip and emergency numbers one tap away.</p>
+                    <ul>
+                        <li>Pre-departure safety checklist and persons on board</li>
+                        <li>Reusable crew and vessel profiles</li>
+                        <li>Vessel size and seats read from your profile</li>
+                        <li>Coastguard and emergency contacts at one tap</li>
+                    </ul>
+                    <a class="text-link" href="#access">Explore the safety center <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="device">
+                        <div class="device-frame">
+                            <div class="device-island"></div>
+                            <div class="device-screen">
+                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Safety center, crew and vessels">
+                                    <defs><linearGradient id="screenBgE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
+                                    <rect width="300" height="620" fill="url(#screenBgE)"/>
+                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="17" font-weight="700" fill="#ffffff">Safety Center</text>
+                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">Pre-departure checklist</text>
+                                    <rect x="20" y="94" width="260" height="8" rx="4" fill="rgba(255,255,255,0.16)"/>
+                                    <rect x="20" y="94" width="195" height="8" rx="4" fill="#3fd0c0"/>
+                                    <text x="20" y="124" font-family="Public Sans" font-size="11" fill="#a9c4d6">6 of 8 complete</text>
+                                    <g font-family="Public Sans">
+                                        <rect x="20" y="138" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="161" r="10" fill="#0f7a7a"/><path d="M39 161l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><text x="64" y="166" font-size="12" font-weight="600" fill="#12263a">Lifejackets for all pax</text>
+                                        <rect x="20" y="192" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="215" r="10" fill="#0f7a7a"/><path d="M39 215l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><text x="64" y="220" font-size="12" font-weight="600" fill="#12263a">Weather window checked</text>
+                                        <rect x="20" y="246" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="269" r="10" fill="none" stroke="#dee2e6" stroke-width="2"/><text x="64" y="274" font-size="12" font-weight="600" fill="#7a8794">Fuel reserve &gt; 30%</text>
+                                        <rect x="20" y="300" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="323" r="10" fill="none" stroke="#dee2e6" stroke-width="2"/><text x="64" y="328" font-size="12" font-weight="600" fill="#7a8794">Flares and VHF tested</text>
+                                    </g>
+                                    <text x="20" y="386" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">CREW ON BOARD</text>
+                                    <g font-family="Public Sans">
+                                        <circle cx="36" cy="412" r="16" fill="#0f7a7a"/><text x="36" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">S</text>
+                                        <circle cx="64" cy="412" r="16" fill="#1f4d6b"/><text x="64" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">A</text>
+                                        <circle cx="92" cy="412" r="16" fill="#d8b98c"/><text x="92" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#12263a">M</text>
+                                        <circle cx="120" cy="412" r="16" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.24)" stroke-dasharray="3 3"/><text x="120" y="417" text-anchor="middle" font-size="14" fill="#a9c4d6">+</text>
+                                        <text x="148" y="417" font-size="12" fill="#a9c4d6">3 of 6 seats • Al Bustan 22ft</text>
+                                    </g>
+                                    <rect x="20" y="452" width="260" height="50" rx="12" fill="#fff"/>
+                                    <text x="36" y="474" font-family="Public Sans" font-size="10" font-weight="700" fill="#7a8794" letter-spacing="1">EMERGENCY</text>
+                                    <text x="36" y="492" font-family="Public Sans" font-size="14" font-weight="700" fill="#12263a">Coastguard &amp; SAR</text>
+                                    <text x="264" y="492" text-anchor="end" font-family="Public Sans" font-size="16" font-weight="800" fill="#0f7a7a">9999</text>
+                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Call now</text>
+                                </svg>
+                            </div>
+                            <div class="device-glare"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pillar 6: Catch Log -->
+            <div class="pillar reveal" id="pillar-catch">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Digital Catch Log</div>
                     <h3>Every fish, geo-tagged and remembered</h3>
@@ -918,62 +1317,9 @@
                 </div>
             </div>
 
-            <!-- Pillar 4: Live Marine Conditions (mirrors home_dashboard_screen) -->
-            <div class="pillar flip reveal" id="pillar-live">
-                <div class="pillar-body">
-                    <div class="pillar-eyebrow">Live Marine Conditions</div>
-                    <h3>See the water the way the fish feel it</h3>
-                    <p>Sea temperature, wave height, wind, tide state and solunar pressure collapse into a single opportunity score, refreshed constantly so the number you launch against is the number you sail with.</p>
-                    <ul>
-                        <li>Hour-by-hour bite forecast with a peak window</li>
-                        <li>Sea surface temperature, wave, wind and tide in one view</li>
-                        <li>Offline snapshots for the days you lose signal</li>
-                    </ul>
-                    <a class="text-link" href="#access">Explore live conditions <span class="arrow">→</span></a>
-                </div>
-                <div class="pillar-media">
-                    <div class="device">
-                        <div class="device-frame">
-                            <div class="device-island"></div>
-                            <div class="device-screen">
-                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live marine conditions and bite forecast">
-                                    <defs><linearGradient id="screenBgC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
-                                    <rect width="300" height="620" fill="url(#screenBgC)"/>
-                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="17" font-weight="700" fill="#ffffff">Marine Conditions</text>
-                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">Mutrah Bank • updated 2 min ago</text>
-                                    <text x="20" y="122" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">BITE FORECAST BY HOUR</text>
-                                    <g fill="#3fd0c0">
-                                        <rect x="20" y="184" width="26" height="26" rx="4" opacity="0.55"/>
-                                        <rect x="58" y="170" width="26" height="40" rx="4" opacity="0.7"/>
-                                        <rect x="96" y="148" width="26" height="62" rx="4"/>
-                                        <rect x="134" y="124" width="26" height="86" rx="4"/>
-                                        <rect x="172" y="156" width="26" height="54" rx="4" opacity="0.7"/>
-                                        <rect x="210" y="178" width="26" height="32" rx="4" opacity="0.55"/>
-                                        <rect x="248" y="190" width="26" height="20" rx="4" opacity="0.45"/>
-                                    </g>
-                                    <g font-family="Public Sans" font-size="9" fill="#a9c4d6">
-                                        <text x="33" y="228" text-anchor="middle">04</text><text x="71" y="228" text-anchor="middle">06</text><text x="109" y="228" text-anchor="middle">08</text><text x="147" y="228" text-anchor="middle">10</text><text x="185" y="228" text-anchor="middle">12</text><text x="223" y="228" text-anchor="middle">14</text><text x="261" y="228" text-anchor="middle">16</text>
-                                    </g>
-                                    <rect x="20" y="248" width="260" height="72" rx="12" fill="#fff"/>
-                                    <text x="36" y="274" font-family="Public Sans" font-size="10" font-weight="700" fill="#7a8794" letter-spacing="1">PEAK WINDOW</text>
-                                    <text x="36" y="300" font-family="Public Sans" font-size="18" font-weight="700" fill="#12263a">05:45 – 07:45</text>
-                                    <text x="264" y="300" text-anchor="end" font-family="Public Sans" font-size="13" font-weight="700" fill="#0f7a7a">High</text>
-                                    <g font-family="Public Sans">
-                                        <rect x="20" y="332" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="362" font-size="12" fill="#7a8794">Sea surface temp</text><text x="264" y="362" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">27.4 °C</text>
-                                        <rect x="20" y="392" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="422" font-size="12" fill="#7a8794">Tide</text><text x="264" y="422" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">Rising 1.8 m</text>
-                                        <rect x="20" y="452" width="260" height="50" rx="12" fill="#fff"/><text x="36" y="482" font-size="12" fill="#7a8794">Moon / solunar</text><text x="264" y="482" text-anchor="end" font-size="14" font-weight="700" fill="#12263a">Waxing 62%</text>
-                                    </g>
-                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Set a bite alert</text>
-                                </svg>
-                            </div>
-                            <div class="device-glare"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pillar 5: Licences & Documents (mirrors documents_wallet_screen + licences_screen) -->
-            <div class="pillar reveal">
+            <!-- Pillar 8: Licences & Documents (mirrors documents_wallet_screen + licences_screen).
+                 The registration number on the card is the profile's boat.registrationNumber. -->
+            <div class="pillar flip reveal" id="pillar-docs">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Licences &amp; Documents</div>
                     <h3>Every permit, in the same pocket as your rod</h3>
@@ -982,6 +1328,7 @@
                         <li>Expiry reminders before a permit lapses</li>
                         <li>Protected-area permits tied to each hotspot</li>
                         <li>Stored offline — no signal needed at sea</li>
+                        <li>Vessel registration number comes from your profile</li>
                     </ul>
                     <a class="text-link" href="#access">Explore the wallet <span class="arrow">→</span></a>
                 </div>
@@ -1021,59 +1368,6 @@
                                         <rect x="80" y="446" width="74" height="16" rx="8" fill="rgba(15,122,122,0.12)"/><text x="117" y="458" text-anchor="middle" font-size="10" font-weight="700" fill="#0f7a7a">Available</text>
                                     </g>
                                     <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">＋ Add document</text>
-                                </svg>
-                            </div>
-                            <div class="device-glare"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Pillar 6: Safety, Crew & Vessels (mirrors safety_center / crew / vessels screens) -->
-            <div class="pillar flip reveal">
-                <div class="pillar-body">
-                    <div class="pillar-eyebrow">Safety, Crew &amp; Vessels</div>
-                    <h3>A pre-departure routine that fits on one screen</h3>
-                    <p>A checklist built around Omani conditions rather than generic boating advice, with your crew manifest and vessel details carried across every trip and emergency numbers one tap away.</p>
-                    <ul>
-                        <li>Pre-departure safety checklist and persons on board</li>
-                        <li>Reusable crew and vessel profiles</li>
-                        <li>Coastguard and emergency contacts at one tap</li>
-                    </ul>
-                    <a class="text-link" href="#access">Explore the safety center <span class="arrow">→</span></a>
-                </div>
-                <div class="pillar-media">
-                    <div class="device">
-                        <div class="device-frame">
-                            <div class="device-island"></div>
-                            <div class="device-screen">
-                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Safety center, crew and vessels">
-                                    <defs><linearGradient id="screenBgE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
-                                    <rect width="300" height="620" fill="url(#screenBgE)"/>
-                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="17" font-weight="700" fill="#ffffff">Safety Center</text>
-                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">Pre-departure checklist</text>
-                                    <rect x="20" y="94" width="260" height="8" rx="4" fill="rgba(255,255,255,0.16)"/>
-                                    <rect x="20" y="94" width="195" height="8" rx="4" fill="#3fd0c0"/>
-                                    <text x="20" y="124" font-family="Public Sans" font-size="11" fill="#a9c4d6">6 of 8 complete</text>
-                                    <g font-family="Public Sans">
-                                        <rect x="20" y="138" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="161" r="10" fill="#0f7a7a"/><path d="M39 161l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><text x="64" y="166" font-size="12" font-weight="600" fill="#12263a">Lifejackets for all pax</text>
-                                        <rect x="20" y="192" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="215" r="10" fill="#0f7a7a"/><path d="M39 215l4 4 7-8" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><text x="64" y="220" font-size="12" font-weight="600" fill="#12263a">Weather window checked</text>
-                                        <rect x="20" y="246" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="269" r="10" fill="none" stroke="#dee2e6" stroke-width="2"/><text x="64" y="274" font-size="12" font-weight="600" fill="#7a8794">Fuel reserve &gt; 30%</text>
-                                        <rect x="20" y="300" width="260" height="46" rx="10" fill="#fff"/><circle cx="44" cy="323" r="10" fill="none" stroke="#dee2e6" stroke-width="2"/><text x="64" y="328" font-size="12" font-weight="600" fill="#7a8794">Flares and VHF tested</text>
-                                    </g>
-                                    <text x="20" y="386" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">CREW ON BOARD</text>
-                                    <g font-family="Public Sans">
-                                        <circle cx="36" cy="412" r="16" fill="#0f7a7a"/><text x="36" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">S</text>
-                                        <circle cx="64" cy="412" r="16" fill="#1f4d6b"/><text x="64" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">A</text>
-                                        <circle cx="92" cy="412" r="16" fill="#d8b98c"/><text x="92" y="417" text-anchor="middle" font-size="12" font-weight="700" fill="#12263a">M</text>
-                                        <circle cx="120" cy="412" r="16" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.24)" stroke-dasharray="3 3"/><text x="120" y="417" text-anchor="middle" font-size="14" fill="#a9c4d6">+</text>
-                                        <text x="148" y="417" font-size="12" fill="#a9c4d6">3 of 6 seats • Al Bustan 22ft</text>
-                                    </g>
-                                    <rect x="20" y="452" width="260" height="50" rx="12" fill="#fff"/>
-                                    <text x="36" y="474" font-family="Public Sans" font-size="10" font-weight="700" fill="#7a8794" letter-spacing="1">EMERGENCY</text>
-                                    <text x="36" y="492" font-family="Public Sans" font-size="14" font-weight="700" fill="#12263a">Coastguard &amp; SAR</text>
-                                    <text x="264" y="492" text-anchor="end" font-family="Public Sans" font-size="16" font-weight="800" fill="#0f7a7a">9999</text>
-                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Call now</text>
                                 </svg>
                             </div>
                             <div class="device-glare"></div>
@@ -1320,11 +1614,11 @@
                         <span class="logo-main">BAHHAR</span>
                     </a>
                     <p>Smart fishing companion for Omani waters — real oceanographic data, local species knowledge and regulatory compliance in one app.</p>
-                    <p class="lang-note">Arabic mode carries every headline and paragraph on this page. The phone-screen mockups stay in English until their artwork is rebuilt in both scripts; the chart's own place labels follow whichever language the map provider serves. Species and place names keep their verified Omani Arabic; where a name is still being checked with local speakers, the Latin stands in &mdash; in either language.</p>
+                    <p class="lang-note">Arabic mode carries every headline, paragraph and labelled reading on this page — including the profile record, the ocean readout and the forecast panel, which are real text rather than artwork. The phone-screen mockups stay in English until their artwork is rebuilt in both scripts; the chart's own place labels follow whichever language the map provider serves. Species and place names keep their verified Omani Arabic; where a name is still being checked with local speakers, the Latin stands in &mdash; in either language.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Product</h4>
-                    <ul><li><a href="#features">Features</a></li><li><a href="#species">Species</a></li><li><a href="#regions">Regions</a></li><li><a href="#why">Why Oman</a></li><li><a href="#access">Early access</a></li></ul>
+                    <ul><li><a href="#features">Features</a></li><li><a href="#pillar-profile">My profile</a></li><li><a href="#pillar-live">Ocean conditions</a></li><li><a href="#pillar-weather">Weather</a></li><li><a href="#species">Species</a></li><li><a href="#regions">Regions</a></li><li><a href="#why">Why Oman</a></li><li><a href="#access">Early access</a></li></ul>
                 </div>
                 <div class="footer-col">
                     <h4>Resources</h4>
@@ -1542,14 +1836,25 @@
 
         /* ---- Working EN <-> AR toggle ---- */
         var ARROW = ' <span class="arrow">→</span>';
+        /* The band chips and the verdict carry a shape mark inside them, and the toggle writes
+           innerHTML, so every Arabic value for those has to re-emit the mark. */
+        var MARK = '<i class="mark" aria-hidden="true"></i>';
         var DICT = [
+            // The flag wordmark is real text, so it carries Arabic too; the brand name does not.
+            ['.flag-region', 'عُمان'],
             ['.nav-links a[href="#why"]', 'لماذا عُمان'],
             ['.nav-links a[href="#features"]', 'المزايا'],
+            ['.nav-links a[href="#pillar-profile"]', 'ملفّي'],
+            ['.nav-links a[href="#pillar-live"]', 'المحيط'],
+            ['.nav-links a[href="#pillar-weather"]', 'الأحوال الجوية'],
             ['.nav-links a[href="#species"]', 'الأسماك'],
             ['.nav-links a[href="#regions"]', 'المناطق'],
             ['.nav-links a[href="#access"]', 'احصل على الوصول'],
             ['#mobileMenu a[href="#why"]', 'لماذا عُمان'],
             ['#mobileMenu a[href="#features"]', 'المزايا'],
+            ['#mobileMenu a[href="#pillar-profile"]', 'ملفّي'],
+            ['#mobileMenu a[href="#pillar-live"]', 'المحيط'],
+            ['#mobileMenu a[href="#pillar-weather"]', 'الأحوال الجوية'],
             ['#mobileMenu a[href="#species"]', 'الأسماك'],
             ['#mobileMenu a[href="#regions"]', 'المناطق'],
             ['#mobileMenu a.btn-solid', 'احصل على الوصول'],
@@ -1578,48 +1883,136 @@
             ['#why .cards-grid .feature-card:nth-child(3) p', 'المناطق المحمية مثل جزر الديمانيات تتطلب تصاريح؛ يضع بحّار حدوداً جغرافية ويعرض المرسوم السلطاني ذي الصلة قبل أن ترمي خطّافك.'],
             ['#features .section-head .eyebrow', 'الرفيق'],
             ['#features .section-head h2', 'كل ما بين الرصيف والتئام الخطّاف المزدوج'],
-            ['#features .pillar:nth-of-type(2) .pillar-eyebrow', 'تخطيط الرحلات الذكي'],
-            ['#features .pillar:nth-of-type(2) h3', 'اعرف مياهك قبل أن تُغادر الميناء'],
-            ['#features .pillar:nth-of-type(2) .pillar-body p', 'معالج من أربع خطوات يبني خطة كاملة وآمنة جويّاً حول مركبك ووقودك وأصنافك المستهدفة، ثم يمنحك نافذة الإقلاع المثالية.'],
-            ['#features .pillar:nth-of-type(2) ul li:nth-child(1)', 'تقديرات استهلاك الوقود والمدى'],
-            ['#features .pillar:nth-of-type(2) ul li:nth-child(2)', 'توصيات نوافذ المدّ والقمر'],
-            ['#features .pillar:nth-of-type(2) ul li:nth-child(3)', 'تخطيط مسارات آمنة جويّاً'],
-            ['#features .pillar:nth-of-type(2) .text-link', 'استكشف تخطيط الرحلات' + ARROW],
-            ['#features .pillar:nth-of-type(3) .pillar-eyebrow', 'الخرائط البحرية'],
-            ['#features .pillar:nth-of-type(3) h3', 'خرائط ملاحية تُقرأ كما يُقرأ البحر'],
-            ['#features .pillar:nth-of-type(3) .pillar-body p', 'تُظهر الخرائط الطبوغرافية المخصّصة الانحدارات وحدود المحميات والمؤشرات اللونية للاحتمالية، محسوبة من مياه عُمان الحقيقية لا من شبكة تصحيح.'],
-            ['#features .pillar:nth-of-type(3) ul li:nth-child(1)', 'حدود المحميات والإشعارات القانونية'],
-            ['#features .pillar:nth-of-type(3) ul li:nth-child(2)', 'خطوط الأعماق واكتشاف الانحدارات'],
-            ['#features .pillar:nth-of-type(3) ul li:nth-child(3)', 'المسافة والاتجاه من مينائك'],
-            ['#features .pillar:nth-of-type(3) .text-link', 'استكشف الخرائط البحرية' + ARROW],
-            ['#features .pillar:nth-of-type(4) .pillar-eyebrow', 'سجل الصيد الرقمي'],
-            ['#features .pillar:nth-of-type(4) h3', 'كل سمكة موسومة بالموقع محفوظة في الذاكرة'],
-            ['#features .pillar:nth-of-type(4) .pillar-body p', 'سجّل صيدك بالصور وGPS والحظوظ الدقيقة التي أنتجته؛ وعلى مدار الموسم يحوّل بحّار دفتر يومياتك إلى تحليلات عضّ شخصية.'],
-            ['#features .pillar:nth-of-type(4) ul li:nth-child(1)', 'توثيق بالصور وGPS والمعدات'],
-            ['#features .pillar:nth-of-type(4) ul li:nth-child(2)', 'تتبّع الصنف والوزن والطول'],
-            ['#features .pillar:nth-of-type(4) ul li:nth-child(3)', 'صدّر دفتر يومياتك بصيغة PDF'],
-            ['#features .pillar:nth-of-type(4) .text-link', 'استكشف سجل الصيد' + ARROW],
-            ['#features .pillar:nth-of-type(5) .pillar-eyebrow', 'الأحوال البحرية اللحظية'],
-            ['#features .pillar:nth-of-type(5) h3', 'انظر إلى الماء كما تحسّه الأسماك'],
-            ['#features .pillar:nth-of-type(5) .pillar-body p', 'حرارة البحر وارتفاع الموج والرياح وحالة المدّ والضغط القمري الشمسي تنضغط كلها في رقم فرص واحد يُحدَّث باستمرار، فتُبحر وفق الرقم نفسه الذي انطلقت على أساسه.'],
-            ['#features .pillar:nth-of-type(5) ul li:nth-child(1)', 'تنبؤ بالالتقام ساعة بساعة مع نافذة ذروة'],
-            ['#features .pillar:nth-of-type(5) ul li:nth-child(2)', 'حرارة سطح البحر والموج والرياح والمدّ في شاشة واحدة'],
-            ['#features .pillar:nth-of-type(5) ul li:nth-child(3)', 'لقطات محفوظة تُستخدم دون اتصال حين تنقطع الشبكة'],
-            ['#features .pillar:nth-of-type(5) .text-link', 'استكشف الأحوال اللحظية' + ARROW],
-            ['#features .pillar:nth-of-type(6) .pillar-eyebrow', 'التراخيص والوثائق'],
-            ['#features .pillar:nth-of-type(6) h3', 'كل تصريح في الجيب الذي تحمل فيه صنّارتك'],
-            ['#features .pillar:nth-of-type(6) .pillar-body p', 'يحمل بحّار رخصة صيدك وتسجيل مركبك وتصاريح المحميات على الجهاز نفسه مع تواريخ انتهائها، فيصبح التفتيش من خفر السواحل مهمة لا تستغرق ثانيتين حتى وأنت في المرسى.'],
-            ['#features .pillar:nth-of-type(6) ul li:nth-child(1)', 'تنبيهات قبل انتهاء صلاحية أي تصريح'],
-            ['#features .pillar:nth-of-type(6) ul li:nth-child(2)', 'تصاريح المناطق المحمية مرتبطة بكل موقع'],
-            ['#features .pillar:nth-of-type(6) ul li:nth-child(3)', 'محفوظة دون اتصال — لا تحتاج شبكة وأنت في العرض'],
-            ['#features .pillar:nth-of-type(6) .text-link', 'استكشف المحفظة' + ARROW],
-            ['#features .pillar:nth-of-type(7) .pillar-eyebrow', 'السلامة والطاقم والمراكب'],
-            ['#features .pillar:nth-of-type(7) h3', 'روتين ما قبل الإبحار كله في شاشة واحدة'],
-            ['#features .pillar:nth-of-type(7) .pillar-body p', 'قائمة تحقق مبنية على الأحوال العُمانية لا على نصائح الإبحار العامة، مع ملفات طاقمك ومركبك تنتقل مع كل رحلة وأرقام الطوارئ على نقرة واحدة.'],
-            ['#features .pillar:nth-of-type(7) ul li:nth-child(1)', 'قائمة سلامة قبل الإبحار مع عدد من على المتن'],
-            ['#features .pillar:nth-of-type(7) ul li:nth-child(2)', 'ملفات قابلة لإعادة الاستخدام للطاقم والمراكب'],
-            ['#features .pillar:nth-of-type(7) ul li:nth-child(3)', 'أرقام خفر السواحل والطوارئ بنقرة واحدة'],
-            ['#features .pillar:nth-of-type(7) .text-link', 'استكشف مركز السلامة' + ARROW],
+            /* The pillars used to be keyed as `#features .pillar:nth-of-type(N)`, which counted
+               divs by position: adding the Profile and Weather pillars, or a readout panel
+               between them, silently shifted every translation one pillar along. Every pillar
+               now carries a stable id and every key hangs off it. */
+            ['#pillar-profile .pillar-eyebrow', 'ملفّ الصيّاد'],
+            ['#pillar-profile h3', 'تُدخِل مركبك وعتادك مرّة واحدة'],
+            ['#pillar-profile .pillar-body p', 'اسمك وميناءُ صيدك ومركبك وعتادك كلها في سجلّ واحد. تقديراتُ الوقود في مخطِّط الرحلات، وعددُ الأشخاص على المتن في قائمة السلامة، وتاريخُ انتهاء التسجيل في المحفظة — كلها تقرأ من هذا السجلّ، فلا يسألك التطبيق السؤالَ نفسه مرّتين.'],
+            ['#pillar-profile ul li:nth-child(1)', 'بياناتك الشخصية وميناء الصيد الذي تُقيم فيه'],
+            ['#pillar-profile ul li:nth-child(2)', 'نوع المركب وطوله والمحرّك ورقم التسجيل'],
+            ['#pillar-profile ul li:nth-child(3)', 'العتاد: الشِّباك وحجمها وعددُها والخطّافات والطُّعوم'],
+            ['#pillar-profile .text-link', 'استكشف ملفّك' + ARROW],
+            ['#pillar-profile .record-group:nth-of-type(1) h5', 'الصيّاد'],
+            ['#pillar-profile .record-group:nth-of-type(2) h5', 'مركبي <span class="record-shared">مشترَك مع المحفظة ومركز السلامة</span>'],
+            ['#pillar-profile .record-group:nth-of-type(3) h5', 'عتادي'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(1) dt', 'الاسم'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(1) dd', 'سام'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(2) dt', 'السنّ'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(3) dt', 'الهاتف'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(4) dt', 'ميناء الإقامة'],
+            ['#pillar-profile .record-group:nth-of-type(1) dl > div:nth-of-type(4) dd', 'البستان'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(1) dt', 'النوع'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(1) dd', 'مركب مفتوح'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(2) dt', 'الطول'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(2) dd', '6,7 م · 22 قدماً'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(3) dt', 'المحرّك'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(3) dd', 'محرّكان · 60 حصاناً'],
+            ['#pillar-profile .record-group:nth-of-type(2) dl > div:nth-of-type(4) dt', 'رقم التسجيل'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(1) dt', 'نوع العتاد'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(1) dd', 'جَرّ وقاع'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(2) dt', 'الشِّباك'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(2) dd', 'إعاشية · 45 م'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(3) dt', 'عدد الشِّباك'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(4) dt', 'الطُّعوم والخطّافات'],
+            ['#pillar-profile .record-group:nth-of-type(3) dl > div:nth-of-type(4) dd', '6 قصبات'],
+            ['#pillar-live .pillar-eyebrow', 'المعلومات المحيطية'],
+            ['#pillar-live h3', 'انظر إلى الماء كما تحسّه الأسماك'],
+            ['#pillar-live .pillar-body p', 'حرارة البحر وارتفاع الموج والرياح وحالة المدّ والضغط القمري الشمسي تنضغط كلها في رقم فرص واحد يُحدَّث باستمرار، فتُبحر وفق الرقم نفسه الذي انطلقت على أساسه.'],
+            ['#pillar-live ul li:nth-child(1)', 'تنبؤ بالالتقام ساعة بساعة مع نافذة ذروة'],
+            ['#pillar-live ul li:nth-child(2)', 'حرارة سطح البحر والموج والرياح والمدّ في شاشة واحدة'],
+            ['#pillar-live ul li:nth-child(3)', 'اتّجاه الموج ودورته، والتيّار والمدى البصري إلى جوارها'],
+            ['#pillar-live ul li:nth-child(4)', 'لقطات محفوظة تُستخدم دون اتصال حين تنقطع الشبكة'],
+            ['#pillar-live .text-link', 'استكشف الأحوال اللحظية' + ARROW],
+            ['#ocean-readout .readout-head h4', 'المعلومات المحيطية'],
+            ['#ocean-readout .readout-where', 'البستان — عيّنة مما تُظهره شاشة المحيط في التطبيق'],
+            ['#ocean-readout .cond:nth-of-type(1) dt', 'حرارة سطح البحر'],
+            ['#ocean-readout .cond:nth-of-type(2) dt', 'ارتفاع الموج'],
+            ['#ocean-readout .cond:nth-of-type(2) dd', '1.2<span class="unit">م</span>'],
+            ['#ocean-readout .cond:nth-of-type(3) dt', 'اتّجاه الموج'],
+            ['#ocean-readout .cond:nth-of-type(3) dd', 'شمالية شرقية<span class="qual">تأتي من الشمال الشرقي</span>'],
+            ['#ocean-readout .cond:nth-of-type(4) dt', 'دورة الموج'],
+            ['#ocean-readout .cond:nth-of-type(4) dd', '7<span class="unit">ث</span>'],
+            ['#ocean-readout .cond:nth-of-type(4) .qual', 'بين مَوجتين'],
+            ['#ocean-readout .cond:nth-of-type(5) dt', 'الرياح'],
+            ['#ocean-readout .cond:nth-of-type(5) dd', '14<span class="unit">عقدة</span>'],
+            ['#ocean-readout .cond:nth-of-type(5) .qual', 'من الشمال الشرقي'],
+            ['#ocean-readout .cond:nth-of-type(6) dt', 'التيّار'],
+            ['#ocean-readout .cond:nth-of-type(6) dd', '0.6<span class="unit">عقدة</span>'],
+            ['#ocean-readout .cond:nth-of-type(6) .qual', 'باتّجاه الجنوب'],
+            ['#ocean-readout .cond:nth-of-type(7) dt', 'المدّ'],
+            ['#ocean-readout .cond:nth-of-type(7) dd', 'صاعد 1.8<span class="unit">م</span>'],
+            ['#ocean-readout .cond:nth-of-type(7) .qual', 'المدّ المقبل 18:42'],
+            ['#ocean-readout .cond:nth-of-type(8) dt', 'المدى البصري'],
+            ['#ocean-readout .cond:nth-of-type(8) dd', '8<span class="unit">كم</span>'],
+            ['#ocean-readout .band-chip.b-good', MARK + 'جيّد'],
+            ['#ocean-readout .band-chip.b-moderate', MARK + 'معتدل'],
+            ['#ocean-readout .band-chip.b-rough', MARK + 'بحر هائج'],
+            ['#ocean-readout .band-chip.b-current', MARK + 'تيّار قوي'],
+            ['#ocean-readout .band-chip.b-risk', MARK + 'خطر مرتفع'],
+            ['#ocean-readout .readout-note', 'التصنيف هو أسوأ قراءة في المجموعة لا متوسّطها: موجٌ بارتفاع 1.2 م على مركب مفتوح بطول 22 قدماً يبقى «معتدلاً» حتى وإن بدت الرياحُ لا تُذكر. القيم المعروضة نموذجٌ لمخرجات التطبيق، لا التغذية الحيّة.'],
+            ['#pillar-weather .pillar-eyebrow', 'الأحوال الجوية — AccuWeather'],
+            ['#pillar-weather h3', 'السماء فوق الماء، في الشاشة نفسها'],
+            ['#pillar-weather .pillar-body p', 'البيانات المحيطية تُخبرك ما الذي يفعله البحر، والتنبّؤُ يُخبرك ما الذي ستفعله السماء به. يحمل بحّار الاثنين معاً، فلا يُبنى قرارُ الصباح على تطبيقين وخبرٍ من اللاسلكي.'],
+            ['#pillar-weather ul li:nth-child(1)', 'الحرارة المحسوس بها والرطوبة والأشعّة فوق البنفسجية والمدى البصري'],
+            ['#pillar-weather ul li:nth-child(2)', 'شريطٌ ساعة بساعة وتوقُّعٌ لخمسة أيام'],
+            ['#pillar-weather ul li:nth-child(3)', 'تنبيهات الأحوال الشديدة لا تظهر إلا حين تُصدَر فعلاً'],
+            ['#pillar-weather .text-link', 'استكشف شاشة الأحوال الجوية' + ARROW],
+            ['#pillar-weather .wx-cond', 'مشمس · المحسوس <b>34°</b>'],
+            ['#pillar-weather .cond:nth-of-type(1) dt', 'الرطوبة'],
+            ['#pillar-weather .cond:nth-of-type(1) dd', '68<span class="unit">%</span>'],
+            ['#pillar-weather .cond:nth-of-type(2) dt', 'الرياح'],
+            ['#pillar-weather .cond:nth-of-type(2) dd', '14<span class="unit">كم/س</span>'],
+            ['#pillar-weather .cond:nth-of-type(2) .qual', 'من الشمال الشرقي'],
+            ['#pillar-weather .cond:nth-of-type(3) dt', 'الأمطار'],
+            ['#pillar-weather .cond:nth-of-type(3) dd', '10<span class="unit">%</span>'],
+            ['#pillar-weather .cond:nth-of-type(4) dt', 'الأشعّة فوق البنفسجية'],
+            ['#pillar-weather .cond:nth-of-type(4) dd', '8<span class="qual">مرتفعٌ جدّاً</span>'],
+            ['#wx-readout .readout-head h4', 'التنبّؤ'],
+            ['#wx-readout .readout-where', 'مسقط — ساعة بساعة إلى ما بعد الظهر، ثم خمسة أيام'],
+            ['#wx-readout .wx-day:nth-of-type(1) span', 'اليوم'],
+            ['#wx-readout .wx-day:nth-of-type(2) span', 'غداً'],
+            ['#wx-readout .wx-attrib', '<b>الأحوال الجوية مقدَّمة من AccuWeather.</b> لم نربط AccuWeather بعد: هذا هو هيكلُ الاستجابة الذي يُبنى التطبيق على أساسه، فيكون الانتقالُ إلى التغذية الحيّة تغييراً لمصدر البيانات لا إعادةَ بناء. تذهب الطلبات إلى خلفيّة بحّار نفسها، فلا يصل مفتاحُ المزوّد إلى أيّ جهاز، وتُخزَّن كلُّ منطقة في الخادم بدل أن تُجلَب لكلّ زائر. ولا يظهر هنا شريطُ تنبيه، لأنّ شريطَ التنبيه لا يظهر إلا حين يكون تنبيهٌ سارياً.'],
+            ['#pillar-trip .pillar-eyebrow', 'تخطيط الرحلات الذكي'],
+            ['#pillar-trip h3', 'اعرف مياهك قبل أن تُغادر الميناء'],
+            ['#pillar-trip .pillar-body p', 'معالج من أربع خطوات يبني خطة كاملة وآمنة جويّاً حول مركبك ووقودك وأصنافك المستهدفة، ثم يمنحك نافذة الإقلاع المثالية.'],
+            ['#pillar-trip ul li:nth-child(1)', 'تقديرات استهلاك الوقود والمدى'],
+            ['#pillar-trip ul li:nth-child(2)', 'توصيات نوافذ المدّ والقمر'],
+            ['#pillar-trip ul li:nth-child(3)', 'تخطيط مسارات آمنة جويّاً'],
+            ['#pillar-trip .text-link', 'استكشف تخطيط الرحلات' + ARROW],
+            ['#pillar-summary > p:first-child', 'بالنظر إلى مركبك وعتادك وأحوالِ المحيط اليوم وتنبّؤ AccuWeather، يُقيِّم بحّار هذا اليوم: <span class="verdict"><i class="mark" aria-hidden="true"></i>معتدل</span>'],
+            ['#pillar-summary .why', '<b>السبب:</b> موجٌ بارتفاع 1.2 م آتٍ من الشمال الشرقي يجعل التصنيف «معتدلاً» وحده، بينما كانت رياحٌ بـ14 عقدة وتيّارٌ بـ0.6 عقدة ليمرّا بلا خفض. ولم يبلغ شيءٌ آخرُ حدّاً من الحدود التي تُخفض مركباً مفتوحاً درجة، فمركبُك بطول 22 قدماً يبقى عند «معتدل». لو أُضيف إلى هذا اليوم تيّارٌ بـ2 عقدة لانخفض درجةً أخرى، ولأُلغيت شبكةٌ تُنزَل في ماءٍ راكد.'],
+            ['#pillar-charts .pillar-eyebrow', 'الخرائط البحرية'],
+            ['#pillar-charts h3', 'خرائط ملاحية تُقرأ كما يُقرأ البحر'],
+            ['#pillar-charts .pillar-body p', 'تُظهر الخرائط الطبوغرافية المخصّصة الانحدارات وحدود المحميات والمؤشرات اللونية للاحتمالية، محسوبة من مياه عُمان الحقيقية لا من شبكة تصحيح.'],
+            ['#pillar-charts ul li:nth-child(1)', 'حدود المحميات والإشعارات القانونية'],
+            ['#pillar-charts ul li:nth-child(2)', 'خطوط الأعماق واكتشاف الانحدارات'],
+            ['#pillar-charts ul li:nth-child(3)', 'المسافة والاتّجاه من مينائك'],
+            ['#pillar-charts .text-link', 'استكشف الخرائط البحرية' + ARROW],
+            ['#pillar-catch .pillar-eyebrow', 'سجل الصيد الرقمي'],
+            ['#pillar-catch h3', 'كل سمكة موسومة بالموقع محفوظة في الذاكرة'],
+            ['#pillar-catch .pillar-body p', 'سجّل صيدك بالصور وGPS والحظوظ الدقيقة التي أنتجته؛ وعلى مدار الموسم يحوّل بحّار دفتر يومياتك إلى تحليلات عضّ شخصية.'],
+            ['#pillar-catch ul li:nth-child(1)', 'توثيق بالصور وGPS والمعدات'],
+            ['#pillar-catch ul li:nth-child(2)', 'تتبّع الصنف والوزن والطول'],
+            ['#pillar-catch ul li:nth-child(3)', 'صدّر دفتر يومياتك بصيغة PDF'],
+            ['#pillar-catch .text-link', 'استكشف سجل الصيد' + ARROW],
+            ['#pillar-docs .pillar-eyebrow', 'التراخيص والوثائق'],
+            ['#pillar-docs h3', 'كل تصريح في الجيب الذي تحمل فيه صنّارتك'],
+            ['#pillar-docs .pillar-body p', 'يحمل بحّار رخصة صيدك وتسجيل مركبك وتصاريح المحميات على الجهاز نفسه مع تواريخ انتهائها، فيصبح التفتيش من خفر السواحل مهمة لا تستغرق ثانيتين حتى وأنت في المرسى.'],
+            ['#pillar-docs ul li:nth-child(1)', 'تنبيهات قبل انتهاء صلاحية أي تصريح'],
+            ['#pillar-docs ul li:nth-child(2)', 'تصاريح المناطق المحمية مرتبطة بكل موقع'],
+            ['#pillar-docs ul li:nth-child(3)', 'محفوظة دون اتصال — لا تحتاج شبكة وأنت في العرض'],
+            ['#pillar-docs ul li:nth-child(4)', 'رقم تسجيل المركب يُقرأ من ملفّك'],
+            ['#pillar-docs .text-link', 'استكشف المحفظة' + ARROW],
+            ['#pillar-safety .pillar-eyebrow', 'السلامة والطاقم والمراكب'],
+            ['#pillar-safety h3', 'روتين ما قبل الإبحار كله في شاشة واحدة'],
+            ['#pillar-safety .pillar-body p', 'قائمة تحقق مبنية على الأحوال العُمانية لا على نصائح الإبحار العامة، مع ملفات طاقمك ومركبك تنتقل مع كل رحلة وأرقام الطوارئ على نقرة واحدة.'],
+            ['#pillar-safety ul li:nth-child(1)', 'قائمة سلامة قبل الإبحار مع عدد من على المتن'],
+            ['#pillar-safety ul li:nth-child(2)', 'ملفات قابلة لإعادة الاستخدام للطاقم والمراكب'],
+            ['#pillar-safety ul li:nth-child(3)', 'طول المركب وعدد المقاعد يُقرآن من ملفّك'],
+            ['#pillar-safety ul li:nth-child(4)', 'أرقام خفر السواحل والطوارئ بنقرة واحدة'],
+            ['#pillar-safety .text-link', 'استكشف مركز السلامة' + ARROW],
             ['#species .eyebrow', 'ذكاء الأصناف'],
             ['#species h2', 'استهداف الأصناف الأكثر طلباً في عُمان'],
             ['#species .section-description', 'من كنعد مسندم إلى ثمد ظفار — لكلٍّ منها نموذج تنبؤ خاص وصورة الحيوان الحقيقي.'],
@@ -1690,10 +2083,13 @@
             ['#region-dhofar .region-legal', 'جنوب غرب Shuwaymiyah تمتدّ جزر الحلانيات في مياه تُعَدّ من أنظف بقاع العالم وأقلّها اصطياداً، وتُشتّي فيها التجمّعة الوحيدة لحيتان الحدباء غير المهاجرة. وهي محمية ومقيّدة بالتصاريح أيضاً؛ <a href="https://gov.om/en/ministry-of-agriculture-fisheries-and-water-resources" target="_blank" rel="noopener">الوزارة</a> تضع شروطها، وشروطها تتغيّر.'],
             ['#region-dhofar .region-species', '<span>في هذه المياه</span> Lutjanus · الحمام · الثمد، مع الضلعة العملاقة في الأعماق'],
             ['#region-dhofar .text-link', 'الأحوال اللحظية لهذه المنطقة' + ARROW],
-            ['.footer-brand p', 'رفيق الصيد الذكي للمياه العُمانية — بيانات محيطية حقيقية، ومعرفة بالأصناف المحلية، والامتثال التنظيمي في تطبيق واحد.'],
-            ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها كاملة. أما نماذج شاشات الهاتف فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين، وتسميات الخريطة نفسها تتبع اللغة التي يقدّمها مزوّد الخرائط. أسماء الأصناف والأماكن تُحفَظ بالعربي العُماني الموثَّق، ومتى بقي الاسم قيد التحقق لدى متحدّثين عُمانيين جاء الاسم اللاتيني مكانه — في اللغتين.'],
+            ['.footer-brand > p:first-of-type', 'رفيق الصيد الذكي للمياه العُمانية — بيانات محيطية حقيقية، ومعرفة بالأصناف المحلية، والامتثال التنظيمي في تطبيق واحد.'],
+            ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها والتسمياتِ المقروءة فيها، بما في ذلك سجلّ الملفّ ولوحة المحيط ولوحة التنبّؤ — وكلها نصوصٌ حقيقية لا رسوم. أما نماذج شاشات الهاتف فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين، وتسميات الخريطة نفسها تتبع اللغة التي يقدّمها مزوّد الخرائط. أسماء الأصناف والأماكن تُحفَظ بالعربي العُماني الموثَّق، ومتى بقي الاسم قيد التحقق لدى متحدّثين عُمانيين جاء الاسم اللاتيني مكانه — في اللغتين.'],
             ['.footer-col:nth-of-type(2) h4', 'المنتج'],
             ['.footer-col a[href="#features"]', 'المزايا'],
+            ['.footer-col a[href="#pillar-profile"]', 'ملفّي'],
+            ['.footer-col a[href="#pillar-live"]', 'المعلومات المحيطية'],
+            ['.footer-col a[href="#pillar-weather"]', 'الأحوال الجوية'],
             ['.footer-col a[href="#species"]', 'الأسماك'],
             ['.footer-col a[href="#regions"]', 'المناطق'],
             ['.footer-col a[href="#why"]', 'لماذا عُمان'],
