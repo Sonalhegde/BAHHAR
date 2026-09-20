@@ -5,6 +5,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/marine_provider.dart';
+import '../../../core/providers/notification_provider.dart';
+import '../../../core/providers/weather_provider.dart';
 import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/providers/preferences_provider.dart';
 import '../../../core/services/firebase_service.dart';
@@ -16,6 +18,7 @@ import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/hotspot_card.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../../shared/animations/app_animations.dart';
+import 'widgets/weather_card_widget.dart';
 
 class HomeDashboardScreen extends ConsumerWidget {
   const HomeDashboardScreen({super.key});
@@ -23,6 +26,8 @@ class HomeDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final marineAsync = ref.watch(marineConditionsProvider);
+    final weatherAsync = ref.watch(weatherConditionsProvider);
+    final pushed = ref.watch(pushedAlertProvider).valueOrNull;
     final hotspotsAsync = ref.watch(hotspotsProvider);
     final isOfflineDemo = ref.watch(offlineDataModeProvider);
     final selectedRegion = ref.watch(selectedGovernorateProvider);
@@ -227,6 +232,61 @@ class HomeDashboardScreen extends ConsumerWidget {
             ),
           ),
 
+          // Push alert strip: a message that arrived while the app was open. A
+          // foreground banner needs a local-notification plugin this app does not
+          // carry, so the push surfaces here instead of being swallowed. Dismissing
+          // only clears the strip; the tray copy is untouched.
+          if (pushed != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.signalCautionBg,
+                    borderRadius:
+                        BorderRadius.circular(GlassTokens.radiusSmall),
+                    border: Border.all(
+                        color: AppColors.signalCaution.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.notifications_active_outlined,
+                          size: 18, color: AppColors.signalCaution),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              pushed.title,
+                              style: AppTextStyles.caption.copyWith(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.signalCaution,
+                              ),
+                            ),
+                            if (pushed.body.isNotEmpty)
+                              Text(
+                                pushed.body,
+                                style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.textSecondary),
+                              ),
+                          ],
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => ref.invalidate(pushedAlertProvider),
+                        child: Icon(Icons.close_rounded,
+                            size: 16, color: AppColors.textTertiary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
           // Live Marine Conditions Grid
           SliverToBoxAdapter(
             child: SlideFadeReveal(
@@ -283,6 +343,84 @@ class HomeDashboardScreen extends ConsumerWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 8),
+                        // Second row: the three readings a fisherman uses to decide
+                        // *where* to go, once wave height and wind have said *whether*.
+                        // Wave direction is its own bearing and never borrows the wind
+                        // one — off this coast a swell from the SE and a afternoon land
+                        // breeze from the NW are a normal morning.
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ConditionStatChip(
+                                label: isArabic
+                                    ? 'اتجاه الموج'
+                                    : 'WAVE FROM',
+                                value: conditions.waveDirectionCompass,
+                                subtext:
+                                    'Period ${conditions.wavePeriodS}s',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ConditionStatChip(
+                                label: isArabic ? 'التيار' : 'CURRENT',
+                                value: '${conditions.currentSpeedKts}kt',
+                                subtext: isArabic
+                                    ? 'إلى ${conditions.currentSetsToCompass}'
+                                    : 'Sets ${conditions.currentSetsToCompass}',
+                                // 2 kt is the strong-current threshold the backend bands
+                                // on, so the chip and the band cannot disagree.
+                                isWarning:
+                                    conditions.currentSpeedKts >= 2.0,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ConditionStatChip(
+                                label: isArabic ? 'الرؤية' : 'VISIBILITY',
+                                value: conditions.visibilityKm == null
+                                    ? '—'
+                                    : '${conditions.visibilityKm}km',
+                                subtext: conditions.visibilityKm == null
+                                    ? (isArabic
+                                        ? 'غير متوفرة'
+                                        : 'Not reported')
+                                    : _visibilityBand(
+                                        conditions.visibilityKm!, isArabic),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (conditions.seaStateBand != 'unknown') ...[
+                          const SizedBox(height: 8),
+                          // The server's own verdict, printed as the server words it.
+                          // It is the worst single reading, not an average, which is
+                          // why it can say "rough sea" beside a calm-looking wave chip.
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.waves_rounded,
+                                size: 14,
+                                color: conditions.isRough
+                                    ? AppColors.signalAlert
+                                    : AppColors.primaryBlue,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _seaStateLabel(conditions.seaStateBand,
+                                    isArabic),
+                                style: AppTextStyles.caption.copyWith(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: conditions.isRough
+                                      ? AppColors.signalAlert
+                                      : AppColors.primaryBlue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         // Offline/stale-cache indicator (Master Build Prompt §9)
                         if (MarineService.isStale(conditions)) ...[
                           const SizedBox(height: 6),
@@ -333,6 +471,23 @@ class HomeDashboardScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            ),
+          ),
+
+          // Weather Section — the air above the water, beside the water itself.
+          // One card under Ocean Conditions, in the same idiom, because a fisherman
+          // reads the day as one glance and not as two screens. The card is its own
+          // widget so the three shapes it can take have a test of their own.
+          SliverToBoxAdapter(
+            child: SlideFadeReveal(
+              delay: const Duration(milliseconds: 260),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                child: WeatherCardWidget(
+                  asyncWeather: weatherAsync,
+                  isArabic: isArabic,
+                ),
+              ),
             ),
           ),
 
@@ -442,3 +597,33 @@ class HomeDashboardScreen extends ConsumerWidget {
     );
   }
 }
+
+/// Marine visibility categories, applied to the kilometre figure the backend sends.
+/// The words are the conventional mariner's bands; the number is never invented here.
+String _visibilityBand(double km, bool isArabic) {
+  if (km >= 10) return isArabic ? 'جيدة جداً' : 'Very good';
+  if (km >= 4) return isArabic ? 'جيدة' : 'Good';
+  if (km >= 1) return isArabic ? 'متوسطة' : 'Moderate';
+  return isArabic ? 'منخفضة' : 'Low';
+}
+
+/// The server's sea-state band, worded the way the landing page words it.
+String _seaStateLabel(String band, bool isArabic) {
+  const en = {
+    'good': 'Sea state: Good',
+    'moderate': 'Sea state: Moderate',
+    'rough_sea': 'Sea state: Rough sea',
+    'strong_current': 'Sea state: Strong current',
+    'high_risk': 'Sea state: High risk',
+  };
+  const ar = {
+    'good': 'حالة البحر: جيدة',
+    'moderate': 'حالة البحر: متوسطة',
+    'rough_sea': 'حالة البحر: مضطربة',
+    'strong_current': 'حالة البحر: تيار قوي',
+    'high_risk': 'حالة البحر: خطر مرتفع',
+  };
+  return (isArabic ? ar[band] : en[band]) ??
+      (isArabic ? 'حالة البحر' : 'Sea state');
+}
+
