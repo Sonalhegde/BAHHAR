@@ -367,6 +367,12 @@
         .fish { width: 100%; height: 150px; object-fit: cover; border-radius: 10px; background: var(--off); transition: transform 0.5s var(--ease); }
         .species-card strong { font-family: var(--f-display); display: block; font-size: 17px; font-weight: 700; color: var(--navy); margin: 8px 0 4px; }
         .species-card small { font-size: 14px; color: var(--muted); font-family: var(--f-ar); direction: rtl; }
+        /* Editorial cell: breaks the photo grid and resolves a duplicate instead of padding it */
+        .species-card.note { background: rgba(15, 122, 122, 0.09); border: 1px solid rgba(15, 122, 122, 0.26); align-items: flex-start; text-align: start; justify-content: center; padding: 26px 24px; }
+        .species-card.note:hover { transform: translateY(-6px); }
+        .species-card.note strong { margin: 0 0 9px; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); }
+        .species-card.note p { font-size: 14.5px; line-height: 1.6; color: var(--body); }
+        .species-card.note em { font-style: normal; color: var(--navy); font-weight: 600; }
 
         /* CTA band */
         .cta { position: relative; overflow: hidden; border-radius: 24px; padding: clamp(48px, 7vw, 96px) 40px; text-align: center; color: #fff; isolation: isolate; }
@@ -385,6 +391,8 @@
         .footer-grid { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
         .footer-brand .logo-main { color: #fff; }
         .footer-brand p { font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.55); margin-top: 18px; max-width: 320px; }
+        .footer-brand .lang-note { font-size: 12.5px; line-height: 1.6; color: rgba(255,255,255,0.4); border-left: 2px solid rgba(63,176,163,0.5); padding-left: 12px; }
+        [dir="rtl"] .footer-brand .lang-note { border-left: 0; border-right: 2px solid rgba(63,176,163,0.5); padding-left: 0; padding-right: 12px; }
         .footer-col h4 { color: #fff; font-family: var(--f-display); font-size: 15px; font-weight: 600; margin-bottom: 20px; }
         .footer-col ul { list-style: none; display: grid; gap: 12px; }
         .footer-col a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; transition: color 0.2s ease; }
@@ -401,7 +409,9 @@
         /* Reveal (JS-gated so content stays visible if scripts fail) */
         .js .reveal { opacity: 0; transform: translateY(30px); }
         [dir="rtl"] .pillar.flip .pillar-media { order: -1; }
-        [dir="rtl"] .text-link .arrow { transform: scaleX(-1); }
+        /* Every directional arrow mirrors with the text; the hover nudge mirrors too */
+        [dir="rtl"] .arrow { transform: scaleX(-1); }
+        [dir="rtl"] .text-link:hover .arrow { transform: scaleX(-1) translateX(5px); }
         /* Hero mirror for Arabic: copy top-right, device far left — kept upright and aligned */
         [dir="rtl"] .hero-copy { transform: none; }
         [dir="rtl"] .hero .device { transform: none; }
@@ -984,25 +994,25 @@
                     <img class="fish" src="assets/images/fish-hammour.webp" alt="Hammour grouper" loading="lazy">
                     <strong>Hammour</strong><small>هامور (Hammour)</small>
                 </article>
-                <!-- Grouper: stocky, rounder, different spot pattern -->
-                <article class="species-card reveal">
-                    <img class="fish" src="assets/images/fish-grouper.webp" alt="Grouper" loading="lazy">
-                    <strong>Grouper</strong><small>عقرب (Aqrab)</small>
+                <!-- Editorial cell: the reef fish below was listed twice, and says so -->
+                <article class="species-card note reveal">
+                    <strong>The same fish, twice</strong>
+                    <p>Hammour is the Omani name for <em>grouper</em>, not a second species, so this grid was counting one reef fish twice. Names here follow BAHHAR&rsquo;s own species catalogue; where an Omani common name is still being checked with local speakers, the grid prints the scientific name rather than guess.</p>
                 </article>
                 <!-- Barracuda: very long thin, pointed jaw with teeth, forked tail -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-barracuda.webp" alt="Barracuda" loading="lazy">
-                    <strong>Barracuda</strong><small>قرفص (Qurfus)</small>
+                    <strong>Barracuda</strong><small>القد (Qid)</small>
                 </article>
-                <!-- Snapper: oval, moderately deep, pointed snout, single dorsal -->
+                <!-- Snapper: oval, moderately deep, pointed snout, single dorsal. No verified Omani name yet, so the genus stands in -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-snapper.webp" alt="Snapper" loading="lazy">
-                    <strong>Snapper</strong><small>فراخ (Farakh)</small>
+                    <strong>Snapper</strong><small>Lutjanus</small>
                 </article>
                 <!-- Sailfish: huge sail dorsal running the back, long spear bill -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-sailfish.webp" alt="Sailfish" loading="lazy">
-                    <strong>Sailfish</strong><small>أبو شراع (Sailfish)</small>
+                    <strong>Sailfish</strong><small>الشراع (Shira')</small>
                 </article>
                 <!-- Cobia: long cylindrical, flat head, dark lateral stripe -->
                 <article class="species-card reveal">
@@ -1021,7 +1031,7 @@
                 <img class="cta-photo" src="assets/images/fish-market.webp" alt="Omani fishermen trading the day catch at a waterfront market" loading="lazy" decoding="async">
                 <h2>Ready to maximise your catch?</h2>
                 <p>Join the waitlist and be among the first Omani fishermen to fish smarter with BAHHAR at launch.</p>
-                <a href="#top" class="glass-button" style="padding:15px 34px;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">Get Early Access <span aria-hidden="true">→</span></a>
+                <a href="#top" class="glass-button" style="padding:15px 34px;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">Get Early Access <span class="arrow" aria-hidden="true">→</span></a>
             </div>
 
             <aside class="before-you-go reveal">
@@ -1045,6 +1055,7 @@
                         <span class="logo-main">BAHHAR</span>
                     </a>
                     <p>Smart fishing companion for Omani waters — real oceanographic data, local species knowledge and regulatory compliance in one app.</p>
+                    <p class="lang-note">Arabic mode carries every headline and paragraph on this page. The phone-screen mockups and the live chart tiles stay in English until their artwork is rebuilt in both scripts.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Product</h4>
@@ -1198,7 +1209,7 @@
             if (e) e.preventDefault();
             var input = document.getElementById('emailInput');
             var email = (input.value || '').trim();
-            if (!email || email.indexOf('@') < 0) { alert('Please enter a valid email address'); return false; }
+            if (!email || email.indexOf('@') < 0) { alert(arOn ? 'الرجاء إدخال بريد إلكتروني صحيح' : 'Please enter a valid email address'); return false; }
             try {
                 var list = JSON.parse(localStorage.getItem('bahhar_emails') || '[]');
                 list.push({ email: email, timestamp: new Date().toISOString(), source: 'landing-page' });
@@ -1224,22 +1235,22 @@
             ['.hero-eyebrow', 'صُمّم للصيادين العُمانيين'],
             ['.hero h1', 'اعرف <span class="hl">بالضبط متى وأين</span> تصطاد'],
             ['.hero-lead', 'يحوّل بحّار البيانات البحرية والمدّية الحيّة إلى إجابة واحدة: أفضل نافذة للصيد وأفضل موقع، مُهيّأة للمياه العُمانية.'],
-            ['.hero-sub', 'من مضائق مسندم إلى سواحل ظفار الموسمية — 3,165 كم من الساحل، كلُّها مُ نمذجة.'],
+            ['.hero-sub', 'من مضائق مسندم إلى سواحل ظفار الموسمية — 3,165 كم من الساحل، كلُّها مُنمذجة.'],
             ['.capture input', ''],
             ['.capture .btn-solid', 'احصل على الوصول المبكر'],
             ['.hero-privacy', 'سنُبلغك عند الإطلاق. بلا رسائل مزعجة.'],
-            ['.stat:nth-child(1) .stat-label', 'نوع أسماك'],
-            ['.stat:nth-child(2) .stat-label', 'مواقع موثّقة'],
+            ['.stat:nth-child(1) .stat-label', 'أصناف أسماك مرصودة'],
+            ['.stat:nth-child(2) .stat-label', 'مواقع صيد موثّقة'],
             ['.stat:nth-child(3) .stat-label', 'أحوال لحظية'],
             ['.stat:nth-child(4) .stat-label', 'تغطية المياه العُمانية'],
             ['#why .eyebrow', 'لماذا عُمان تحديداً'],
             ['#why h2', 'التطبيقات العامة لا تفهم المياه العُمانية'],
             ['#access h2', 'هل أنت جاهز لزيادة صيدك؟'],
             ['#access .cta p', 'انضم إلى قائمة الانتظار وكن من أوّل الصيّادين العُمانيين الذين يصطادون بذكاء مع بحّار عند الإطلاق.'],
-            ['#access .glass-button', 'احصل على وصول مبكر <span aria-hidden="true">→</span>'],
+            ['#access .glass-button', 'احصل على وصول مبكر <span class="arrow" aria-hidden="true">→</span>'],
             ['#why .section-description', 'صُمّم بحّار من الأساس لبحر العرب وخليج عُمان — لا مجرد نموذج عالمي رُفع عليه علم.'],
             ['#why .cards-grid .feature-card:nth-child(1) h3', 'الطبقات الحرارية المحلية'],
-            ['#why .cards-grid .feature-card:nth-child(1) p', 'يخلق صعود المياه الباردة صيفاً في ظفار طبقات حرارية تجذب أسماك الطُّعم، وهو نمط تتجاهله النماذج العالمية تماماً؛ نحن نُ نمذج عمود الماء العُماني.'],
+            ['#why .cards-grid .feature-card:nth-child(1) p', 'يخلق صعود المياه الباردة صيفاً في ظفار طبقات حرارية تجذب أسماك الطُّعم، وهو نمط تتجاهله النماذج العالمية تماماً؛ نحن نُنمذج عمود الماء العُماني.'],
             ['#why .cards-grid .feature-card:nth-child(2) h3', 'الأسماك الإقليمية'],
             ['#why .cards-grid .feature-card:nth-child(2) p', 'يتصرّف الكنعد والهامور في بحر العرب بشكل مختلف عن البحر الأحمر، لذا تنبؤاتنا مُدرَّبة على النظم البيئية العُمانية.'],
             ['#why .cards-grid .feature-card:nth-child(3) h3', 'الامتثال القانوني'],
@@ -1294,12 +1305,13 @@
             ['.species-card:nth-child(1) strong', 'الكنعد'],
             ['.species-card:nth-child(2) strong', 'تونة الزعانف الصفراء'],
             ['.species-card:nth-child(3) strong', 'الهامور'],
-            ['.species-card:nth-child(4) strong', 'العقرب'],
-            ['.species-card:nth-child(5) strong', 'القرفص'],
-            ['.species-card:nth-child(6) strong', 'الفراخ'],
-            ['.species-card:nth-child(7) strong', 'أبو شراع'],
+            ['.species-card.note strong', 'السمكة نفسها، مرّتين'],
+            ['.species-card.note p', 'كانت هذه القائمة تورد السمكة نفسها مرّتين: فالهامور هو الاسم العُماني الشائع لسمك الجروب (<em>Grouper</em>)، لا نوعٌ مستقلّ عنه. أسماء الأصناف هنا مطابقة لكتالوج بحّار، ومتى بقي اسم شائع قيد التحقق لدى متحدّثين عُمانيين عرضنا الاسم العلمي بدل التخمين.'],
+            ['.species-card:nth-child(5) strong', 'القد'],
+            ['.species-card:nth-child(7) strong', 'الشراع'],
             ['.species-card:nth-child(8) strong', 'الكوبيا'],
             ['.footer-brand p', 'رفيق الصيد الذكي للمياه العُمانية — بيانات محيطية حقيقية، ومعرفة بالأصناف المحلية، والامتثال التنظيمي في تطبيق واحد.'],
+            ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها كاملة. أما نماذج شاشات الهاتف وبلاطات الخريطة الحيّة فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين.'],
             ['.footer-col:nth-of-type(2) h4', 'المنتج'],
             ['.footer-col:nth-of-type(2) ul li:nth-child(1) a', 'المزايا'],
             ['.footer-col:nth-of-type(2) ul li:nth-child(2) a', 'الأسماك'],
@@ -1314,27 +1326,35 @@
             ['.footer-col:nth-of-type(4) ul li:nth-child(2) a', 'شروط الخدمة'],
             ['.before-you-go h3', 'قبل أن تُبحر'],
             ['.before-you-go p', 'حالة البحر وأنظمة التصاريح وحدود المناطق المحمية تحددها <a href="https://gov.om/en/ministry-of-agriculture-fisheries-and-water-resources" target="_blank" rel="noopener">وزارة الزراعة والثروة السمكية وموارد المياه</a> في عُمان، وهي قابلة للتغيير. تحقق من الأحوال اللحظية قبل أن تُغادر المرسى؛ بحّار يُعينك على القرار ولا يُغني عن كلام الوزارة الحالي ولا عن قراءتك أنت للماء.'],
+            ['#successMessage', '✓ شكراً لك! سنُبلغك عند إطلاق بحّار.'],
             ['.stats-band .photo-note', 'صورة: قوارب تقليدية فوق مياه خور دروّاس الضحلة، مسقط'],
             ['#species .photo-note', 'صورة: ضحلات جزر الديمانيات من الأعلى'],
             ['.footer-bottom p:first-child', '© 2026 بحّار • سلطنة عُمان. جميع الحقوق محفوظة.'],
             ['.footer-bottom .made-txt', 'صُنع للصيّادين العُمانيين']
         ];
         var arOn = false, store = [];
-        window.toggleLanguage = function () {
-            arOn = !arOn;
+        var LANG_KEY = 'bahhar_lang';
+        function applyLanguage(ar) {
             var root = document.documentElement;
-            root.setAttribute('dir', arOn ? 'rtl' : 'ltr');
-            root.setAttribute('lang', arOn ? 'ar' : 'en');
+            root.setAttribute('dir', ar ? 'rtl' : 'ltr');
+            root.setAttribute('lang', ar ? 'ar' : 'en');
             DICT.forEach(function (row, i) {
                 var el = document.querySelector(row[0]);
                 if (!el) return;
-                if (el.tagName === 'INPUT') { el.placeholder = arOn ? 'أدخل بريدك الإلكتروني' : 'Enter your email'; return; }
-                if (!store[i]) store[i] = el.innerHTML;
-                el.innerHTML = arOn ? row[1] : store[i];
+                if (el.tagName === 'INPUT') { el.placeholder = ar ? 'أدخل بريدك الإلكتروني' : 'Enter your email'; return; }
+                if (!store[i]) store[i] = el.innerHTML;   // cache the English source once, on first switch
+                el.innerHTML = ar ? row[1] : store[i];
             });
-            document.querySelectorAll('.lang-toggle').forEach(function (b) { b.textContent = arOn ? 'EN' : 'عربي'; });
+            document.querySelectorAll('.lang-toggle').forEach(function (b) { b.textContent = ar ? 'EN' : 'عربي'; });
+            arOn = ar;
             if (window.heroGauge) window.heroGauge.label();
+        }
+        window.toggleLanguage = function () {
+            applyLanguage(!arOn);
+            try { localStorage.setItem(LANG_KEY, arOn ? 'ar' : 'en'); } catch (err) {}   // storage can be blocked
         };
+        /* The choice is the visitor's, not the page's: restore it before first paint */
+        try { if (localStorage.getItem(LANG_KEY) === 'ar') applyLanguage(true); } catch (err) {}
     })();
     </script>
 </body>
