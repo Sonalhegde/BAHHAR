@@ -33,18 +33,28 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
-    // Fisherman profile: the single canonical record for personal / boat / gear
-    // data. Documents Wallet and the Safety Center READ this document instead of
-    // keeping their own copies of vessel registration, size and seats, so a field
-    // can only ever be edited in one place. Same per-user treatment as catches and
-    // trips: owner-only, and the uid must match the document id on create so a
-    // profile cannot be written into somebody else's slot.
+    // Fisherman profile: the single canonical identity record. Documents Wallet
+    // and the Safety Center READ it instead of keeping their own copy of vessel
+    // registration, size and seats, so a field can only be edited in one place.
+    //
+    // The document is FLAT, because that is what FishermanProfileModel.toJson()
+    // writes: fullName / civilId / governorate at the top level, and boat, gear,
+    // licences, crew and documents as reference ID arrays (vesselIds, gearIds,
+    // licenceIds, crewIds, documentIds) rather than nested objects. Asserting a
+    // nested {personal, boat, gear} shape here would reject every first save with
+    // PERMISSION_DENIED, since no client in this repo has ever written one.
+    //
+    // Same per-user isolation as catches and trips, plus the uid == document id
+    // check so a profile cannot be written into somebody else's slot.
     match /fisherman_profiles/{userId} {
       allow read, write: if isOwner(userId);
       allow create: if isAuthenticated()
                    && request.auth.uid == userId
                    && request.resource.data.uid == userId
-                   && request.resource.data.keys().hasAll(['personal', 'boat', 'gear']);
+                   && request.resource.data.keys().hasAll([
+                        'fullName', 'licenceIds', 'vesselIds', 'crewIds',
+                        'gearIds', 'documentIds'
+                      ]);
     }
 
     // Reference data collections: Read-only for authenticated clients, writable only via Admin/Backend
