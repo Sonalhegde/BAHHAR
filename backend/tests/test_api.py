@@ -45,6 +45,7 @@ def test_geofence_daymaniyat_protected():
 # suite stays offline-safe (CI has no network credentials).
 # ---------------------------------------------------------------------------
 from datetime import datetime, UTC, timedelta, date
+import asyncio
 
 import main
 
@@ -230,7 +231,7 @@ def test_marine_conditions_carry_wave_direction_current_and_band(monkeypatch):
             "time": [datetime.now(UTC).strftime("%Y-%m-%dT%H:00")],
             "wave_height": [1.2], "wave_period": [7.0], "wave_direction": [45],
             "sea_surface_temperature": [27.4],
-            "surface_current_eastward": [0.0], "surface_current_northward": [-0.3],
+            "ocean_current_velocity": [0.3], "ocean_current_direction": [0.0],
         }
     }
     monkeypatch.setattr(main, "_fetch_open_meteo_weather", _fake_fetcher(weather))
@@ -250,6 +251,86 @@ def test_marine_conditions_carry_wave_direction_current_and_band(monkeypatch):
     assert data["sea_state"]["drivers"] == ["wave_height_m"]
     assert data["day_rating"]["ocean_band"] == "moderate"
     assert "next_high_tide" not in data              # no tide station: field absent, not guessed
+
+
+def test_marine_request_only_asks_for_variables_the_live_api_accepts():
+    """A field name this provider does not publish is not a missing tile - it is no Ocean
+    readout at all.
+
+    The marine API answers 400 for the whole request when any one hourly variable is unknown, and
+    the endpoint turns that into a 502 with nothing to show. That is how asking for
+    `surface_current_eastward` took down wave, temperature and current together, which every
+    upstream-mocked test happily passed. This is the one test that looks at what goes out rather
+    than at what comes back, so the regression cannot come back in through a stub."""
+    seen = {}
+
+    class _Response:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self):
+            return {"hourly": {"time": []}}
+
+    class _Client:
+        async def get(self, url, params=None):
+            seen["url"] = url
+            seen["params"] = params
+            return _Response()
+
+    asyncio.run(main._fetch_open_meteo_marine(_Client(), 23.61, 58.54))
+    requested = seen["params"]["hourly"].split(",")
+    assert tuple(requested) == main.OPEN_METEO_MARINE_HOURLY
+    assert "ocean_current_velocity" in requested and "ocean_current_direction" in requested
+    assert not [v for v in requested if v.startswith("surface_current_")]
+
+
+def test_current_bearing_is_printed_the_way_a_fisherman_reads_it(monkeypatch):
+    """The provider gives the bearing the water comes from; the readout prints where it sets.
+
+    A bearing printed half a circle out is a wrong bearing on a navigational screen, so the
+    conversion is pinned here rather than trusted to the comment above it."""
+    main._CACHE.clear()
+    marine = {
+        "hourly": {
+            "time": [datetime.now(UTC).strftime("%Y-%m-%dT%H:00")],
+            "wave_height": [0.5], "wave_period": [6.0], "wave_direction": [45],
+            "sea_surface_temperature": [27.0],
+            "ocean_current_velocity": [1.0], "ocean_current_direction": [90],
+        }
+    }
+    monkeypatch.setattr(main, "_fetch_open_meteo_weather",
+                        _fake_fetcher({"current": FAKE_WEATHER["current"], "hourly": {"time": ["x"]}}))
+    monkeypatch.setattr(main, "_fetch_open_meteo_marine", _fake_fetcher(marine))
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "")
+
+    data = client.get("/api/v1/marine/conditions",
+                      params={"lat": 23.61, "lon": 58.54}).json()
+    assert data["current_speed_kts"] == 1.9          # 1 m/s, not 1 kt
+    assert data["current_direction_deg"] == 270      # from the east, so it sets west
+    assert data["current_sets_to"] == "W"
+    assert data["wave_direction"] == "NE"            # waves keep their own from-bearing
+
+
+def test_current_conversion_survives_a_wrap(monkeypatch):
+    """A south-setting current must not come out as bearing 270 or -90."""
+    main._CACHE.clear()
+    marine = {
+        "hourly": {
+            "time": [datetime.now(UTC).strftime("%Y-%m-%dT%H:00")],
+            "wave_height": [0.4], "wave_period": [6.0], "wave_direction": [0],
+            "sea_surface_temperature": [27.0],
+            "ocean_current_velocity": [0.5], "ocean_current_direction": [180],
+        }
+    }
+    monkeypatch.setattr(main, "_fetch_open_meteo_weather",
+                        _fake_fetcher({"current": FAKE_WEATHER["current"], "hourly": {"time": ["x"]}}))
+    monkeypatch.setattr(main, "_fetch_open_meteo_marine", _fake_fetcher(marine))
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "")
+
+    data = client.get("/api/v1/marine/conditions",
+                      params={"lat": 23.61, "lon": 58.54}).json()
+    assert data["current_direction_deg"] == 0
+    assert data["current_sets_to"] == "N"
 
 
 def test_weather_endpoint_serves_the_documented_mock_shape(monkeypatch):

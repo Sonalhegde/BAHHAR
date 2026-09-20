@@ -412,18 +412,24 @@ async def _fetch_open_meteo_weather(client: httpx.AsyncClient, lat: float, lon: 
     return res.json()
 
 
-async def _fetch_open_meteo_marine(client: httpx.AsyncClient, lat: float, lon: float) -> Dict[str, Any]:
-    """Waves, sea temperature and surface current from the marine API.
+# Checked against the live API, which does not accept the component names one might expect:
+# asking for `surface_current_eastward` fails the whole call with 400, taking the wave and
+# temperature readings down with it. These six are what the endpoint answers in one request.
+OPEN_METEO_MARINE_HOURLY = (
+    "wave_height", "wave_period", "wave_direction", "sea_surface_temperature",
+    "ocean_current_velocity", "ocean_current_direction",
+)
 
-    The two current fields are what back the Ocean Information readout's "Current" tile;
-    they arrive as eastward/northward components in m/s and are recombined below."""
+
+async def _fetch_open_meteo_marine(client: httpx.AsyncClient, lat: float, lon: float) -> Dict[str, Any]:
+    """Waves, sea temperature and the surface current from the marine API.
+
+    The two current fields back the Ocean readout's "Current" tile: speed in m/s and a bearing,
+    both already resolved by the provider rather than recombined from components here."""
     params = {
         "latitude": lat,
         "longitude": lon,
-        "hourly": ",".join([
-            "wave_height", "wave_period", "wave_direction", "sea_surface_temperature",
-            "surface_current_eastward", "surface_current_northward",
-        ]),
+        "hourly": ",".join(OPEN_METEO_MARINE_HOURLY),
         "past_days": 1,
         "timezone": "Asia/Muscat",
     }
@@ -587,17 +593,18 @@ async def marine_conditions(
     # Open-Meteo's default wind unit is km/h (its `wind_speed_unit` parameter), so km/h -> kt
     # is 0.539957. The factor this line used to carry, 1.943844, converts m/s -> kt, which
     # overstated every wind reading 3.6x: a 20 km/h breeze (10.8 kt) arrived as 38.9 kt and
-    # banded "high risk", warning fishermen off benign water. Currents below genuinely do
-    # arrive in m/s, so their 1.943844 is correct and stays.
+    # banded "high risk", warning fishermen off benign water. The current below genuinely does
+    # arrive in m/s, so its 1.943844 is correct and stays.
     wind_kts = _as_float(current_weather.get("wind_speed_10m"), 0.0) * KM_PER_HOUR_TO_KNOTS
 
-    # Surface current arrives as eastward/northward components in m/s. Recombine them into
-    # speed + the bearing it SETS TOWARD (the convention the Ocean readout prints; waves and
-    # wind are reported the other way round, as the bearing they come FROM).
-    cur_east = _hourly("surface_current_eastward", 0.0)
-    cur_north = _hourly("surface_current_northward", 0.0)
-    current_kts = round(math.hypot(cur_east, cur_north) * METERS_PER_SECOND_TO_KNOTS, 1)
-    current_deg = round((math.degrees(math.atan2(cur_east, cur_north)) + 360) % 360, 0)
+    # The current arrives as a speed in m/s plus a bearing. Open-Meteo labels every direction in
+    # these APIs as the bearing the thing comes FROM - wind, waves, current alike - so the
+    # bearing the Ocean readout prints is half a circle round from the number in the response.
+    # That reading follows the provider's stated convention rather than a gauge check, so it is
+    # kept on this one line and pinned by a test: if it turns out to be the other way round, the
+    # fix is here and nothing else moves.
+    current_kts = round(_hourly("ocean_current_velocity", 0.0) * METERS_PER_SECOND_TO_KNOTS, 1)
+    current_deg = round((_hourly("ocean_current_direction", 0.0) + 180.0) % 360.0, 0)
     # Open-Meteo reports visibility in metres; the readout prints kilometres.
     visibility_m = _as_float(current_weather.get("visibility"), -1.0)
 

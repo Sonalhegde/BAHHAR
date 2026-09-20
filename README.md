@@ -4,7 +4,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.29%2B-blue.svg)](https://flutter.dev/)
 [![Python](https://img.shields.io/badge/FastAPI-3.11%2B-green.svg)](https://fastapi.tiangolo.com/)
-[![Backend tests](https://img.shields.io/badge/backend%20tests-9%20passing-brightgreen.svg)](backend/tests/test_api.py)
+[![Backend tests](https://img.shields.io/badge/backend%20tests-32%20passing-brightgreen.svg)](backend/tests/test_api.py)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
 BAHHAR (بَحّار, "seasoned mariner") converts live oceanographic, meteorologic, tidal and
@@ -60,7 +60,7 @@ Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 - **Geofencing** — `POST /api/v1/geofence/verify` for Daymaniyat, Ras Al Jinz, Hormuz corridor.
 - **Bilingual EN ⇄ AR** with RTL; **Premium White editorial** design system.
 - **Security rules** — per-user Firestore isolation + read-only reference collections; storage
-  upload limits. **Backend test suite: 29 passing.**
+  upload limits. **Backend test suite: 32 passing.**
 - **CI** — `backend_ci.yml` (pytest) and `flutter_ci.yml` (format, analyze, test).
 
 ### ⏳ Planned / blocked
@@ -163,7 +163,7 @@ BAHHAR/
 
 ```bash
 # Backend (offline — upstreams are monkeypatched)
-cd backend && pytest tests/ -v            # 29 passing
+cd backend && pytest tests/ -v            # 32 passing
 
 # Flutter
 flutter test

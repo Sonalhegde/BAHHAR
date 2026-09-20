@@ -202,7 +202,10 @@ Replaces the former fully-simulated `MarineService` with real data + offline res
   cloud, pressure, weather code, UV, visibility, day/night — and the atmospheric half of
   `/api/v1/weather` (§6.5), so the weather panel is live with **no key of any kind**.
 - **Open-Meteo marine API** (keyless): sea surface temperature, wave height/period/direction,
-  surface current as eastward/northward components.
+  and the surface current as `ocean_current_velocity` (m/s) + `ocean_current_direction`. The
+  component names one might expect (`surface_current_eastward/northward`) are **not** published,
+  and asking for them fails the entire call with 400 — waves and temperature included — so the
+  request shape is pinned by a test that inspects what goes out, not what comes back.
 - **WorldTides v3** (`/api/v3?extremes`): high/low extremes → derived tide state.
 - **AccuWeather** (optional, `ACCUWEATHER_API_KEY`): only consulted for `/api/v1/weather`
   when a key is present. It is not required, and no provider key ever reaches a device.
@@ -215,7 +218,10 @@ apparent_temperature_c, cloud_cover_pct, pressure_msl_hpa, weather_code, uv_inde
 tide_state, tide_height_m, tide_source, next_high_tide, sea_state{band,drivers},
 copyright, fetched_at, cached` (+ `day_rating` when `boat_length_m`/`gear` are passed).
 Two conventions are carried deliberately: wave and wind bearings are the direction the
-sea/wind come **from**, while `current_sets_to` is the direction the water goes **to**.
+sea/wind come **from**, while `current_sets_to` is the direction the water goes **to** — the
+provider publishes the current bearing the same from-way as the rest, so the payload turns it
+half a circle. That turn is inferred from the provider's stated convention rather than a gauge
+comparison, so it sits on one line in `main.py` and two tests pin it (including the wrap at 180°).
 `visibility_km` is `null` when upstream reported nothing, never `0` (which would read as fog).
 Wind arrives from Open-Meteo in km/h and is converted with `KM_PER_HOUR_TO_KNOTS`; currents
 arrive in m/s and use `METERS_PER_SECOND_TO_KNOTS` — mixing the two factors overstates wind
@@ -323,7 +329,7 @@ language/port/units; guest-mode catch queue flushed on sign-in; FCM handlers beh
 `FirebaseService.isConfigured` guard; **MapLibre GL + OpenFreeMap map migration (v3) — Google
 Maps fully removed**; core utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10
 screens in demo mode; Android build/sign/ProGuard config; `firestore.rules` + `storage.rules`;
-landing-page redesign; backend pytest suite (**29 passing**).
+landing-page redesign; backend pytest suite (**32 passing**).
 
 > The Dart side of the items above is verified by CI (`flutter analyze`, `flutter test`), not
 > locally: this checkout has no Flutter SDK, no `android/app/src/main/res` tree and no iOS
@@ -389,7 +395,7 @@ flutter run            # add --dart-define=ML_API_BASE_URL=http://<host>:8000
 cd backend
 pip install -r requirements.txt
 cp ../.env.example .env         # then set WORLDTIDES_API_KEY
-pytest tests/ -v                # 9 passing
+pytest tests/ -v                # 32 passing
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 

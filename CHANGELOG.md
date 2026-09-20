@@ -58,11 +58,19 @@ done and were left alone. Everything below was not.
 - **Tests** — `test/features/home/weather_card_widget_test.dart` (data shape, warning
   thresholds, provenance wording, missing fields, loading/error, Arabic) and
   `test/core/models/marine_conditions_test.dart` (parsing, string numbers, null-vs-zero
-  visibility, separate wave/wind bearings, compass wrapping, JSON round-trip). Backend **29
+  visibility, separate wave/wind bearings, compass wrapping, JSON round-trip). Backend **32
   passing** (from 16), covering the trip optimiser's exclusions and blockers, the weather
-  contract and the wind conversion.
+  contract, the wind conversion and the marine request shape.
 
 **Fixed**
+- **The Ocean readout was dead on live data.** The current fields had been wired under variable
+  names Open-Meteo does not publish (`surface_current_eastward/northward`), and the marine API
+  rejects the *whole* request when any one hourly variable is unknown — so waves, sea temperature
+  and current all failed together as an upstream 400, and the endpoint returned 502 with nothing
+  to show. Every mocked test passed, because every test replaced the fetcher and never looked at
+  what it asked for. Found by running the backend against the real API for the demo, not by the
+  suite: the fields are `ocean_current_velocity` (m/s) and `ocean_current_direction`, and a new
+  test now pins the outgoing request shape so a bad name cannot come back through a stub.
 - **Wind was overstated 3.6× on live data.** Open-Meteo's default unit is km/h and the marine
   proxy converted it with the m/s→kt factor, so a 20 km/h breeze (10.8 kt) arrived as 38.9 kt and
   banded *high risk* — warning fishermen off benign water. `KM_PER_HOUR_TO_KNOTS` and
@@ -91,8 +99,15 @@ done and were left alone. Everything below was not.
   outlook — the page was already right and the card was built to match it.
 
 **Verified, and what was not**
-- `pytest tests/ -q` → **29 passed**. Every touched Dart file was re-read line by line and put
+- `pytest tests/ -q` → **32 passed**. Every touched Dart file was re-read line by line and put
   through a comment/string-stripping delimiter balance check (21 files, 0 errors).
+- **The backend was run against the live upstreams**, which is what surfaced the marine bug: for
+  Muscat, `/api/v1/weather` answered live Open-Meteo (29.2 °C, feels like 35.8, visibility 21.7
+  km, five days), `/api/v1/marine/conditions` answered 31.9 °C SST, 0.5 m waves from the E, 0.8
+  kt current, sea state *good* and a 06:55 high tide, and `POST /api/v1/trip/optimize` ranked the
+  candidates against those readings and rejected two for crossing the radius and the budget.
+  The current's sets-toward bearing follows the provider's from-convention for every direction it
+  publishes; it is pinned by tests and flagged in code as an inference, not a gauge check.
 - **No Flutter or Dart SDK exists in this environment**, and `android/app/src/main/res` and the
   iOS asset catalogs are absent from the checkout, so `flutter test`, `flutter analyze`,
   `dart format` and `flutter_launcher_icons` could not be run and `flutter run` could not produce
