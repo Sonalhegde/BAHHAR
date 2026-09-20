@@ -787,7 +787,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-5 8-6 11-4l3-3 1 4 3 1-3 3c-2 3-7 3-11-1z"/><circle cx="9" cy="11" r="0.6" fill="currentColor"/><path d="M6 15c-1 1-2 3-2 4"/></svg>
                     </span>
                     <h3>Regional species</h3>
-                    <p>Kingfish (كنعد) and Hammour (هامور) behave differently in the Arabian Sea than in the Red Sea. Our forecasts are trained on Omani ecosystems.</p>
+                    <p>Kingfish (الكنعد) and Hammour (الهامور) behave differently in the Arabian Sea than in the Red Sea. Our forecasts are trained on Omani ecosystems.</p>
                 </article>
                 <article class="feature-card glass-panel--on-light reveal">
                     <span class="icon-badge">
@@ -1099,17 +1099,17 @@
                 <!-- Kingfish: slender torpedo, forked tail, low pointed dorsal -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-kingfish.webp" alt="Kingfish" loading="lazy">
-                    <strong>Kingfish</strong><small>كنعد (Kanaad)</small>
+                    <strong>Kingfish</strong><small>الكنعد (Kanaad)</small>
                 </article>
                 <!-- Yellowfin Tuna: deep torpedo, tall sickle yellow fins, finlets -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-tuna.webp" alt="Yellowfin Tuna" loading="lazy">
-                    <strong>Yellowfin Tuna</strong><small>ثمد (Thamad)</small>
+                    <strong>Yellowfin Tuna</strong><small>الثمد (Thamad)</small>
                 </article>
                 <!-- Hammour (grouper): stocky round, wide flat head, big mouth, spots -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-hammour.webp" alt="Hammour grouper" loading="lazy">
-                    <strong>Hammour</strong><small>هامور (Hammour)</small>
+                    <strong>Hammour</strong><small>الهامور (Hammour)</small>
                 </article>
                 <!-- Editorial cell: the reef fish below was listed twice, and says so -->
                 <article class="species-card note reveal">
@@ -1134,7 +1134,7 @@
                 <!-- Cobia: long cylindrical, flat head, dark lateral stripe -->
                 <article class="species-card reveal">
                     <img class="fish" src="assets/images/fish-cobia.webp" alt="Cobia" loading="lazy">
-                    <strong>Cobia</strong><small>كوبيا (Cobia)</small>
+                    <strong>Cobia</strong><small>الكوبيا (Cobia)</small>
                 </article>
             </div>
         </div>
@@ -1320,7 +1320,7 @@
                         <span class="logo-main">BAHHAR</span>
                     </a>
                     <p>Smart fishing companion for Omani waters — real oceanographic data, local species knowledge and regulatory compliance in one app.</p>
-                    <p class="lang-note">Arabic mode carries every headline and paragraph on this page. The phone-screen mockups and the live chart tiles stay in English until their artwork is rebuilt in both scripts. Species and place names keep their verified Omani Arabic; where a name is still being checked with local speakers, the Latin stands in &mdash; in either language.</p>
+                    <p class="lang-note">Arabic mode carries every headline and paragraph on this page. The phone-screen mockups stay in English until their artwork is rebuilt in both scripts; the chart's own place labels follow whichever language the map provider serves. Species and place names keep their verified Omani Arabic; where a name is still being checked with local speakers, the Latin stands in &mdash; in either language.</p>
                 </div>
                 <div class="footer-col">
                     <h4>Product</h4>
@@ -1624,6 +1624,16 @@
             ['#species h2', 'استهداف الأصناف الأكثر طلباً في عُمان'],
             ['#species .section-description', 'من كنعد مسندم إلى ثمد ظفار — لكلٍّ منها نموذج تنبؤ خاص وصورة الحيوان الحقيقي.'],
             ['.species-card:nth-child(1) strong', 'الكنعد'],
+            /* The English grid glosses each name with its Arabic; Arabic mode was carrying that
+               gloss unchanged, so every card read الكنعد / كنعد (Kanaad) - the same word twice, one
+               of them spelled out for a reader who does not need it. The second line is the
+               scientific name instead, taken from the same catalogue as the Arabic ones. */
+            ['.species-card:nth-child(1) small', 'Scomberomorus commerson'],
+            ['.species-card:nth-child(2) small', 'Thunnus albacares'],
+            ['.species-card:nth-child(3) small', 'Variola albimarginata'],
+            ['.species-card:nth-child(5) small', 'Sphyraena barracuda'],
+            ['.species-card:nth-child(7) small', 'Istiophorus platypterus'],
+            ['.species-card:nth-child(8) small', 'Rachycentron canadum'],
             ['.species-card:nth-child(2) strong', 'الثمد'],
             ['.species-card:nth-child(3) strong', 'الهامور'],
             ['.species-card.note strong', 'السمكة نفسها، مرّتين'],
@@ -1681,7 +1691,7 @@
             ['#region-dhofar .region-species', '<span>في هذه المياه</span> Lutjanus · الحمام · الثمد، مع الضلعة العملاقة في الأعماق'],
             ['#region-dhofar .text-link', 'الأحوال اللحظية لهذه المنطقة' + ARROW],
             ['.footer-brand p', 'رفيق الصيد الذكي للمياه العُمانية — بيانات محيطية حقيقية، ومعرفة بالأصناف المحلية، والامتثال التنظيمي في تطبيق واحد.'],
-            ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها كاملة. أما نماذج شاشات الهاتف وبلاطات الخريطة الحيّة فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين. أسماء الأصناف والأماكن تُحفَظ بالعربي العُماني الموثَّق، ومتى بقي الاسم قيد التحقق لدى متحدّثين عُمانيين جاء الاسم اللاتيني مكانه — في اللغتين.'],
+            ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها كاملة. أما نماذج شاشات الهاتف فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين، وتسميات الخريطة نفسها تتبع اللغة التي يقدّمها مزوّد الخرائط. أسماء الأصناف والأماكن تُحفَظ بالعربي العُماني الموثَّق، ومتى بقي الاسم قيد التحقق لدى متحدّثين عُمانيين جاء الاسم اللاتيني مكانه — في اللغتين.'],
             ['.footer-col:nth-of-type(2) h4', 'المنتج'],
             ['.footer-col a[href="#features"]', 'المزايا'],
             ['.footer-col a[href="#species"]', 'الأسماك'],
