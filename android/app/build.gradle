@@ -2,7 +2,12 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
-    id "com.google.gms.google-services" version "4.4.0" apply false
+    // Applied, not just declared. With `apply false` this plugin never ran, so google-services.json
+    // in this directory was ignored and the option-less Firebase.initializeApp() in
+    // core/services/firebase_service.dart had no Android config to pick up. The plugin now fails
+    // the build outright when google-services.json is missing, which is the point: it is
+    // gitignored and supplied out-of-band, and a silent no-cloud build was the worse outcome.
+    id "com.google.gms.google-services" version "4.4.0"
 }
 
 def keystoreProperties = new Properties()
@@ -71,6 +76,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
-    implementation 'com.google.firebase:firebase-storage'
+    // firebase-storage dropped with the firebase_storage Dart package: Cloud Storage needs the
+    // Blaze plan, and catch photos moved to Supabase Storage (core/services/supabase_storage_service.dart).
     implementation 'com.google.firebase:firebase-messaging'
 }

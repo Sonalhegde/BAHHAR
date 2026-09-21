@@ -7,3 +7,7 @@ requests>=2.32.0
 pytest>=8.2.0
 httpx>=0.27.0
 python-dotenv>=1.0.0
+# seed_firestore.py imports this inside a try/except ImportError and falls back to a dry-run without
+# it, so a valid service-account key could be supplied and nothing written while the run still
+# looked like a successful validation. Pinned here so `python seed_firestore.py <key>` seeds.
+firebase-admin>=6.5.0
