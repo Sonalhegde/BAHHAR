@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict
 
 try:  # Load .env if python-dotenv is installed (keys must never live in code)
@@ -21,6 +22,22 @@ app = FastAPI(
     title="Bahhar AI — Marine & Fishing Prediction Microservice",
     description="Oman-specific marine intelligence, ML fishing probability, geofencing engine, and server-side weather/tide proxy (keys never reach the client).",
     version="1.0.0"
+)
+
+# CORS: every endpoint here is a read-only, unauthenticated public-data proxy
+# (Open-Meteo, WorldTides, stateless ML scoring) — no cookies, no bearer tokens,
+# nothing a cross-site request could ride. So a browser client (the Flutter web
+# build, the landing page) must be able to call it from any origin. Tighten to
+# the deployed frontends in production via BAHHAR_CORS_ORIGINS, comma-separated,
+# e.g. "https://bahhar.om,https://www.bahhar.om".
+_cors_origins = [
+    o.strip() for o in os.environ.get("BAHHAR_CORS_ORIGINS", "").split(",") if o.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins if _cors_origins else ["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 # ---------------------------------------------------------------------------
@@ -660,6 +677,248 @@ async def marine_conditions(
         )
 
     _cache_set(cache_key, payload, MARINE_TTL_SECONDS if not include_tides else max(MARINE_TTL_SECONDS, TIDES_TTL_SECONDS))
+    return {**payload, "cached": False}
+
+
+# ---------------------------------------------------------------------------
+# Wind / current field grid — the data behind the animated particle-flow layer
+# on the website's Marine Charts (website/map-mockup.html).
+#
+# The visualization *technique* comes from the open-source nullschool.net code
+# (cambecc/earth, MIT) and Esri's wind-js (Apache 2.0): particles advecting
+# through a bilinearly interpolated U/V grid, leaving short faded trails. Only
+# the technique is reused — the live earth.nullschool.net site is never
+# queried, never embedded, and contributes no content; every number here
+# comes from Bahhar's own Open-Meteo integration.
+#
+# Open-Meteo does not serve U/V component names on these endpoints: a live
+# call rejects `u10`, and asking `surface_current_eastward` fails the whole
+# multi-point request (the same trap already noted above
+# OPEN_METEO_MARINE_HOURLY). The components are therefore derived once here,
+# server-side, from the speed + direction the API does answer with, and every
+# client receives a ready-to-interpolate grid.
+# ---------------------------------------------------------------------------
+
+# The water and sky around Oman's coast — Musandam in the north to Dhofar in
+# the south, the same region the Flutter map's default camera covers.
+_WF_LAT_MAX, _WF_LAT_MIN = 26.5, 16.5
+_WF_LON_MIN, _WF_LON_MAX = 52.0, 60.0
+_WF_STEP = 0.5
+# The global models behind these fields refresh only a few times a day, so the
+# grid is refetched no more often than the source itself changes — the same
+# discipline as the point TTLs above, sized to the model instead of the widget.
+WF_TTL_SECONDS = 3 * 3600
+# One request carries a comma-separated coordinate list (verified against the
+# live API, which answers several locations in one call); chunks of this many
+# points keep every URL comfortably inside the length the API serves.
+_WF_CHUNK = 90
+
+_WF_WIND_HOURLY = ("wind_speed_10m", "wind_direction_10m")
+_WF_CURRENT_HOURLY = ("ocean_current_velocity", "ocean_current_direction")
+
+# hourly_units labels every value as it arrives, and the label wins: the live
+# marine API was observed returning ocean_current_velocity in km/h, not the
+# m/s some documentation implies. Unknown labels fall back to m/s, the unit
+# this grid ships in.
+_UNIT_TO_MS = {
+    "m/s": 1.0,
+    "km/h": 1.0 / 3.6,
+    "miles/h": 0.44704,
+    "kn": 0.514444,
+    "knots": 0.514444,
+}
+
+
+def _wf_grid() -> Tuple[List[Tuple[float, float]], int, int]:
+    """Row-major scan order the shipped header describes: west→east, north→south."""
+    ny = int(round((_WF_LAT_MAX - _WF_LAT_MIN) / _WF_STEP)) + 1
+    nx = int(round((_WF_LON_MAX - _WF_LON_MIN) / _WF_STEP)) + 1
+    pts: List[Tuple[float, float]] = []
+    for j in range(ny):
+        lat = round(_WF_LAT_MAX - j * _WF_STEP, 4)
+        for i in range(nx):
+            pts.append((lat, round(_WF_LON_MIN + i * _WF_STEP, 4)))
+    return pts, ny, nx
+
+
+def _wf_uv(speed_ms: Optional[float], direction_from_deg: Optional[float]) -> Tuple[Optional[float], Optional[float]]:
+    """Speed + FROM-bearing -> east/north components in m/s.
+
+    Open-Meteo directions point where the air or water comes FROM (the
+    convention already pinned by the marine endpoint's tests); advection needs
+    the direction it flows TO, so half a circle is added before splitting.
+    A missing direction means nothing was measured: zero vector, never a
+    invented one.
+    """
+    if speed_ms is None:
+        return None, None
+    if direction_from_deg is None:
+        return 0.0, 0.0
+    to_rad = math.radians(direction_from_deg + 180.0)
+    return round(speed_ms * math.sin(to_rad), 3), round(speed_ms * math.cos(to_rad), 3)
+
+
+def _wf_speed_to_ms(speed: Any, unit_label: Any) -> Optional[float]:
+    if speed is None:
+        return None
+    factor = _UNIT_TO_MS.get(str(unit_label or "m/s").strip().lower(), 1.0)
+    return _as_float(speed, 0.0) * factor
+
+
+def _wf_now_index(times: List[str]) -> int:
+    """Index of the hourly entry nearest the current instant (same rule the
+    point-based marine endpoint uses)."""
+    now = datetime.now(UTC)
+    best_i: int = 0
+    best_d: Optional[float] = None
+    for i, t in enumerate(times):
+        try:
+            stamp = datetime.fromisoformat(t).replace(tzinfo=UTC)
+        except ValueError:
+            continue
+        d = abs((stamp - now).total_seconds())
+        if best_d is None or d < best_d:
+            best_i, best_d = i, d
+    return best_i
+
+
+async def _fetch_open_meteo_grid_chunk(
+    client: httpx.AsyncClient,
+    base: str,
+    hourly: Tuple[str, ...],
+    chunk: List[Tuple[float, float]],
+) -> List[Dict[str, Any]]:
+    """One multi-point upstream call. The API answers a JSON array when given
+    several coordinates and a bare object when given one — normalize to a list."""
+    params = {
+        "latitude": ",".join(str(p[0]) for p in chunk),
+        "longitude": ",".join(str(p[1]) for p in chunk),
+        "hourly": ",".join(hourly),
+        "forecast_days": 1,
+        "timezone": "UTC",
+    }
+    res = await client.get(base, params=params)
+    res.raise_for_status()
+    data = res.json()
+    return data if isinstance(data, list) else [data]
+
+
+def _wf_assemble(
+    chunk_results: List[List[Dict[str, Any]]],
+    coords: List[Tuple[float, float]],
+    nx: int,
+    ny: int,
+    speed_key: str,
+    dir_key: str,
+) -> Tuple[List[Optional[float]], List[Optional[float]]]:
+    """Scatter every returned location back onto its grid cell.
+
+    The API snaps requested coordinates to its own model cells (a request for
+    23.6 lands on 23.79), so each answer is matched to the nearest requested
+    point and answers that fell outside the box are dropped. Points the model
+    has no water for (the box covers inland Oman too) keep null u/v: the
+    frontend treats a null as "no particle here" rather than flow of zero.
+    """
+    u: List[Optional[float]] = [None] * (nx * ny)
+    v: List[Optional[float]] = [None] * (nx * ny)
+    for locs in chunk_results:
+        for loc in locs:
+            lat = _as_float(loc.get("latitude"), None)
+            lon = _as_float(loc.get("longitude"), None)
+            if lat is None or lon is None:
+                continue
+            k = min(
+                range(len(coords)),
+                key=lambda i: (coords[i][0] - lat) ** 2 + (coords[i][1] - lon) ** 2,
+            )
+            if abs(coords[k][0] - lat) > _WF_STEP or abs(coords[k][1] - lon) > _WF_STEP:
+                continue
+            hourly = loc.get("hourly") or {}
+            times = hourly.get("time") or []
+            speeds = hourly.get(speed_key) or []
+            dirs = hourly.get(dir_key) or []
+            if not times or not speeds:
+                continue
+            idx = min(_wf_now_index(times), len(speeds) - 1)
+            unit_label = (loc.get("hourly_units") or {}).get(speed_key)
+            direction = _as_float(dirs[idx], None) if idx < len(dirs) else None
+            u[k], v[k] = _wf_uv(_wf_speed_to_ms(speeds[idx], unit_label), direction)
+    return u, v
+
+
+@app.get("/api/v1/wind-field")
+async def wind_field(
+    fields: str = Query("wind,current", description="Comma list drawn from: wind, current"),
+):
+    """U/V grid in m/s for the nullschool-style particle layer, cached.
+
+    Shape mirrors wind-js so the frontend stays close to the reference
+    implementation: a header (origin lo1/la1, step dx/dy, counts nx/ny, the
+    scan order above) plus row-major u/v arrays per requested field.
+    """
+    requested = {f.strip().lower() for f in fields.split(",") if f.strip()}
+    if not requested or not requested <= {"wind", "current"}:
+        raise HTTPException(status_code=422, detail="fields must list wind and/or current")
+
+    cache_key = "windfield:" + ",".join(sorted(requested))
+    cached = _cache_get(cache_key)
+    if cached:
+        return {**cached, "cached": True}
+
+    coords, ny, nx = _wf_grid()
+    chunks = [coords[i:i + _WF_CHUNK] for i in range(0, len(coords), _WF_CHUNK)]
+    specs = []
+    if "wind" in requested:
+        specs.append(("wind", OPEN_METEO_BASE, _WF_WIND_HOURLY))
+    if "current" in requested:
+        specs.append(("current", OPEN_METEO_MARINE_BASE, _WF_CURRENT_HOURLY))
+
+    async def _run(base: str, hourly: Tuple[str, ...]):
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT, follow_redirects=True) as client:
+            return list(await asyncio.gather(
+                *(_fetch_open_meteo_grid_chunk(client, base, hourly, ch) for ch in chunks)
+            ))
+
+    results = await asyncio.gather(
+        *(_run(base, hourly) for _, base, hourly in specs), return_exceptions=True
+    )
+
+    payload: Dict[str, Any] = {
+        "header": {
+            "version": 1, "nx": nx, "ny": ny,
+            "lo1": _WF_LON_MIN, "la1": _WF_LAT_MAX, "dx": _WF_STEP, "dy": _WF_STEP,
+            "scan": "row-major, west->east, north->south",
+            "unit": "m/s",
+        },
+        "fields": {},
+        "stats": {"points": nx * ny, "chunks_per_field": len(chunks)},
+        "attribution": OPEN_METEO_ATTRIBUTION,
+        "copyright": (
+            "Model data: Open-Meteo.com (CC-BY 4.0). Flow visualization technique: "
+            "cambecc/earth (MIT) and Esri wind-js (Apache 2.0)."
+        ),
+        "generated_at": datetime.now(UTC).isoformat(),
+    }
+    failed: List[str] = []
+    keys_by_name = {"wind": _WF_WIND_HOURLY, "current": _WF_CURRENT_HOURLY}
+    for (name, _, _), res in zip(specs, results):
+        if isinstance(res, BaseException):
+            failed.append(name)
+            continue
+        speed_key, dir_key = keys_by_name[name]
+        u, v = _wf_assemble(res, coords, nx, ny, speed_key, dir_key)
+        payload["fields"][name] = {"u": u, "v": v, "unit": "m/s"}
+        pairs = [(a, b) for a, b in zip(u, v) if a is not None and b is not None]
+        payload["stats"][f"{name}_max_ms"] = round(
+            max((math.hypot(a, b) for a, b in pairs), default=0.0), 2
+        ) if pairs else 0.0
+
+    if len(failed) == len(specs):
+        raise HTTPException(status_code=502, detail="Upstream grid data unavailable")
+    if failed:
+        payload["note"] = "/".join(failed) + " field unavailable from the upstream model."
+
+    _cache_set(cache_key, payload, WF_TTL_SECONDS)
     return {**payload, "cached": False}
 
 

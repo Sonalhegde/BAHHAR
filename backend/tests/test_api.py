@@ -604,3 +604,143 @@ def test_trip_optimize_declares_itself_a_rule_not_a_model(monkeypatch):
     assert "score =" in data["rule"]
     assert data["weights"]["species_match"] == 18.0
 
+
+# ---------------------------------------------------------------------------
+# /api/v1/wind-field — the grid behind the website's particle-flow layer.
+# Upstream is faked (offline-safe like the rest of the suite), but the
+# outgoing request parameters are asserted: a silent variable-name or unit
+# drift against the live API is the failure mode this project pins by test.
+# ---------------------------------------------------------------------------
+
+_WF_NOW = datetime.now(UTC).strftime("%Y-%m-%dT%H:00")
+
+
+def _wf_upstream(wind=(36.0, 270.0, "km/h"), current=(3.6, 180.0, "km/h"),
+                 fail_base=None, null_coords=()):
+    """Build (calls, fake) for monkeypatching the chunk fetcher.
+
+    Wind 36 km/h FROM the west is +10 m/s eastward; current 3.6 km/h FROM the
+    south is +1 m/s northward. Coordinates come back snapped off-grid like the
+    live API really answers, so the nearest-cell mapping is exercised too.
+    """
+    calls = []
+
+    async def _fake(client, base, hourly, chunk):
+        calls.append((base, tuple(hourly), len(chunk)))
+        if fail_base and fail_base in base:
+            raise httpx.ConnectError("upstream down")
+        speed, direction, unit = wind if "forecast" in base else current
+        speed_key, dir_key = hourly
+        return [
+            {
+                "latitude": lat + 0.008,
+                "longitude": lon - 0.004,
+                "hourly_units": {speed_key: unit},
+                "hourly": {
+                    "time": [_WF_NOW],
+                    speed_key: [None if (lat, lon) in null_coords else speed],
+                    dir_key: [direction],
+                },
+            }
+            for lat, lon in chunk
+        ]
+
+    return calls, _fake
+
+
+def test_wind_field_grid_shape_uv_and_request_params(monkeypatch):
+    main._CACHE.clear()
+    calls, fake = _wf_upstream()
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+
+    res = client.get("/api/v1/wind-field")
+    assert res.status_code == 200
+    data = res.json()
+
+    header = data["header"]
+    assert (header["nx"], header["ny"]) == (17, 21)
+    assert header["lo1"] == 52.0 and header["la1"] == 26.5 and header["dx"] == 0.5
+    n = header["nx"] * header["ny"]
+    for name in ("wind", "current"):
+        field = data["fields"][name]
+        assert len(field["u"]) == n and len(field["v"]) == n
+        assert field["unit"] == "m/s"
+
+    # Every cell carries the derived vector: FROM-bearings rotated to TO-flow.
+    assert data["fields"]["wind"]["u"][0] == 10.0
+    assert abs(data["fields"]["wind"]["v"][0]) < 1e-6
+    assert abs(data["fields"]["current"]["u"][0]) < 1e-6
+    assert data["fields"]["current"]["v"][0] == 1.0
+    assert data["stats"]["wind_max_ms"] == 10.0
+    assert data["cached"] is False
+
+    # Outgoing calls: both providers, each in 90-point chunks (357 = 90+90+90+87),
+    # and the exact hourly variable names the live API accepts.
+    bases = {c[0] for c in calls}
+    assert main.OPEN_METEO_BASE in bases and main.OPEN_METEO_MARINE_BASE in bases
+    assert all(c[2] <= main._WF_CHUNK for c in calls)
+    assert sum(1 for c in calls if c[2] == 90) == 6 and len(calls) == 8
+    wind_calls = [c for c in calls if "forecast" in c[0]]
+    assert wind_calls[0][1] == ("wind_speed_10m", "wind_direction_10m")
+    current_calls = [c for c in calls if "marine" in c[0]]
+    assert current_calls[0][1] == ("ocean_current_velocity", "ocean_current_direction")
+
+
+def test_wind_field_honors_the_units_the_api_labels(monkeypatch):
+    """The live marine API answers ocean_current_velocity in km/h whatever the
+    docs say; a grid that assumed m/s would ship vectors 3.6x too strong."""
+    main._CACHE.clear()
+    _, fake = _wf_upstream(current=(3.6, 180.0, "m/s"))
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+    data = client.get("/api/v1/wind-field", params={"fields": "current"}).json()
+    # Same number, labelled m/s this time: no /3.6 applied, so 3.6 not 1.0.
+    assert data["fields"]["current"]["v"][0] == 3.6
+
+
+def test_wind_field_land_points_stay_null_not_zero(monkeypatch):
+    """The box covers inland Oman too. A land point must be null ("no water,
+    no particle"), never 0 ("measured calm") — the frontend decides on that."""
+    main._CACHE.clear()
+    _, fake = _wf_upstream(null_coords={(26.5, 52.0)})
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+    data = client.get("/api/v1/wind-field", params={"fields": "current"}).json()
+    assert data["fields"]["current"]["u"][0] is None      # row 0, col 0: inland
+    assert data["fields"]["current"]["u"][1] == 0.0       # neighbour still measured
+
+
+def test_wind_field_is_cached_under_its_ttl(monkeypatch):
+    main._CACHE.clear()
+    calls, fake = _wf_upstream()
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+    first = client.get("/api/v1/wind-field").json()
+    hits = len(calls)
+    second = client.get("/api/v1/wind-field").json()
+    assert first["cached"] is False and second["cached"] is True
+    assert len(calls) == hits  # cache served: the upstream was not called again
+
+
+def test_wind_field_partial_failure_ships_the_survivor(monkeypatch):
+    main._CACHE.clear()
+    _, fake = _wf_upstream(fail_base="marine")
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+    res = client.get("/api/v1/wind-field")
+    assert res.status_code == 200
+    data = res.json()
+    assert "wind" in data["fields"] and "current" not in data["fields"]
+    assert "current" in data["note"]
+
+
+def test_wind_field_total_failure_is_502_not_an_empty_grid(monkeypatch):
+    main._CACHE.clear()
+    _, fake = _wf_upstream(fail_base="open-meteo")
+    monkeypatch.setattr(main, "_fetch_open_meteo_grid_chunk", fake)
+    res = client.get("/api/v1/wind-field")
+    assert res.status_code == 502
+    main._CACHE.clear()
+
+
+def test_wind_field_rejects_unknown_field_names():
+    res = client.get("/api/v1/wind-field", params={"fields": "wind,tides"})
+    assert res.status_code == 422
+
+
