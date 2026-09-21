@@ -96,12 +96,35 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<bool> signInWithGoogle({required bool isArabic}) =>
-      _socialSignIn(() => _repository.signInWithGoogle(), isArabic);
+      _attemptSignIn(() => _repository.signInWithGoogle(), isArabic);
 
   Future<bool> signInWithApple({required bool isArabic}) =>
-      _socialSignIn(() => _repository.signInWithApple(), isArabic);
+      _attemptSignIn(() => _repository.signInWithApple(), isArabic);
 
-  Future<bool> _socialSignIn(
+  /// Email/password sign-in and registration. Same state machine as the social
+  /// flows; unlike Google/Apple nothing can be cancelled here, so a failed attempt
+  /// always leaves a message on screen rather than silently returning false.
+  Future<bool> signInWithEmail({
+    required String email,
+    required String password,
+    required bool isArabic,
+  }) =>
+      _attemptSignIn(
+        () => _repository.signInWithEmail(email: email, password: password),
+        isArabic,
+      );
+
+  Future<bool> registerWithEmail({
+    required String email,
+    required String password,
+    required bool isArabic,
+  }) =>
+      _attemptSignIn(
+        () => _repository.registerWithEmail(email: email, password: password),
+        isArabic,
+      );
+
+  Future<bool> _attemptSignIn(
     Future<UserProfile> Function() action,
     bool isArabic,
   ) async {

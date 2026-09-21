@@ -7,7 +7,12 @@ import '../../../core/services/firebase_service.dart';
 import '../../../core/services/firestore_service.dart';
 import '../domain/user_model.dart';
 
-/// Real Firebase Auth data source for the phone-OTP, Google and Apple flows.
+/// Real Firebase Auth data source for the email/password, Google and Apple flows.
+///
+/// The phone-OTP methods below stay in place but are not reachable from the login
+/// screen: Phone auth has required the Blaze (billing) plan since September 2024 and
+/// this project carries no card. They are kept, not deleted, so flipping that decision
+/// later is a UI change rather than a rewrite.
 ///
 /// Every method throws [FirebaseUnavailableException] when Firebase is not
 /// configured, and surfaces FirebaseAuthException messages verbatim so the
@@ -17,6 +22,11 @@ class AuthRepository {
   final FirestoreService _firestore = FirestoreService();
 
   /// Sends an SMS OTP to [phoneE164] (e.g. '+96891234567').
+  ///
+  /// DISABLED IN THE UI, pending a Blaze-plan decision: phone auth has needed the
+  /// billing-enabled plan since September 2024, so calling this on the current
+  /// project fails with `operation-not-allowed`. Not deleted so the flow returns
+  /// with one console change plus one widget re-added to the login screen.
   ///
   /// [onCodeSent] receives the verification id needed by [verifyOtp].
   /// [onAutoVerified] fires when Android auto-retrieves the code.
@@ -62,6 +72,45 @@ class AuthRepository {
     return _signInWithCredential(cred, preferredLocale: preferredLocale);
   }
 
+  /// Email/password sign-in. The one non-social method that costs nothing: unlike
+  /// phone OTP, email never moved behind the Blaze plan.
+  ///
+  /// Needs the Email provider switched on in Firebase console → Authentication →
+  /// Sign-in method. While it is off, Firebase raises `operation-not-allowed` and
+  /// [_friendlyError] names that switch, so the failure says what to do instead of
+  /// looking like a bad password.
+  Future<UserProfile> signInWithEmail({
+    required String email,
+    required String password,
+    String? preferredLocale,
+  }) async {
+    _ensureConfigured();
+    final cred = EmailAuthProvider.credential(
+      email: email.trim(),
+      password: password,
+    );
+    return _signInWithCredential(cred, preferredLocale: preferredLocale);
+  }
+
+  /// Creates the account, then signs in the same call — Firebase Auth logs a new
+  /// user in, so there is no second step to fail.
+  Future<UserProfile> registerWithEmail({
+    required String email,
+    required String password,
+    String? preferredLocale,
+  }) async {
+    _ensureConfigured();
+    final result = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+    final user = result.user;
+    if (user == null) {
+      throw Exception('auth-null-user');
+    }
+    return _finishSignIn(user, preferredLocale: preferredLocale);
+  }
+
   Future<UserProfile> signInWithGoogle({String? preferredLocale}) async {
     _ensureConfigured();
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -103,6 +152,15 @@ class AuthRepository {
     if (user == null) {
       throw Exception('auth-null-user');
     }
+    return _finishSignIn(user, preferredLocale: preferredLocale);
+  }
+
+  /// Shared tail of every successful sign-in, including the account-creation one,
+  /// which never passes through a credential exchange.
+  Future<UserProfile> _finishSignIn(
+    User user, {
+    String? preferredLocale,
+  }) async {
     try {
       await _firestore.upsertUserOnLogin(user, preferredLocale: preferredLocale);
     } catch (e) {
@@ -159,6 +217,19 @@ class AuthRepository {
           return 'That phone number is not valid.';
         case 'network-request-failed':
           return 'Network error. Check your connection and retry.';
+        case 'operation-not-allowed':
+          return 'This sign-in method is not enabled. Turn on Email (or the '
+              'relevant provider) under Firebase console → Authentication → '
+              'Sign-in method.';
+        case 'email-already-in-use':
+          return 'An account already exists for that email. Sign in instead.';
+        case 'weak-password':
+          return 'That password is too weak. Use at least 6 characters.';
+        case 'user-not-found':
+          return 'No account found for that email. Register first.';
+        case 'wrong-password':
+        case 'invalid-credential':
+          return 'Email or password is incorrect.';
         default:
           return e.message ?? 'Authentication failed (${e.code}).';
       }

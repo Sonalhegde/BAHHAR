@@ -15,12 +15,14 @@ import '../../../../shared/polymorphic/soft_toggle.dart';
 import '../../../../shared/polymorphic/glass_input.dart';
 import '../../../../shared/animations/app_animations.dart';
 
-enum AuthMethod { phone, email }
-
-/// Real Firebase-backed login/register screen: phone OTP (verifyPhoneNumber →
-/// code entry → signInWithCredential), Google Sign-In and Sign in with Apple.
-/// Loading, error and invalid-code states are surfaced in the UI — auth
-/// failures are never silent.
+/// Real Firebase-backed login/register screen: email/password, Google Sign-In and
+/// Sign in with Apple. Loading, error and invalid-credential states are surfaced in
+/// the UI — auth failures are never silent.
+///
+/// Phone OTP is not offered here. It has needed the Blaze (billing) plan since
+/// September 2024 and this project carries no card; the flow stays implemented in
+/// auth_repository.dart and phone_otp_widget.dart, dormant, so enabling it later is
+/// a UI change rather than a rewrite.
 class LoginRegisterScreen extends ConsumerStatefulWidget {
   const LoginRegisterScreen({super.key});
 
@@ -29,13 +31,9 @@ class LoginRegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
-  AuthMethod _selectedMethod = AuthMethod.phone;
   bool _isRegister = false;
-  bool _otpSent = false;
   String _selectedGov = 'Muscat';
 
-  final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
@@ -52,52 +50,10 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _otpController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     super.dispose();
-  }
-
-  String get _phoneE164 =>
-      '+968${_phoneController.text.replaceAll(RegExp(r'\s+'), '')}';
-
-  Future<void> _sendPhoneOtp() async {
-    final digits = _phoneController.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 7) {
-      ref.read(authNotifierProvider.notifier).clearError();
-      setState(() {}); // keep UI in sync; validation shown via snackbar below
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.read(isArabicProvider)
-                ? 'أدخل رقم هاتف عُماني صحيح (8 أرقام)'
-                : 'Enter a valid Omani mobile number (8 digits).',
-          ),
-          backgroundColor: AppColors.signalAlert,
-        ),
-      );
-      return;
-    }
-    await ref
-        .read(authNotifierProvider.notifier)
-        .sendOtp(phoneE164: _phoneE164, isArabic: ref.read(isArabicProvider));
-    if (!mounted) return;
-    if (ref.read(authNotifierProvider).error == null) {
-      setState(() => _otpSent = true);
-    }
-  }
-
-  Future<void> _verifyPhoneOtp() async {
-    final ok = await ref.read(authNotifierProvider.notifier).verifyOtp(
-          _otpController.text,
-          isArabic: ref.read(isArabicProvider),
-        );
-    if (!mounted || !ok) return;
-    await _completeRegistrationDetails();
-    if (!mounted) return;
-    context.go('/home');
   }
 
   /// On register, persist the captain name / governorate the user typed into
@@ -121,6 +77,13 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
     ref.read(authNotifierProvider.notifier).updateHomeRegion(_selectedGov);
   }
 
+  /// Email/password sign-in, and account creation while in register mode.
+  ///
+  /// This used to be a stub: it validated the fields and then apologised that the
+  /// Email provider was not enabled, leaving a full email/password form on screen
+  /// whose buttons did nothing. It calls real FirebaseAuth now. If the provider is
+  /// still switched off in the console, `operation-not-allowed` comes back through
+  /// [AuthNotifier] as an error banner naming that switch.
   Future<void> _handleEmailAuth() async {
     final isArabic = ref.read(isArabicProvider);
     final email = _emailController.text.trim();
@@ -138,18 +101,22 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
       );
       return;
     }
-    // Email/password sign-in requires enabling the Email provider in the
-    // Firebase console; surface that clearly if it is disabled.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          isArabic
-              ? 'استخدم الهاتف أو Google أو Apple لتسجيل الدخول حالياً'
-              : 'Use Phone, Google or Apple sign-in for now — email/password '
-                  'needs the Email provider enabled in Firebase console.',
-        ),
-      ),
-    );
+    final notifier = ref.read(authNotifierProvider.notifier);
+    final ok = _isRegister
+        ? await notifier.registerWithEmail(
+            email: email,
+            password: password,
+            isArabic: isArabic,
+          )
+        : await notifier.signInWithEmail(
+            email: email,
+            password: password,
+            isArabic: isArabic,
+          );
+    if (!mounted || !ok) return;
+    await _completeRegistrationDetails();
+    if (!mounted) return;
+    context.go('/home');
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -352,37 +319,8 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         onSelected: (idx) {
                           setState(() {
                             _isRegister = (idx == 1);
-                            _otpSent = false;
                           });
                         },
-                      ),
-                      const SizedBox(height: 18),
-
-                      // Method Selector: Phone vs Email
-                      Row(
-                        children: [
-                          Expanded(
-                            child: PolymorphicChip(
-                              label: isArabic ? 'رقم الهاتف' : 'Phone (OTP)',
-                              icon: Icons.phone_iphone_rounded,
-                              isSelected:
-                                  _selectedMethod == AuthMethod.phone,
-                              onTap: () => setState(
-                                  () => _selectedMethod = AuthMethod.phone),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: PolymorphicChip(
-                              label: isArabic ? 'البريد' : 'Email',
-                              icon: Icons.mail_outline_rounded,
-                              isSelected:
-                                  _selectedMethod == AuthMethod.email,
-                              onTap: () => setState(
-                                  () => _selectedMethod = AuthMethod.email),
-                            ),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 18),
 
@@ -443,119 +381,41 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Method 1: Phone OTP
-                      if (_selectedMethod == AuthMethod.phone) ...[
-                        Text(
-                          isArabic ? 'رقم الهاتف العُماني' : 'OMAN MOBILE NUMBER',
-                          style: AppTextStyles.sectionHeader,
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0A1D31)
-                                    .withValues(alpha: 0.55),
-                                borderRadius: BorderRadius.circular(
-                                    GlassTokens.radiusMedium),
-                                border: Border.all(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.14)),
-                              ),
-                              child: Text(
-                                '+968',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.cyanBright,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: GlassInput(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                hintText: '9123 4567',
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        if (_otpSent) ...[
-                          const SizedBox(height: 14),
-                          GlassInput(
-                            controller: _otpController,
-                            labelText: isArabic
-                                ? 'رمز التحقق (OTP)'
-                                : 'VERIFICATION CODE (OTP)',
-                            hintText: '••••••',
-                            keyboardType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            isArabic
-                                ? 'أرسلنا رمزاً إلى $_phoneE164'
-                                : 'We sent a code to $_phoneE164',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.textTertiary),
-                          ),
-                        ],
-
-                        const SizedBox(height: 20),
-                        SoftButton(
-                          label: _otpSent
-                              ? (isArabic ? 'تأكيد ودخول' : 'Verify & Continue')
-                              : (isArabic
-                                  ? 'إرسال الرمز'
-                                  : 'Send Verification Code'),
-                          isLoading: authState.isLoading,
-                          onPressed: authState.isLoading
-                              ? null
-                              : (_otpSent ? _verifyPhoneOtp : _sendPhoneOtp),
-                        ),
-                      ],
-
-                      // Method 2: Email & Password
-                      if (_selectedMethod == AuthMethod.email) ...[
-                        GlassInput(
-                          controller: _emailController,
-                          labelText: isArabic
-                              ? 'البريد الإلكتروني'
-                              : 'EMAIL ADDRESS',
-                          hintText: 'captain@bahhar.om',
-                          keyboardType: TextInputType.emailAddress,
-                          prefixIcon: const Icon(
-                              Icons.mail_outline_rounded,
-                              size: 18,
-                              color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 14),
-                        GlassInput(
-                          controller: _passwordController,
-                          labelText:
-                              isArabic ? 'كلمة المرور' : 'PASSWORD',
-                          hintText: '••••••••',
-                          obscureText: true,
-                          prefixIcon: const Icon(Icons.lock_outline_rounded,
-                              size: 18, color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: 20),
-                        SoftButton(
-                          label: _isRegister
-                              ? (isArabic
-                                  ? 'إنشاء حساب'
-                                  : 'Create Account')
-                              : (isArabic
-                                  ? 'تسجيل الدخول'
-                                  : 'Sign In with Email'),
-                          isLoading: authState.isLoading,
-                          onPressed: authState.isLoading
-                              ? null
-                              : _handleEmailAuth,
-                        ),
-                      ],
+                      // Email and password — the credential sign-in this build offers.
+                      // Phone OTP is not on screen: see the class doc for why.
+                      GlassInput(
+                        controller: _emailController,
+                        labelText: isArabic
+                            ? 'البريد الإلكتروني'
+                            : 'EMAIL ADDRESS',
+                        hintText: 'captain@bahhar.om',
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: const Icon(
+                            Icons.mail_outline_rounded,
+                            size: 18,
+                            color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 14),
+                      GlassInput(
+                        controller: _passwordController,
+                        labelText: isArabic ? 'كلمة المرور' : 'PASSWORD',
+                        hintText: '••••••••',
+                        obscureText: true,
+                        prefixIcon: const Icon(Icons.lock_outline_rounded,
+                            size: 18, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 20),
+                      SoftButton(
+                        label: _isRegister
+                            ? (isArabic ? 'إنشاء حساب' : 'Create Account')
+                            : (isArabic
+                                ? 'تسجيل الدخول'
+                                : 'Sign In with Email'),
+                        isLoading: authState.isLoading,
+                        onPressed: authState.isLoading
+                            ? null
+                            : _handleEmailAuth,
+                      ),
 
                       const SizedBox(height: 18),
                       // Divider
