@@ -279,6 +279,31 @@ old `TODO(ml-backend)` pointed at does not exist yet.
 the backend is unreachable *or when the backend had no water to rank against*, and
 `TripRecommendation.isMock` records which happened.
 
+### 6.7 Wind/current field grid (`GET /api/v1/wind-field?fields=wind,current`)
+The nullschool-style particle layer on the website's Marine Charts needs a **grid**, not a point.
+The endpoint samples Open-Meteo across a 0.5° bounding box of Omani waters (16.5–26.5 N,
+52–60 E → 17×21 = 357 points), sent as multi-coordinate batched calls (90 points per request,
+verified against the live API, which answers several locations in one call), and returns a
+wind-js-shaped payload: a header (`nx/ny/lo1/la1/dx/dy`, row-major west→east, north→south)
+plus `u`/`v` arrays in m/s per requested field. The API rejects U/V component names on these
+endpoints, so components are derived server-side from speed + FROM-bearing; conversion factors
+come from the `hourly_units` label the response carries (the live marine API returns currents in
+km/h whatever the docs say). Land cells stay `null` — "no water, no particle" — never `0`.
+Cached 3 h (`WF_TTL_SECONDS`), matching the models' own refresh cadence; one field surviving an
+upstream failure ships with a `note`, total failure is 502. Technique credit: `cambecc/earth`
+(MIT) / Esri `wind-js` (Apache 2.0) — the *algorithm*, never the live nullschool site.
+
+**Phase-2 ticket (Flutter native port, deliberately not in this pass):** render the same grid
+inside `fishing_map_screen` as a `CustomPainter` in a `Stack` above `MapLibreMap`, converting
+each particle's lat/lon through `MapLibreMapController.toScreenLocation` every frame so streaks
+stay anchored while panning/zooming; port the bilinear-interpolation + age/fade cycle to Dart
+(`flutter` canvas handles the trail via an `ImageFiltered`/opacity-clear, no JS reuse possible
+since `maplibre_gl` is the native SDK, not a WebView). Canvas-based, **not** WebGL — the
+`mapbox/webgl-wind` approach has a known broken rendering bug on Android/iOS browsers and this
+audience is mobile-first. Cap particles ≈600, gate behind the existing layer-toggle pattern and
+`reduceMotion`, and performance-test on real mid-range Android hardware, not an emulator. Ships
+as its own phase after the website layer is validated in production.
+
 ---
 
 ## 7. Environment Variables & Secrets
@@ -360,11 +385,13 @@ language/port/units; guest-mode catch queue flushed on sign-in; FCM handlers beh
 `FirebaseService.isConfigured` guard; **MapLibre GL + OpenFreeMap map migration (v3) — Google
 Maps fully removed**; core utils (`validators`, `formatters`, `geo_helpers`, `api_client`); 10
 screens in demo mode; Android build/sign/ProGuard config; `firestore.rules` + `storage.rules`;
-landing-page redesign; backend pytest suite (**32 passing**).
+landing-page redesign; backend pytest suite (**39 passing**); `/api/v1/wind-field` grid endpoint +
+nullschool-style wind/current particle layer on the website's Marine Charts.
 
-> The Dart side of the items above is verified by CI (`flutter analyze`, `flutter test`), not
-> locally: this checkout has no Flutter SDK, no `android/app/src/main/res` tree and no iOS
-> project, so `flutter run` cannot be exercised here.
+> The Dart side of the items above is verified by CI (`flutter analyze`, `flutter test`).
+> A Flutter SDK 3.47 now exists at `C:\flutter` locally (web target added via `web/`), so the app
+> can also be exercised with `flutter run -d web-server`; the Android `res` tree and the iOS
+> project remain outside this checkout, so mobile targets still build in CI only.
 
 **Blocked on external credentials (cannot be done in-repo):** Copernicus
 Marine account (Phase 5), Apple Developer account (iOS), app signing keystore + Play Store listing.
@@ -376,6 +403,8 @@ September 2024. The email form previously validated the fields and then apologis
 Firebase Auth now.
 
 **Deferred functional gaps (by design / high effort):**
+- **Flutter native wind/current particle overlay** — the website layer (§6.7) ships first; the
+  `CustomPainter` port is specified as its own phase-2 ticket in §6.7.
 - Phase-5 Copernicus Marine integration (chlorophyll/SST fronts) — account not yet provisioned.
   No placeholder field implies it is live.
 - `/api/v1/trip/optimize` is **rule-based**, not the trained model the original
@@ -412,6 +441,12 @@ through the BAHHAR backend), say that AccuWeather takes the same contract only o
 configured, and say plainly that no severe-weather alert feed exists for Omani waters instead of
 implying an all-clear. Where the app now shows something the page under-described — the five-day
 outlook in the Weather card — the page was brought in line with the code, not the reverse.
+
+The Marine Charts pillar embeds `website/map-mockup.html`, which now carries the wind/current
+particle-flow layer (§6.7): a canvas of advected streaks over the Leaflet chart, switchable
+Wind / Current / Off independently of the spots and protected-area layers, with a sidebar that
+reads wind kt + FROM compass and current kt + SETS TO under the cursor, and an honest provenance
+line that says *"Illustrative sample"* whenever the live grid is unreachable.
 
 **Deployment:** `website/vercel.json` (deployed with Vercel root directory set to `website/`)
 rewrites `/*` → `/landing-page.html` and sets security headers; a `.vercelignore` excludes non-web

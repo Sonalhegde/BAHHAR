@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Wind & current particle visualization — website phase (2026-09-21)
+
+The nullschool-style flow layer, built from Bahhar's own Open-Meteo integration — the live
+earth.nullschool.net site is never queried or embedded; only the *technique* (particles advecting
+through a bilinearly interpolated U/V grid) is reused, from `cambecc/earth` (MIT) and Esri
+`wind-js` (Apache 2.0), and credited in the code that ports it.
+
+**Added**
+- `GET /api/v1/wind-field` (`backend/main.py`): 0.5° U/V grid over Omani waters (17×21 points),
+  fetched as batched multi-coordinate Open-Meteo calls (90/request), wind-js-shaped response,
+  3 h TTL cache. Components are derived server-side because the live API rejects `u10` and
+  `surface_current_eastward` outright; speed→m/s factors come from the response's own
+  `hourly_units` label (the live marine API answers currents in km/h). Land cells stay null.
+  7 new pytest cases (shape, units, nulls, cache, partial 200 + note, total 502, 422) —
+  **39 passing**.
+- `website/map-mockup.html`: canvas particle layer over the Leaflet chart (trails via
+  `destination-out` fading, geo-anchored so pan/zoom keeps streaks on the water), Wind /
+  Current / Off segmented control, independent Fishing-spots and Protected-area checkboxes,
+  a sidebar readout (wind kt + FROM compass, current kt + SETS TO, click-to-pin), speed→colour
+  scales, `prefers-reduced-motion` static-arrow fallback, area-scaled particle count capped
+  at 900 for mid-range phones, and live-or-sample provenance that never pretends: with no
+  reachable backend it draws a synthetic field explicitly labelled "Illustrative sample".
+- CORS middleware on the backend (env-configurable `BAHHAR_CORS_ORIGINS`) so browser clients
+  can reach the API; every endpoint is a read-only public-data proxy, no cookies or tokens.
+
+**Deferred by design:** the Flutter native port (`CustomPainter` over `MapLibreMap`,
+`toScreenLocation` per frame, no WebGL) is written up as its own phase-2 ticket in
+SPECIFICATION.md §6.7 — different engineering problem, to be tackled after this ships.
+
+
 ### Firebase connection + card-free storage & auth (2026-09-21)
 
 The brief said to connect the real Firebase project, and the first step was to confirm the project ID
