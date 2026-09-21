@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BAHHAR — Fishing Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Pinned version + SRI: a CDN swap cannot execute in this page's origin unpicked. -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,6 +20,9 @@
             overflow: hidden;
         }
         #map { position: absolute; inset: 0; width: 100%; height: 100%; }
+        /* The particle-flow canvas rides above the tiles but never takes input:
+           every drag, wheel and click still belongs to Leaflet underneath. */
+        #flow { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 500; pointer-events: none; }
         .header {
             position: absolute; top: 0; left: 0; right: 0;
             background: rgba(244, 248, 250, 0.94);
@@ -44,6 +48,41 @@
         .good { background: #0f7a7a; }
         .moderate { background: #d8b98c; }
         .protected { width: 34px; height: 13px; border-radius: 3px; background: rgba(15, 122, 122, 0.12); border: 1px dashed #0f7a7a; }
+        /* ── Flow sidebar: the read-out half of the wind/current layer ── */
+        .sidebar {
+            position: absolute; top: 66px; right: 12px; width: 208px;
+            max-height: calc(100% - 92px); overflow-y: auto;
+            background: rgba(244, 248, 250, 0.96);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(24, 36, 48, 0.07);
+            border-radius: 12px; padding: 12px 13px; z-index: 1000;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+        .side-title { font-size: 10px; font-weight: 700; color: #5a6c7d; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px; }
+        .seg { display: flex; gap: 4px; margin-bottom: 10px; }
+        .seg button {
+            flex: 1; font: 600 11.5px/1 'Public Sans', system-ui, sans-serif;
+            color: #182430; background: rgba(24, 36, 48, 0.05);
+            border: 1px solid rgba(24, 36, 48, 0.10); border-radius: 8px;
+            padding: 6px 0; cursor: pointer; transition: background .18s ease, color .18s ease;
+        }
+        .seg button.on { background: #0f7a7a; border-color: #0f7a7a; color: #fff; }
+        .seg button:focus-visible { outline: 2px solid #0f7a7a; outline-offset: 2px; }
+        .chk { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #182430; margin-bottom: 6px; cursor: pointer; }
+        .chk input { accent-color: #0f7a7a; }
+        .scale { display: flex; align-items: center; gap: 2px; margin: 8px 0 3px; }
+        .scale i { width: 100%; height: 7px; border-radius: 2px; }
+        .scale-labels { display: flex; justify-content: space-between; font-size: 9.5px; color: #5a6c7d; margin-bottom: 8px; }
+        .readout {
+            font-size: 12px; line-height: 1.45; color: #182430;
+            background: rgba(24, 36, 48, 0.045); border-radius: 8px;
+            padding: 8px 9px; min-height: 44px;
+        }
+        .readout b { font-weight: 700; }
+        .readout .dim { color: #5a6c7d; font-size: 11px; }
+        .side-note { font-size: 10px; color: #5a6c7d; line-height: 1.5; margin-top: 8px; }
+        .side-note.live { color: #0f7a7a; }
+        .side-note.sample { color: #b98f4f; }
         .leaflet-marker-icon { background: none; border: none; }
         .custom-marker {
             width: 34px; height: 34px; background: #0f7a7a; border-radius: 50%;
@@ -61,6 +100,11 @@
         .leaflet-tile-pane { filter: saturate(0.62) contrast(0.97) brightness(1.02); }
         .leaflet-control-attribution { font-size: 10px; background: rgba(244, 248, 250, 0.86); }
         .leaflet-control-attribution a { color: #0f7a7a; }
+        /* Narrow phones: the sidebar would crowd the chart, so it becomes a slim band. */
+        @media (max-width: 560px) {
+            .sidebar { width: calc(100% - 24px); top: auto; bottom: 88px; max-height: 38%; }
+            .legend { bottom: auto; top: 66px; }
+        }
     </style>
 </head>
 <body>
@@ -72,6 +116,7 @@
     </div>
 
     <div id="map"></div>
+    <canvas id="flow" aria-hidden="true"></canvas>
 
     <div class="legend">
         <div class="legend-title">Legend</div>
@@ -80,9 +125,35 @@
         <div class="legend-item"><div class="protected"></div><span>Protected Area</span></div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <aside class="sidebar" aria-label="Wind and current flow layer">
+        <div class="side-title">Wind &amp; Current Flow</div>
+        <div class="seg" role="group" aria-label="Flow layer mode">
+            <button id="mWind" type="button" class="on">Wind</button>
+            <button id="mCur" type="button">Current</button>
+            <button id="mOff" type="button">Off</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="tSpots" checked> Fishing spots</label>
+        <label class="chk"><input type="checkbox" id="tProt" checked> Protected area</label>
+        <div class="scale" id="flowScale" aria-hidden="true"></div>
+        <div class="scale-labels"><span id="scaleLo">calm</span><span id="scaleHi">strong</span></div>
+        <div class="readout" id="readout"><span class="dim">Move over the chart to read wind and current at that spot.</span></div>
+        <div class="side-note" id="srcNote">Loading flow data…</div>
+    </aside>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
     <script>
-        // Real OpenStreetMap tiles centred on the Omani coast (Gulf of Oman / Daymaniyat)
+        // =====================================================================
+        // Wind / current particle-flow layer.
+        //
+        // The technique — advecting particles through a bilinearly interpolated
+        // U/V grid and fading their trails — is the one published by the
+        // open-source nullschool.net code (cambecc/earth, MIT) and Esri's
+        // wind-js (Apache 2.0, MIT-equivalent obligations), ported to this
+        // Leaflet map by hand. Nothing is scraped from, embedded from, or
+        // queried on earth.nullschool.net itself; every vector comes from
+        // Bahhar's own /api/v1/wind-field proxy over Open-Meteo models.
+        // =====================================================================
+
         var map = L.map('map', {
             center: [23.72, 58.28],
             zoom: 10,
@@ -98,11 +169,15 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Daymaniyat Islands Nature Reserve: protected, permit-controlled water
+        // Daymaniyat Islands Nature Reserve and the fishing spots live in their
+        // own layer groups so the sidebar checkboxes can switch each off without
+        // touching anything else on the chart.
+        var protectedLayer = L.layerGroup();
         L.circle([23.8617, 58.0933], {
             color: '#0f7a7a', fillColor: '#0f7a7a', fillOpacity: 0.1,
             radius: 8000, weight: 2, dashArray: '5, 5'
-        }).addTo(map);
+        }).addTo(protectedLayer);
+        protectedLayer.addTo(map);
 
         function marker(score, cls) {
             return L.divIcon({
@@ -118,9 +193,11 @@
             { at: [23.61, 58.54], score: 72, species: 'Hammour', name: 'Mutrah Rocky Bank' },
             { at: [23.55, 58.28], score: 68, species: 'Grouper', name: 'Al Bustan Reef', moderate: true }
         ];
+        var spotsLayer = L.layerGroup();
         spots.forEach(function (s) {
-            s.marker = L.marker(s.at, { icon: marker(String(s.score), s.moderate ? 'moderate-marker' : ''), title: s.name }).addTo(map);
+            s.marker = L.marker(s.at, { icon: marker(String(s.score), s.moderate ? 'moderate-marker' : ''), title: s.name }).addTo(spotsLayer);
         });
+        spotsLayer.addTo(map);
 
         // Filter is a working control: cycle the target species, dim the rest.
         var faces = ['all species'].concat(spots.map(function (s) { return s.species; }));
@@ -136,6 +213,354 @@
                     (want === 'all species' || s.species === want) ? '1' : '0.3';
             });
         });
+
+        document.getElementById('tSpots').addEventListener('change', function (e) {
+            e.target.checked ? spotsLayer.addTo(map) : map.removeLayer(spotsLayer);
+        });
+        document.getElementById('tProt').addEventListener('change', function (e) {
+            e.target.checked ? protectedLayer.addTo(map) : map.removeLayer(protectedLayer);
+        });
+
+        // ── Field access ─────────────────────────────────────────────────────
+        // The backend ships one JSON contract (see backend/main.py, /api/v1/wind-field):
+        // header {nx, ny, lo1, la1, dx, dy} + row-major u/v arrays in m/s scanned
+        // west->east, north->south; null = the model has no value there (land).
+        var FIELD_SOURCES = [
+            '/api/v1/wind-field',                    // same origin, when deployed behind the API
+            'http://localhost:8000/api/v1/wind-field' // local dev backend
+        ];
+
+        function samplePoint(f, lng, lat) {
+            if (!f) return null;
+            var h = f.header;
+            var x = (lng - h.lo1) / h.dx, y = (h.la1 - lat) / h.dy;
+            if (x < 0 || y < 0 || x > h.nx - 1 || y > h.ny - 1) return null;
+            // Bilinear over the four surrounding cells, weighing only the cells
+            // that actually carry a value — a half-land cell still interpolates
+            // across the water ones instead of dropping the particle.
+            var x0 = Math.min(Math.floor(x), h.nx - 2), y0 = Math.min(Math.floor(y), h.ny - 2);
+            var fx = x - x0, fy = y - y0;
+            var us = f.u, vs = f.v, wu = 0, wv = 0, wsum = 0;
+            for (var j = 0; j < 2; j++) for (var i = 0; i < 2; i++) {
+                var k = (y0 + j) * h.nx + (x0 + i);
+                if (us[k] === null || vs[k] === null) continue;
+                var w = (i ? fx : 1 - fx) * (j ? fy : 1 - fy);
+                wu += us[k] * w; wv += vs[k] * w; wsum += w;
+            }
+            if (wsum === 0) return null;
+            return [wu / wsum, wv / wsum];
+        }
+
+        function fieldMaxMs(f) {
+            if (!f) return 0;
+            var m = 0;
+            for (var k = 0; k < f.u.length; k++) {
+                if (f.u[k] === null || f.v[k] === null) continue;
+                var s = Math.hypot(f.u[k], f.v[k]);
+                if (s > m) m = s;
+            }
+            return m;
+        }
+
+        // Honest fallback: when no backend is reachable (the static marketing
+        // host, offline preview), a clearly-labelled synthetic field keeps the
+        // visualization standing rather than showing a spinner forever. It is
+        // marked as a sample in the sidebar everywhere a sample appears —
+        // same rule the landing page applies to its "sample data" banners.
+        function syntheticField() {
+            var nx = 9, ny = 11, lo1 = 52, la1 = 26.5, d = 1;
+            var u = [], v = [];
+            for (var j = 0; j < ny; j++) for (var i = 0; i < nx; i++) {
+                var lat = la1 - j * d, lon = lo1 + i * d;
+                if (lat < 20 && lon < 55.5) { u.push(null); v.push(null); continue; } // inland/west
+                var along = 3 + 2.6 * Math.sin((lon - 52) * 0.55) + lat * 0.08;         // SW monsoon band
+                var cross = -1.6 - 1.2 * Math.cos((lat - 17) * 0.8);
+                if (lat > 22.8) { along = 2.2 + 1.4 * Math.sin((lat - 22.8) * 1.1); cross = 0.7 * Math.sin((lon - 56) * 0.9); } // Gulf of Oman
+                u.push(+along.toFixed(2)); v.push(+cross.toFixed(2));
+            }
+            var cu = [], cv = [];
+            for (var j2 = 0; j2 < ny; j2++) for (var i2 = 0; i2 < nx; i2++) {
+                var lat2 = la1 - j2 * d, lon2 = lo1 + i2 * d;
+                if (lat2 < 20 && lon2 < 55.5) { cu.push(null); cv.push(null); continue; }
+                var t = (lon2 - 58.4) * 0.8;
+                cu.push(+(0.5 * Math.sin(t) - 0.25).toFixed(2));
+                cv.push(+((lat2 > 23 ? 0.5 : -0.4) * Math.cos(t * 0.7)).toFixed(2));
+            }
+            return {
+                header: { nx: nx, ny: ny, lo1: lo1, la1: la1, dx: d, dy: d },
+                fields: { wind: { u: u, v: v }, current: { cu: cu, cv: cv } }
+            };
+        }
+
+        // ── Canvas + animation ───────────────────────────────────────────────
+        var canvas = document.getElementById('flow');
+        var ctx = canvas.getContext('2d');
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        function sizeCanvas() {
+            canvas.width = Math.round(canvas.clientWidth * dpr);
+            canvas.height = Math.round(canvas.clientHeight * dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        sizeCanvas();
+        window.addEventListener('resize', function () { sizeCanvas(); clearCanvas(); drawStatic(); });
+
+        function clearCanvas() {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        // Trails are erased by pulling opacity off the whole canvas each frame
+        // (destination-out), so the map underneath never gets painted over.
+        function fadeCanvas() {
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.065)';
+            ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+            ctx.restore();
+        }
+
+        // Speed->colour: shared ramp for both media, in kt. The same stops the
+        // Flutter app's marine cards band, so a returning eye meets one language.
+        var RAMPS = {
+            wind:    { stops: [[0, '#4fb3a9'], [6, '#0f7a7a'], [12, '#d8b98c'], [18, '#c2743a'], [28, '#a83232']], hi: '30 kt', lo: 'calm' },
+            current: { stops: [[0, '#7d9cc7'], [0.6, '#4d6fae'], [1.2, '#6b4fae'], [2, '#3d2f86'], [4, '#241a5c']], hi: '4 kt', lo: 'calm' }
+        };
+        function rampColor(mode, kt) {
+            var stops = RAMPS[mode].stops;
+            for (var i = stops.length - 1; i >= 0; i--) if (kt >= stops[i][0]) return stops[i][1];
+            return stops[0][1];
+        }
+
+        var particles = [];
+        var mode = 'wind';               // 'wind' | 'current' | 'off'
+        var live = null;                  // parsed {wind:{u,v}, current:{u,v}} once loaded
+        var isSample = false;
+        var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function activeField() {
+            if (!live || mode === 'off') return null;
+            return live[mode];
+        }
+
+        function seedParticle(p) {
+            var b = map.getBounds().pad(0.15);
+            for (var tries = 0; tries < 8; tries++) {
+                var lat = b.getSouth() + Math.random() * (b.getNorth() - b.getSouth());
+                var lng = b.getWest() + Math.random() * (b.getEast() - b.getWest());
+                if (samplePoint(activeField(), lng, lat)) { p.lat = lat; p.lng = lng; p.age = 0; p.life = 40 + Math.random() * 90; return true; }
+            }
+            return false;
+        }
+
+        function particleCount() {
+            // Scales with viewport area; capped so a mid-range Android browser
+            // keeps its frame budget (wind-js tunes for exactly this).
+            var area = (canvas.clientWidth * canvas.clientHeight) / 1400;
+            return Math.max(220, Math.min(900, Math.round(area)));
+        }
+
+        function rebuildParticles() {
+            particles = [];
+            var n = particleCount(), made = 0;
+            for (var guard = 0; guard < n * 3 && made < n; guard++) {
+                var p = {};
+                if (seedParticle(p)) { particles.push(p); made++; }
+            }
+        }
+
+        // Advection converts m/s into degrees/s. Currents get the larger gain or
+        // their 0–1 m/s motion would be invisible at a regional camera — the
+        // standard exaggeration of this technique; the sidebar says so.
+        function gainMs() { return mode === 'current' ? 0.16 : 0.05; }
+
+        var lastTs = 0, rafId = 0;
+        function frame(ts) {
+            rafId = requestAnimationFrame(frame);
+            var f = activeField();
+            if (!f) return;
+            var dt = Math.min((ts - lastTs) / 1000 || 0.016, 0.05);
+            lastTs = ts;
+            fadeCanvas();
+            ctx.lineWidth = 1.15;
+            ctx.lineCap = 'round';
+            var g = gainMs();
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                var uv = samplePoint(f, p.lng, p.lat);
+                if (!uv || ++p.age > p.life) { seedParticle(p); continue; }
+                var kt = Math.hypot(uv[0], uv[1]) * 1.943844;
+                var lat2 = p.lat + uv[1] * g * dt, lng2 = p.lng + uv[0] * g * dt;
+                var a = map.latLngToContainerPoint([p.lat, p.lng]);
+                var b = map.latLngToContainerPoint([lat2, lng2]);
+                ctx.strokeStyle = rampColor(mode, kt);
+                ctx.globalAlpha = 0.78;
+                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                p.lat = lat2; p.lng = lng2;
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function startStop() {
+            cancelAnimationFrame(rafId);
+            clearCanvas();
+            var el = document.getElementById('srcNote');
+            if (!activeField()) { renderStaticLegend(el); return; }
+            renderProvenance(el);   // an off -> wind/current switch restores the live note
+            rebuildParticles();
+            if (reduced) { drawStatic(); return; }
+            lastTs = performance.now();
+            rafId = requestAnimationFrame(frame);
+        }
+
+        // prefers-reduced-motion: the same information without animation —
+        // one arrow per grid cell, length scaled by speed. Same data, no loop.
+        function drawStatic() {
+            clearCanvas();
+            var f = activeField();
+            if (!f) return;
+            var h = f.header, max = fieldMaxMs(f) || 1;
+            ctx.strokeStyle = 'rgba(24, 36, 48, 0.75)';
+            ctx.fillStyle = 'rgba(24, 36, 48, 0.75)';
+            ctx.lineWidth = 1;
+            for (var j = 0; j < h.ny; j++) for (var i = 0; i < h.nx; i++) {
+                var k = j * h.nx + i;
+                if (f.u[k] === null) continue;
+                var lat = h.la1 - j * h.dy, lng = h.lo1 + i * h.dx;
+                var c = map.latLngToContainerPoint([lat, lng]);
+                var s = Math.hypot(f.u[k], f.v[k]);
+                var len = 6 + 14 * Math.min(s / max, 1);
+                var ux = f.u[k] / (s || 1), uy = -f.v[k] / (s || 1); // screen y is down
+                var x2 = c.x + ux * len, y2 = c.y + uy * len;
+                ctx.beginPath(); ctx.moveTo(c.x - ux * len * 0.4, c.y - uy * len * 0.4); ctx.lineTo(x2, y2); ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(x2, y2, 1.6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // ── Sidebar: read-out, stats, provenance ─────────────────────────────
+        var COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+        function compassFromDeg(deg) { return COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
+        function uvToReadout(uv) {
+            if (!uv) return null;
+            var kt = Math.hypot(uv[0], uv[1]) * 1.943844;
+            var toDeg = (Math.atan2(uv[0], uv[1]) * 180 / Math.PI + 360) % 360;
+            return { kt: kt, from: compassFromDeg(toDeg + 180), to: compassFromDeg(toDeg) };
+        }
+
+        var readoutEl = document.getElementById('readout');
+        function renderReadout(latlng, locked) {
+            var wf = live && live.wind, cf = live && live.current;
+            var w = wf && samplePoint(wf, latlng.lng, latlng.lat);
+            var c = cf && samplePoint(cf, latlng.lng, latlng.lat);
+            var rw = uvToReadout(w), rc = uvToReadout(c);
+            var html = [];
+            html.push('<b>' + latlng.lat.toFixed(2) + '° ' + latlng.lng.toFixed(2) + '°</b>' + (locked ? ' <span class="dim">· pinned, tap to release</span>' : ''));
+            html.push('Wind ' + (rw ? '<b>' + rw.kt.toFixed(0) + ' kt</b> from ' + rw.from : '<span class="dim">no data</span>'));
+            html.push('Current ' + (rc ? '<b>' + rc.kt.toFixed(1) + ' kt</b> setting ' + rc.to : '<span class="dim">no water here</span>'));
+            readoutEl.innerHTML = html.join('<br>');
+        }
+        var pinned = null;
+        map.on('mousemove', function (e) { if (!pinned && (live)) renderReadout(e.latlng, false); });
+        map.on('click', function (e) {
+            if (pinned) { pinned = null; return; }
+            if (!live) return;
+            pinned = e.latlng; renderReadout(pinned, true);
+        });
+        map.on('movestart zoomstart', function () { clearCanvas(); });
+        map.on('moveend zoomend', function () {
+            if (!activeField()) return;
+            if (reduced) drawStatic();
+            else rebuildParticles();
+        });
+
+        function paintScale() {
+            var r = RAMPS[mode === 'current' ? 'current' : 'wind'];
+            var el = document.getElementById('flowScale');
+            el.innerHTML = r.stops.map(function (s) { return '<i style="background:' + s[1] + '"></i>'; }).join('');
+            document.getElementById('scaleLo').textContent = r.lo;
+            document.getElementById('scaleHi').textContent = r.hi;
+        }
+        function renderStaticLegend(el) {
+            // Kept for parity: when the layer is off the scale still explains itself as idle.
+            el.textContent = 'Flow layer is off — choose Wind or Current.';
+            el.className = 'side-note';
+        }
+        function renderProvenance(el) {
+            if (!live) { el.textContent = 'Loading flow data…'; el.className = 'side-note'; return; }
+            var when = live.generatedAt ? new Date(live.generatedAt).toUTCString().slice(17, 22) : '—';
+            if (isSample) {
+                el.innerHTML = 'Illustrative sample — synthetic vectors, not measurements. The live grid comes from Bahhar\'s /api/v1/wind-field (Open-Meteo models).';
+                el.className = 'side-note sample';
+            } else {
+                var maxWkt = (fieldMaxMs(live.wind) * 1.943844).toFixed(0);
+                var maxCkt = live.current ? (fieldMaxMs(live.current) * 1.943844).toFixed(1) : '—';
+                el.innerHTML = 'Live Open-Meteo grid · 0.5° · ' + (live.cached ? 'server-cached' : 'fresh fetch') + ' · model time ' + when + ' UTC<br>' +
+                    'Strongest wind ' + maxWkt + ' kt · strongest current ' + maxCkt + ' kt<br>' +
+                    'Current motion exaggerated for visibility · data: Open-Meteo.com (CC-BY 4.0)';
+                el.className = 'side-note live';
+            }
+        }
+
+        function setMode(next) {
+            mode = next;
+            var ids = { wind: 'mWind', current: 'mCur', off: 'mOff' };
+            Object.keys(ids).forEach(function (m) {
+                document.getElementById(ids[m]).classList.toggle('on', m === next);
+            });
+            if (reduced && next !== 'off') {
+                readoutEl.innerHTML = '<span class="dim">Motion reduced per your system setting — showing static vectors.</span><br>' + readoutEl.innerHTML;
+            }
+            paintScale();
+            startStop();
+        }
+        document.getElementById('mWind').addEventListener('click', function () { setMode('wind'); });
+        document.getElementById('mCur').addEventListener('click', function () { setMode('current'); });
+        document.getElementById('mOff').addEventListener('click', function () { setMode('off'); });
+
+        // Map the backend contract into the shape the sampler reads.
+        function parseFieldPayload(d) {
+            function wrap(f) { return f ? { header: d.header, u: f.u, v: f.v } : null; }
+            return {
+                wind: wrap(d.fields && d.fields.wind),
+                current: wrap(d.fields && d.fields.current),
+                generatedAt: d.generated_at,
+                cached: !!d.cached
+            };
+        }
+
+        function loadField() {
+            var el = document.getElementById('srcNote');
+            var tryNext = function (i) {
+                if (i >= FIELD_SOURCES.length) {
+                    var syn = syntheticField();
+                    live = parseFieldPayload({
+                        header: syn.header,
+                        fields: { wind: { u: syn.fields.wind.u, v: syn.fields.wind.v }, current: { u: syn.fields.current.cu, v: syn.fields.current.cv } }
+                    });
+                    isSample = true;
+                    paintScale(); renderProvenance(el); startStop();
+                    return;
+                }
+                var ctrl = ('AbortController' in window) ? new AbortController() : null;
+                if (ctrl) setTimeout(function () { ctrl.abort(); }, 4000);
+                fetch(FIELD_SOURCES[i], ctrl ? { signal: ctrl.signal } : undefined)
+                    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+                    .then(function (d) {
+                        if (!d || !d.header || !d.fields || !d.fields.wind) throw new Error('shape');
+                        live = parseFieldPayload(d);
+                        isSample = false;
+                        paintScale(); renderProvenance(el); startStop();
+                    })
+                    .catch(function () { tryNext(i + 1); });
+            };
+            tryNext(0);
+        }
+
+        loadField();
     </script>
 </body>
 </html>
