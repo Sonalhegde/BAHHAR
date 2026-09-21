@@ -1,3 +1,8 @@
+// INACTIVE - deployed nowhere. Firebase Cloud Storage sits behind the Blaze (billing) plan at
+// any volume and this project carries no card, so catch photos moved to Supabase Storage
+// (lib/core/services/supabase_storage_service.dart). This file is kept, not deleted: if a Blaze
+// decision is ever made, the bucket layout and the per-owner isolation below are what returns.
+// Until then nothing reads it, and firebase.json referencing it does not change that.
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {

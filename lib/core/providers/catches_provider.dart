@@ -8,6 +8,7 @@ import '../models/catch_model.dart';
 import '../services/firebase_service.dart';
 import '../services/firestore_service.dart';
 import '../services/prefs_service.dart';
+import '../services/supabase_storage_service.dart';
 import 'auth_provider.dart';
 
 /// Seed catches used when Firebase is not configured (offline demo mode).
@@ -96,10 +97,23 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
     );
   }
 
-  /// Saves a catch. Uploads the photo to Firebase Storage first when Firebase
-  /// is available and a [photoPath] is provided; otherwise stores locally in
-  /// memory (offline demo mode).
-  Future<void> addCatch(CatchModel entry, {String? photoPath}) async {
+  /// Shown whenever a catch was recorded but its photo could not be stored, for
+  /// any reason. One string so the two paths cannot drift apart.
+  static const String _photoNotStoredWarning =
+      'Photo storage is not set up on this build, so the catch was saved '
+      'without its photo.';
+
+  /// Saves a catch. Uploads the photo to Supabase Storage first when Firebase
+  /// is available, photo storage is configured and a [photoPath] is provided;
+  /// otherwise stores locally in memory (offline demo mode).
+  ///
+  /// Returns a warning to show the fisherman when the catch saved but its photo
+  /// did not, or null when everything landed. The split is deliberate: photo
+  /// storage being unconfigured is a known state of this build, so the record of
+  /// a fish actually caught is kept and the gap is reported - while a real upload
+  /// failure (network, bucket permissions) still throws, because a photo lost to
+  /// a bad signal is worth retrying and the caller already surfaces failures.
+  Future<String?> addCatch(CatchModel entry, {String? photoPath}) async {
     final user = _ref.read<UserProfile?>(authProvider);
     final uid = user?.id ?? 'user_default';
 
@@ -111,16 +125,24 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
       if (user == null || user.isGuest) {
         await PrefsService.addGuestCatch(jsonEncode(entry.toJson()));
       }
-      return;
+      // The same honesty applies here: a photo picked in demo mode is not
+      // uploaded anywhere and the queued record does not carry the file, so
+      // saying nothing would leave a log entry that implies a photo exists.
+      return photoPath != null ? _photoNotStoredWarning : null;
     }
 
     String? photoUrl;
+    String? photoWarning;
     if (photoPath != null) {
-      photoUrl = await _firestore.uploadCatchPhoto(
-        uid: uid,
-        catchId: entry.id,
-        filePath: photoPath,
-      );
+      try {
+        photoUrl = await SupabaseStorageService.uploadCatchPhoto(
+          uid: uid,
+          catchId: entry.id,
+          filePath: photoPath,
+        );
+      } on StorageUnavailableException {
+        photoWarning = _photoNotStoredWarning;
+      }
     }
     await _firestore.addCatch(entry, photoUrl: photoUrl);
     // Firestore snapshot listener refreshes [state]; optimistic insert keeps
@@ -128,6 +150,7 @@ class CatchesController extends StateNotifier<AsyncValue<List<CatchModel>>> {
     state = state.whenData(
       (list) => [entry.copyWith(photoUrl: photoUrl), ...list],
     );
+    return photoWarning;
   }
 
   /// Points the controller at whatever account is current now.

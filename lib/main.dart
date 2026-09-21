@@ -4,12 +4,18 @@ import 'app.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/prefs_service.dart';
+import 'core/services/supabase_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase placeholder
   await FirebaseService.init();
+
+  // Photo files live in Supabase Storage, not Firebase Cloud Storage: Cloud Storage moved behind
+  // the Blaze (billing) plan, and this project runs card-free. Inert with no SUPABASE_URL /
+  // SUPABASE_ANON_KEY at build time - catches still save, and the one that loses its photo says so.
+  await SupabaseStorageService.init();
 
   // Restore language / port / units before the first frame, so the app opens in the
   // language it was left in rather than flashing English first. A platform without a

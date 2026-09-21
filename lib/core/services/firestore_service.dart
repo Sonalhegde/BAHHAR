@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' show LatLng;
 
 import '../../features/auth/domain/user_model.dart';
@@ -12,14 +10,18 @@ import '../models/fisherman_profile_model.dart';
 import '../models/hotspot_model.dart';
 import 'firebase_service.dart';
 
-/// Typed Firestore/FireStorage data layer for BAHHAR.
+/// Typed Firestore data layer for BAHHAR.
+///
+/// Documents only. Photo bytes are not Firestore's job and were never free
+/// Firebase's job either - they live in Supabase Storage
+/// ([SupabaseStorageService] in `supabase_storage_service.dart`), because Cloud
+/// Storage needs the Blaze plan and this project has no card on it.
 ///
 /// Every method requires Firebase to be configured; otherwise it throws
 /// [FirebaseUnavailableException] so callers can show an explicit error /
 /// offline state instead of silently failing.
 class FirestoreService {
   FirebaseFirestore get _db => FirebaseFirestore.instance;
-  FirebaseStorage get _storage => FirebaseStorage.instance;
 
   void _ensureConfigured() {
     if (!FirebaseService.isConfigured) {
@@ -65,26 +67,13 @@ class FirestoreService {
             .toList());
   }
 
-  /// Persists a catch document. Upload the photo first via [uploadCatchPhoto]
-  /// and pass the resulting URL as [photoUrl].
+  /// Persists a catch document. Upload the photo first via
+  /// `SupabaseStorageService.uploadCatchPhoto` and pass the resulting URL as
+  /// [photoUrl].
   Future<void> addCatch(CatchModel entry, {String? photoUrl}) async {
     _ensureConfigured();
     final data = entry.copyWith(photoUrl: photoUrl).toJson();
     await _db.collection('catches').doc(entry.id).set(data);
-  }
-
-  /// Uploads a catch photo to Firebase Storage under catches/{uid}/{catchId}/
-  /// and returns the public download URL.
-  Future<String> uploadCatchPhoto({
-    required String uid,
-    required String catchId,
-    required String filePath,
-  }) async {
-    _ensureConfigured();
-    final file = File(filePath);
-    final ref = _storage.ref().child('catches').child(uid).child('$catchId.jpg');
-    final upload = await ref.putFile(file);
-    return upload.ref.getDownloadURL();
   }
 
   // ── User profile ──────────────────────────────────────────────────────────

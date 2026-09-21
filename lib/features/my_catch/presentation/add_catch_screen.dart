@@ -200,16 +200,18 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
     );
 
     try {
-      await ref.read(catchesProvider.notifier).addCatch(
+      final photoWarning = await ref.read(catchesProvider.notifier).addCatch(
             newCatch,
             photoPath: _photoFile?.path,
           );
       if (!mounted) return;
-      // Success feedback before returning to Catch History.
+      // Success feedback before returning to Catch History. A catch that saved
+      // without its photo says so - the record is good, the gap is not hidden.
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Catch successfully logged'),
-          backgroundColor: AppColors.signalGood,
+        SnackBar(
+          content: Text(photoWarning ?? 'Catch successfully logged'),
+          backgroundColor:
+              photoWarning == null ? AppColors.signalGood : AppColors.signalAlert,
         ),
       );
       context.pop();
