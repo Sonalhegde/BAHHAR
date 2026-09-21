@@ -149,3 +149,45 @@ analyze` and `flutter test` on push. Code was written against the verified `mapl
 - [x] Reconciled against *Master Build Prompt v3*: `SPECIFICATION.md`/`README`/`.env.example` corrected; MapLibre code migration deferred (§E)
 - [x] README features/stack/setup/env/deploy verified & corrected
 - [ ] Production deploy verified live (awaiting authorization)
+
+---
+
+## Live demo QA — app building pass (2026-09-20)
+
+The same environment constraint applies (no Flutter/Dart SDK, so `flutter test`/`analyze`/`format`
+stayed with CI), but this pass **ran the backend against the real upstreams** for the demo, which
+is the one QA step a monkeypatched suite cannot substitute.
+
+| Check | Result |
+| :-- | :-- |
+| `pytest tests/ -q` | **32 passed** (9 at the time of the tables above, 16 before this pass) |
+| `GET /api/v1/weather` (live, no key) | 200, `source: open-meteo` — 29.2 °C, feels like 35.8, humidity 80 %, wind 3.2 km/h ESE, visibility 21.7 km, 8 hours + 5 days, `alerts: []` with the reason in `note` |
+| `GET /api/v1/marine/conditions` (live) | 200 — SST 31.5 °C, waves 0.5 m from E, period 4.8 s, wind 4 kt, current 0.8 kt setting W, tide Rising 0.47 m, next high 06:55, band **good**, `day_rating` for a 6.7 m open boat on handlines |
+| `POST /api/v1/trip/optimize` (live) | 200 — 3 candidates evaluated against those readings, recommended Qurayyat Ridge (score 98.2, 1.9 nm out, 16.6 L, OMR 3.97), `strategy` printed, `conditions` present |
+| TTL cache | second identical call → `cached: true` |
+| Landing page in a 390 × 844 frame, EN + AR | measured in the DOM rather than by eye (the browser window would not come to the foreground, so screenshots were unavailable): both new section ids exist, the mobile layout is active at this width (`#hamburger` computes `display:flex`), the weather eyebrow reads **"Weather — Open-Meteo, through the BAHHAR backend"** and the Arabic row localises it (`الأحوال الجوية — OPEN-METEO عبر خلفيّة بحّار`), and the ocean/weather panels hold real text — `CURRENT 0.6 kt setting south`, `31 °C · Sunny · feels like 34°`. **Not** verified: pixel-level rendering at this width |
+
+### Bugs this found that the stubbed suite passed
+| Bug | Root cause | Fix |
+| :-- | :-- | :-- |
+| **Ocean readout returned 502 for every request** | the current was wired as `surface_current_eastward/northward`, which Open-Meteo does not publish — and an unknown hourly variable fails the *whole* call, taking waves and SST with it. Every test replaced `_fetch_open_meteo_marine`, so none of them could see the request | use `ocean_current_velocity`/`ocean_current_direction`; a new test asserts the **outgoing** variable list, so a bad name cannot return through a stub |
+| Wind 3.6× too strong on live data | km/h values converted with the m/s→kt factor, pushing benign days into the *high risk* band | separate named `KM_PER_HOUR_TO_KNOTS` / `METERS_PER_SECOND_TO_KNOTS`, pinned by tests |
+| Guest catches never synced | the queue flushed only when the catches controller was constructed, so signing in mid-session did nothing | `reload()` + an `authProvider` listener |
+| Startup could be killed by the push plugin | `NotificationService.init()` caught only `FirebaseException`; an `UnsupportedError` escaped `main()` before `runApp` | broad try/catch, degrade to a log line |
+
+### Known data-quality limit, recorded rather than papered over
+Open-Meteo's **visibility** is a model field and is grid-cell sensitive on the coast: two positions
+about a kilometre apart at Al Bustan read **0.2 km** and **21.7 km** under the same clear sky. It is
+passed through unfiltered — inventing a plausibility test against someone else's model would be its
+own lie — but nothing should treat a single low reading as a warning until the field is
+cross-checked against a second source. The same discipline applies to the current's sets-toward
+bearing, which follows the provider's stated from-convention by inference and is flagged as such in
+`backend/main.py`.
+
+### Deferred list, corrected
+Item 4 above deferred trip-optimize, geohash, persistence and FCM handlers. **Closed this pass:**
+`/api/v1/trip/optimize` (rule-based, not the trained model), `shared_preferences` persistence,
+guest queue, FCM handlers, fisherman-profile Firestore writes. **Still deferred, with the reason:**
+geohash queries (12 seed hotspots), background-isolate photo compression (needs an unresolvable
+dependency), launcher-icon *generation* (configured; no SDK or platform icon tree), and everything
+in §0 that needs credentials the user has to supply.
