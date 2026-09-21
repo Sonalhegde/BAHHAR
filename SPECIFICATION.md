@@ -223,6 +223,12 @@ provider publishes the current bearing the same from-way as the rest, so the pay
 half a circle. That turn is inferred from the provider's stated convention rather than a gauge
 comparison, so it sits on one line in `main.py` and two tests pin it (including the wrap at 180°).
 `visibility_km` is `null` when upstream reported nothing, never `0` (which would read as fog).
+**Known data-quality caveat, from the live smoke test:** Open-Meteo's visibility is a model field
+and it is grid-cell sensitive on the coast — two positions about a kilometre apart at Al Bustan
+read 0.2 km and 21.7 km, under the same clear sky. The value is passed through rather than
+filtered, because inventing a plausibility test on someone else's model would be its own lie, but
+nothing should treat a single low reading as a warning until that field is cross-checked against a
+second source.
 Wind arrives from Open-Meteo in km/h and is converted with `KM_PER_HOUR_TO_KNOTS`; currents
 arrive in m/s and use `METERS_PER_SECOND_TO_KNOTS` — mixing the two factors overstates wind
 3.6× and was the subject of a live-data fix. Upstream failure → HTTP **502**. `/api/v1/tides`
