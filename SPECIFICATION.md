@@ -292,13 +292,23 @@ with placeholder values only. **`.env` must never be committed** and is listed i
 | `ML_API_BASE_URL` | app `.env` / `--dart-define` | Deployed FastAPI base URL |
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth token (v3 name; supersedes the older `ML_API_AUTH_TOKEN`) |
 | `COPERNICUS_MARINE_USERNAME` / `COPERNICUS_MARINE_PASSWORD` | `backend/.env` | Phase-5 chlorophyll/SST-front data — **not yet provisioned** |
-| `FIREBASE_PROJECT_ID` / `FIREBASE_STORAGE_BUCKET` | app `.env` | Firebase project wiring |
+| `FIREBASE_PROJECT_ID` | app `.env` | Which project the repo points at: **`bahar-3719a`** (`bahar` is only the console display name). Documentary — no `flutter_dotenv` exists, so `lib/` never reads it |
+| `FIREBASE_STORAGE_BUCKET` | app `.env` | Empty by design. Cloud Storage requires Blaze; this project has no card |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | `--dart-define` | Catch-photo files. Public-by-design client config; RLS is the boundary |
 
 > Maps need **no** key: the app renders OpenFreeMap tiles via MapLibre (the former
 > `GOOGLE_MAPS_API_KEY` was removed with the Google Maps dependency).
 
 `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`,
 `android/key.properties` and any service-account JSON are gitignored and supplied out-of-band.
+The `com.google.gms.google-services` plugin is applied in `android/app/build.gradle`, which is what
+makes the option-less `Firebase.initializeApp()` work on Android — and what makes an Android build
+fail loudly until that JSON is present. `firebase_options.dart` stays gitignored for the same
+reason: it is generated per project, and CI clones have no business compiling against one.
+
+`firebase.json`, `.firebaserc` and `firestore.indexes.json` **are** committed: they carry the
+project id and no secrets, and hand-authoring them (rather than `firebase init`) is what kept the
+already-reviewed `firestore.rules` / `storage.rules` from being overwritten by a scaffolder.
 
 ---
 
@@ -317,8 +327,23 @@ nested `personal`/`boat`/`gear` shape rejected writes the model never makes.
 
 `firestore.rules`: users read/write only their own `catches`/`trips`/`preferences`/profile
 (ownership checked on both `resource.data.userId` and `request.resource.data.userId`); reference
-collections are authenticated-read / `write: if false`. `storage.rules` limit catch photos to
-≤ 10 MB JPEG/PNG under the owner's authenticated path.
+collections are authenticated-read / `write: if false`.
+
+**Deployment state on `bahar-3719a`**, because "written" and "live" are different claims: the
+reference collections are seeded (7 regions, 6 species, 7 hotspots — read back and confirmed), but
+the live Firestore ruleset is still the deny-all production template and the composite index below
+does not exist yet. Both need `firebase deploy --only firestore:rules,firestore:indexes` run by a
+project owner; the Firebase Admin service-account key can write documents and create a ruleset but
+is refused on releasing it and on creating indexes (403).
+
+`catches` needs that index: `fetchCatchesForUser` issues `where('userId') + orderBy('caughtAt')`,
+which live Firestore rejects with `FAILED_PRECONDITION` until a composite
+`userId ASC / caughtAt DESC` index exists. It is declared in `firestore.indexes.json`. Every other
+query in the app is a plain document read or a client-side filter.
+
+Catch photos are **not** in Firebase Storage. `storage.rules` is kept but inactive — Cloud Storage
+sits behind Blaze at any volume — and the bytes go to Supabase Storage instead, which holds files
+only: Firestore still owns the catch document and stores the returned public URL.
 
 ---
 
@@ -341,9 +366,14 @@ landing-page redesign; backend pytest suite (**32 passing**).
 > locally: this checkout has no Flutter SDK, no `android/app/src/main/res` tree and no iOS
 > project, so `flutter run` cannot be exercised here.
 
-**Blocked on external credentials (cannot be done in-repo):** Firebase project wiring
-(`google-services.json`, `firebase_options.dart`, enable Auth/Firestore/Storage/FCM), Copernicus
+**Blocked on external credentials (cannot be done in-repo):** Copernicus
 Marine account (Phase 5), Apple Developer account (iOS), app signing keystore + Play Store listing.
+
+**Sign-in surface, as of the card-free pass:** email/password (verified working against the live
+project), Google, Apple and guest. Phone OTP is still implemented in `auth_repository.dart` and
+`phone_otp_widget.dart` but is not offered on screen — SMS sending has required Blaze since
+September 2024. The email form previously validated the fields and then apologised; it calls real
+Firebase Auth now.
 
 **Deferred functional gaps (by design / high effort):**
 - Phase-5 Copernicus Marine integration (chlorophyll/SST fronts) — account not yet provisioned.

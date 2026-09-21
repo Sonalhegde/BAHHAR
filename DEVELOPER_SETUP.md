@@ -174,52 +174,106 @@ The app will run with simulated data. Skip to [Running the App](#running-the-app
 
 #### Option B: Configure Firebase
 
+The project this repo is wired to is **`bahar-3719a`** — `bahar` is only the console display name,
+the ID is in the `project_id` field of the service-account JSON. The steps below are for a project
+of your own; they are identical apart from the IDs.
+
 1. **Create Firebase Project**
    - Go to https://console.firebase.google.com/
    - Click "Add project"
    - Name: `bahhar-dev` (or your choice)
    - Enable Google Analytics (optional)
+   - **Do not attach a billing account.** Nothing below needs one, and two of the services the app
+     used to assume (Cloud Storage, Phone auth) are the ones that do — see step 5.
 
 2. **Register Android App**
    - Click "Add app" → Android icon
-   - Package name: `com.bahharai.bahhar`
+   - Package name: `com.bahharai.bahhar` (must match `android/app/build.gradle` exactly)
    - App nickname: `BAHHAR Dev`
    - Click "Register app"
 
 3. **Download Configuration**
    - Download `google-services.json`
-   - Place in `android/app/google-services.json`
+   - Place in `android/app/google-services.json` (gitignored)
+   - The `com.google.gms.google-services` plugin is **applied** in `android/app/build.gradle`, so it
+     reads that file at build time — which is what lets the option-less `Firebase.initializeApp()` in
+     `lib/core/services/firebase_service.dart` find the project on Android. It also means the Gradle
+     build **fails** until the file exists, rather than quietly running unconfigured.
 
-4. **Generate Firebase Options**
+4. **`flutterfire configure` is optional**
    ```bash
-   # Install FlutterFire CLI
    dart pub global activate flutterfire_cli
-   
-   # Configure Firebase
-   flutterfire configure --project=bahhar-dev
+   flutterfire configure --project=<your-project-id>
    ```
-   
-   This creates `lib/firebase_options.dart`
+
+   It writes `lib/firebase_options.dart`, which **nothing in `lib/` imports** — the app is configured
+   by the native file from step 3 (`ios/Runner/GoogleService-Info.plist` on iOS). Run it only if you
+   prefer explicit options; `firebase_options.dart` is gitignored either way.
 
 5. **Enable Firebase Services**
    
    In Firebase Console:
-   - **Authentication** → Enable:
-     - Phone (requires billing)
-     - Google
-     - Anonymous
-   - **Firestore Database** → Create database (start in test mode for dev)
-   - **Storage** → Get started
-   - **Cloud Messaging** → Enable
+   - **Authentication** → Sign-in method → enable the three the login screen actually offers:
+     - **Email/Password** — the only non-social method, and the one that costs nothing
+     - **Google** (add the SHA-1 fingerprint from step 2's app)
+     - **Apple** (needs an Apple developer account, so expect this one to stay off in dev)
+     - *Phone:* leave it off. `sendOtp`/`verifyOtp` are still implemented in
+       `lib/features/auth/data/auth_repository.dart` but no longer reachable from the UI — Phone auth
+       has required Blaze since September 2024. Re-enabling it is one console switch plus re-adding
+       the widget, not a rewrite. *Anonymous* is not used.
+   - **Firestore Database** → Create database, **production mode**. Test mode opens every collection to
+     any signed-in client; `firestore.rules` in this repo is the version that should be live.
+   - **Storage** → nothing to create. Catch photos go to **Supabase** instead (step 7) because Cloud
+     Storage sits behind Blaze at any volume; `storage.rules` is kept in the repo but inactive.
+   - **Cloud Messaging** → Enable (used by `lib/core/services/notification_service.dart`)
 
-6. **Deploy Security Rules (Optional for Dev)**
+6. **Deploy Security Rules and Indexes**
    ```bash
    npm install -g firebase-tools
    firebase login
-   firebase init
-   firebase deploy --only firestore:rules
-   firebase deploy --only storage:rules
+   firebase deploy --only firestore:rules,firestore:indexes
    ```
+
+   **Skip `firebase init`.** `firebase.json`, `.firebaserc` and `firestore.indexes.json` are committed,
+   so the CLI already knows the project and the rule files — running init would offer to overwrite the
+   reviewed `firestore.rules` / `storage.rules` with a scaffold.
+
+   The index is not optional housekeeping: `fetchCatchesForUser` runs
+   `where('userId') + orderBy('caughtAt', descending:)`, and an equality paired with a sort needs a
+   composite index. Without it live Firestore answers `FAILED_PRECONDITION` and the catch log is empty
+   for every user. Every other query in the app is a plain document read.
+
+   Do not deploy `--only storage:rules` — there is no bucket for it to attach to.
+
+7. **Seed the Reference Collections**
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   python seed_firestore.py ..\path\to\service-account-key.json
+   ```
+
+   Generate the service-account key under *Project settings → Service accounts* and keep it **outside
+   the repo**. Two things to know about this script:
+   - It catches `ImportError` and falls back to a *dry run*, so a missing `firebase-admin` looks like
+     success. The output must say it wrote documents, not `[DRY RUN]`.
+   - It writes `regions`, `species` and `hotspots`. There is **no `regulations` data** in
+     `firestore_seed.json`, so that collection stays empty until real Omani regulations are sourced —
+     it is not guessed at.
+
+8. **Photo Storage (Supabase)**
+
+   Create a Supabase project, add a bucket named **`bahhar-uploads`** with public read, then pass the
+   client config at build time:
+   ```bash
+   flutter run --dart-define=SUPABASE_URL=https://xxxx.supabase.co \
+               --dart-define=SUPABASE_ANON_KEY=<anon-key>
+   ```
+   With nothing set, uploads fail visibly (`SupabaseStorageService.isConfigured` is false) and the
+   catch still saves without its photo — see `lib/core/services/supabase_storage_service.dart`.
+
+> **What a service-account key cannot do.** It writes documents and can *create* a Firebase Rules
+> ruleset, but releasing that ruleset and creating Firestore indexes are refused (403) — those need
+> `firebase login` as a project owner, i.e. step 6 above run by a human.
 
 ### 6. Google Maps API Key
 
@@ -506,9 +560,18 @@ Make sure `google-services.json` is in `android/app/` (not `android/`)
 This is normal in demo mode. Add `google-services.json` to fix.
 
 #### Auth not working
-- Enable auth methods in Firebase Console
+- Enable the provider you are using under Authentication → Sign-in method. The screen offers
+  Email/Password, Google and Apple; with Email off, Firebase returns `operation-not-allowed` and the
+  app names that switch rather than looking like a bad password.
 - Add SHA-1 for Google Sign-In
-- Enable billing for Phone auth
+- Sign-in then fails to persist data? Check the rules are deployed — a live deny-all ruleset signs you
+  in successfully and rejects every read afterwards, which looks like an auth bug and is not one.
+- Phone OTP is not on the screen. It needs Blaze; see §5 step 5.
+
+#### Catch log is empty for a signed-in user
+Not an auth failure. `catches` needs the `userId` / `caughtAt` composite index from
+`firestore.indexes.json`; without it the query is rejected with `FAILED_PRECONDITION`. Deploy with
+`firebase deploy --only firestore:indexes`.
 
 ### Backend Issues
 

@@ -9,6 +9,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Firebase connection + card-free storage & auth (2026-09-21)
+
+The brief said to connect the real Firebase project, and the first step was to confirm the project ID
+rather than trust the console. The console shows **`bahar`**; the service-account key the project owner
+supplied says `"project_id": "bahar-3719a"`, so `bahar` is a display name and every prior reference to
+`bahhar-ai-prod` in `.env.example` was a placeholder nobody had replaced. Everything below was then
+checked against the live project rather than assumed, which changed two of the brief's premises.
+
+**Added / changed — against the live project**
+- `firebase.json`, `.firebaserc` (`default: bahar-3719a`) and `firestore.indexes.json` committed.
+  Hand-authored instead of `firebase init`, because init offers to overwrite the reviewed
+  `firestore.rules` / `storage.rules` with a scaffold.
+- **`com.google.gms.google-services` is now applied** in `android/app/build.gradle`. It was declared
+  `apply false`, which meant the plugin never ran, `google-services.json` was ignored, and the
+  option-less `Firebase.initializeApp()` the app has always called had no Android config to pick up.
+  Consequence accepted deliberately: an Android build now fails loudly until that file is present.
+- `backend/requirements.txt` gained `firebase-admin>=6.5.0`. Without it `seed_firestore.py` catches
+  `ImportError` and prints a *verified dry run* — a green-looking seed that wrote nothing.
+- Reference data **seeded and read back** on `bahar-3719a`: 7 regions, 6 species, 7 hotspots.
+
+**Two things the probes found, which the brief assumed were already fine**
+- **The catch log was broken by a missing index.** `fetchCatchesForUser` pairs `where('userId')` with
+  `orderBy('caughtAt', descending: true)`; live Firestore rejected exactly that query with
+  `FAILED_PRECONDITION: The query requires an index`. Declared in `firestore.indexes.json`.
+- **The live security rules are not this repo's rules.** The released Firestore ruleset is Google's
+  deny-all production template (`allow read, write: if false`), so §5's "redeploy the existing rules"
+  and §8's "check the profile rule now that it's live" rested on a false premise. Nothing client-side
+  can read or write yet.
+
+Both need `firebase deploy --only firestore:rules,firestore:indexes`. The service-account key can write
+documents and *create* a ruleset but is refused (403) on **releasing** it and on creating indexes, so
+that command belongs to a project owner — recorded rather than worked around, and no deploy is claimed.
+
+**Removed — the card-free migration**
+- **`firebase_storage` is gone**, replaced by `supabase_flutter` and
+  `lib/core/services/supabase_storage_service.dart`. Cloud Storage requires Blaze at any volume and the
+  project carries no card; the same reasoning that put MapLibre/OpenFreeMap where Google Maps was.
+  Firestore still owns the catch document and stores the returned URL — only the bytes moved.
+  `storage.rules` is kept with an INACTIVE header rather than deleted, so the policy is still on record.
+- **Phone/OTP is off the login screen** (Blaze since September 2024): the method selector, the phone
+  field and the OTP step were removed from `login_register_screen.dart`; `sendOtp`/`verifyOtp` stay in
+  `auth_repository.dart` doc-guarded, and `phone_otp_widget.dart` stays unused, so reversing this is a
+  UI change and not a rewrite.
+- `catches_provider.addCatch` now returns `Future<String?>` — a photo it could not store comes back as a
+  warning the `Add Catch` screen shows, instead of a record silently saved with a URL pointing at nothing.
+
+**Fixed — a stub that looked like a feature**
+With Phone removed and Apple needing a paid developer account, the only non-Google method on screen was
+`_handleEmailAuth`, which validated the fields and then apologised. The email form now performs real
+`signInWithEmail` / `registerWithEmail`, routed through a new `_finishSignIn` so account creation also
+upserts `users/{uid}` (it never passes through a credential exchange), with six added `_friendlyError`
+cases including one that names the console switch when the provider is off. **Verified against the live
+project**: a probe user was created, signed in through the same `accounts:signInWithPassword` endpoint
+the SDK calls (200 + idToken), and deleted. That also established the Email provider is already enabled,
+and that the project has **no registered web app**, hence no web API key — Google sign-in still needs
+the device config.
+
+**Verification honesty** — no Flutter/Dart SDK, no `firebase`/`flutterfire` CLI and no Chrome exist in
+this environment, so `flutter run`, `flutter test` and `flutter analyze` were **not** run; CI
+(`flutter_ci.yml`) is the gate for the Dart changes, and the edited files were checked with a
+string-aware bracket-balance scanner plus leftover-symbol greps, which is not a compiler.
+`pubspec.lock` is stale until someone runs `flutter pub get`. `pytest tests -q` run from `backend/` →
+32 passed. From the repo root the same command fails at collection with `No module named 'main'`;
+`backend_ci.yml` sets `working-directory: backend` for exactly that reason, so it is a pre-existing
+path rule rather than a regression — the README's own instructions already use the `cd backend` form.
+
 ### App building pass — one logo, live weather, extended ocean data, persisted profile, trip optimiser (2026-09-20)
 
 A brief written against the actual repo, so the first job was checking each claim in the code: the

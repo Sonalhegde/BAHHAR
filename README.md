@@ -59,14 +59,16 @@ Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).
 - **ML prediction** — `POST /api/v1/predict` bite-probability (thermal + bathymetric + solunar).
 - **Geofencing** — `POST /api/v1/geofence/verify` for Daymaniyat, Ras Al Jinz, Hormuz corridor.
 - **Bilingual EN ⇄ AR** with RTL; **Premium White editorial** design system.
-- **Security rules** — per-user Firestore isolation + read-only reference collections; storage
-  upload limits. **Backend test suite: 32 passing.**
+- **Security rules** — per-user Firestore isolation + read-only reference collections, committed and
+  aimed at a live project. Whether they are *deployed* is a separate claim — see
+  [What is live on `bahar-3719a`](#what-is-live-on-bahar-3719a). **Backend test suite: 32 passing.**
 - **CI** — `backend_ci.yml` (pytest) and `flutter_ci.yml` (format, analyze, test).
 
 ### ⏳ Planned / blocked
-- **Blocked on external credentials:** Firebase project wiring, Copernicus Marine account, release
-  keystore + Play Store listing, iOS runner. (Maps are keyless via MapLibre/OpenFreeMap — no API
-  key needed.)
+- **Blocked on external credentials:** Copernicus Marine account, release keystore + Play Store
+  listing, iOS runner. Firebase is no longer on this list — the repo points at `bahar-3719a` and its
+  reference data is seeded; what remains is one `firebase deploy` that needs an owner-attended login.
+  (Maps are keyless via MapLibre/OpenFreeMap — no API key needed.)
 - **Deferred in code:** Firestore geohash queries (client-side filtered — 12 seed hotspots do not
   justify it yet), catch-photo background-isolate compression beyond `image_picker`'s 1600px/q82,
   launcher-icon generation (configured, but needs the SDK and the platform icon trees), the
@@ -128,13 +130,38 @@ values**.
 | `ML_API_BASE_URL` | app `.env` / `--dart-define` | Deployed FastAPI base URL |
 | `ML_API_TOKEN` | app `.env` | Service-to-service auth (v3 name) |
 | `COPERNICUS_MARINE_USERNAME` / `COPERNICUS_MARINE_PASSWORD` | `backend/.env` | Phase-5 data — not yet provisioned |
-| `FIREBASE_PROJECT_ID` / `FIREBASE_STORAGE_BUCKET` | app `.env` | Firebase wiring |
+| `FIREBASE_PROJECT_ID` | app `.env` | Records which project the repo points at — `bahar-3719a`. **Nothing in `lib/` reads it**: the app is configured by the native files below |
+| `FIREBASE_STORAGE_BUCKET` | app `.env` | Deliberately empty. Cloud Storage needs Blaze and this project carries no card |
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | `--dart-define` (or `--dart-define-from-file=.env`) | Catch-photo file storage. Unset, uploads say so and the catch still saves |
 
 Maps are keyless (MapLibre + OpenFreeMap) — the former `GOOGLE_MAPS_API_KEY` was removed with the
-Google Maps dependency.
+Google Maps dependency. Files moved for the same reason: Cloud Storage is behind Blaze, so catch
+photos go to Supabase Storage (`lib/core/services/supabase_storage_service.dart`) and Firestore
+keeps only the metadata.
 
 Also supplied out-of-band (gitignored): `android/app/google-services.json`,
-`ios/Runner/GoogleService-Info.plist`, `android/key.properties`.
+`ios/Runner/GoogleService-Info.plist`, `android/key.properties`. The `google-services` Gradle
+plugin is now actually applied in `android/app/build.gradle` (it was declared `apply false`, which
+meant the JSON file was ignored), so an Android build **fails** until that file is in place.
+
+### What is live on `bahar-3719a`
+
+| | State |
+| :-- | :-- |
+| Firestore reference data | **Seeded** — 7 regions, 6 species, 7 hotspots (verified by reading the collections back) |
+| Firestore security rules | **Not deployed** — the live ruleset is still Firestore's deny-all production template. Run the deploy below |
+| Composite index for the catch log | **Not created** — `catches` + `userId`/`caughtAt` is required by `fetchCatchesForUser`; live Firestore rejects that query until it exists |
+| Email/password sign-in | **Working** — verified against the live project (account created, token issued, account deleted) |
+| Google sign-in | Configured; needs `google-services.json` on a device to test |
+| Apple sign-in | Needs an Apple Developer account |
+| Phone OTP | Implemented and left in the tree, **not on the sign-in screen** — SMS sending requires Blaze |
+
+One command closes the two gaps, from the repo root, signed in as a project owner (a service-account
+key can write data but is not permitted to release rules or create indexes):
+
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
 
 ---
 
