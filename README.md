@@ -32,6 +32,7 @@ production alias is `bahhar-blue.vercel.app`; rename or retarget it under
 | Target | How to serve | State |
 | :-- | :-- | :-- |
 | Vercel (primary) | `website/vercel.json` (root directory `website/`) rewrites `/*` → `/landing-page.html` and sets security headers; `.vercelignore` uploads only `website/` | Deployed — <https://bahhar-blue.vercel.app> |
+| Flutter web simulator | `flutter build web --release` → `build/web`, deployed to the `bahharapp` Vercel project — a browser-previewable build of the app for stakeholder review | Deployed — <https://bahharapp.vercel.app> |
 | GitHub Pages | Set Pages source to `/website` → `https://sonalhegde.github.io/BAHHAR/` | Ready — needs Pages enabled on `main` |
 
 Hosting walkthrough: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md).

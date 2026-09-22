@@ -1,11 +1,11 @@
 {
-    "name": "bahhar",
-    "short_name": "bahhar",
+    "name": "BAHHAR - Smart Fishing of Oman",
+    "short_name": "BAHHAR",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F3F4F6",
+    "theme_color": "#0A66C2",
+    "description": "BAHHAR - smart fishing trip planning for the waters of Oman: live marine conditions, tides, weather, hotspots and a digital catch log.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

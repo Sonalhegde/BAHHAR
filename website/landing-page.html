@@ -214,7 +214,34 @@
            so the underline takes the accent that is legible on light. */
         #header.scrolled .nav-links a::after { background: var(--teal); }
 
-        .utility-bar { display: flex; align-items: center; gap: 10px; padding-inline-start: 20px; border-inline-start: 1px solid rgba(255,255,255,0.22); transition: border-color 0.35s ease; }
+        /* Features mega-menu: every content section lives under one Features heading, so the
+           bar stays calm while nothing is buried. The panel is a solid light surface so its
+           labels clear AA over both the transparent-hero and scrolled header states. */
+        .nav-item.mega { position: relative; }
+        .nav-trigger { position: relative; display: inline-flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; padding: 6px 2px; font-family: var(--f-body); font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.92); transition: color 0.2s ease; }
+        #header.scrolled .nav-trigger { color: var(--body); }
+        #header.scrolled .nav-trigger:hover { color: var(--navy); }
+        .nav-trigger .caret { transition: transform 0.25s var(--ease); }
+        .nav-item.mega.open .nav-trigger .caret { transform: rotate(180deg); }
+        .nav-trigger::after { content: ''; position: absolute; bottom: -6px; inset-inline-start: 0; width: 0; height: 2px; background: var(--seafoam); transition: width 0.28s ease; }
+        .nav-item.mega:hover .nav-trigger::after, .nav-item.mega.open .nav-trigger::after { width: 100%; }
+        #header.scrolled .nav-trigger::after { background: var(--teal); }
+        .mega-panel { position: absolute; top: calc(100% + 16px); inset-inline-start: -22px; display: grid; grid-template-columns: repeat(4, minmax(148px, 1fr)); gap: 6px 24px; width: max-content; max-width: 640px; padding: 22px 22px 20px; background: var(--bg-secondary); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow-md); opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity 0.2s var(--ease), transform 0.2s var(--ease), visibility 0.2s; z-index: 1200; }
+        .nav-item.mega:hover .mega-panel, .nav-item.mega.open .mega-panel { opacity: 1; visibility: visible; transform: translateY(0); }
+        .mega-col { display: flex; flex-direction: column; gap: 2px; }
+        .mega-h { font-family: var(--f-display); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px 10px; font-weight: 700; }
+        .mega-panel a { color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 500; padding: 7px 10px; border-radius: 8px; position: static; transition: background 0.16s ease, color 0.16s ease; }
+        .mega-panel a::after { display: none; }
+        .mega-panel a:hover { background: var(--bg-primary); color: var(--navy); }
+        #header.scrolled .mega-panel a { color: var(--ink); }
+        .nav-cta { display: inline-flex; align-items: center; padding: 9px 18px; border-radius: 999px; background: var(--teal); color: #fff !important; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(15,122,122,0.25); transition: background 0.2s ease, transform 0.2s ease; }
+        .nav-cta::after { display: none; }
+        .nav-cta:hover { background: var(--navy); transform: translateY(-1px); }
+        .mobile-menu { overflow-y: auto; }
+        .mm-group { color: rgba(255,255,255,0.55); font-family: var(--f-display); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 20px; }
+        .mobile-menu a.mm-sub { font-size: 17px; font-weight: 500; padding: 10px 0; min-height: 40px; }
+        @media (max-width: 968px) { .nav-links { display: none; } }
+                .utility-bar { display: flex; align-items: center; gap: 10px; padding-inline-start: 20px; border-inline-start: 1px solid rgba(255,255,255,0.22); transition: border-color 0.35s ease; }
         #header.scrolled .utility-bar { border-inline-start-color: rgba(18,38,58,0.12); }
         .flag-chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: rgba(255,255,255,0.9); }
         #header.scrolled .flag-chip { color: var(--body); }
@@ -735,14 +762,38 @@
 
                 <div class="nav-right">
                     <ul class="nav-links">
-                        <li><a href="#why">Why Oman</a></li>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#pillar-profile">Profile</a></li>
-                        <li><a href="#pillar-live">Ocean</a></li>
-                        <li><a href="#pillar-weather">Weather</a></li>
-                        <li><a href="#species">Species</a></li>
-                        <li><a href="#regions">Regions</a></li>
-                        <li><a href="#access">Get Access</a></li>
+                        <li class="nav-item mega">
+                            <button type="button" class="nav-trigger" id="featuresTrigger" aria-expanded="false" aria-controls="featuresMenu"><span class="nav-label">Features</span><svg class="caret" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M1 3l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                            <div class="mega-panel" id="featuresMenu">
+                                <div class="mega-col">
+                                    <span class="mega-h">The idea</span>
+                                    <a href="#why">Why Oman</a>
+                                    <a href="#species">Species</a>
+                                    <a href="#regions">Regions</a>
+                                </div>
+                                <div class="mega-col">
+                                    <span class="mega-h">Plan the trip</span>
+                                    <a href="#pillar-trip">Smart Trip Planning</a>
+                                    <a href="#pillar-optimizer">Trip Optimiser</a>
+                                    <a href="#pillar-charts">Marine Charts</a>
+                                </div>
+                                <div class="mega-col">
+                                    <span class="mega-h">On the water</span>
+                                    <a href="#pillar-live">Ocean Information</a>
+                                    <a href="#pillar-weather">Weather</a>
+                                    <a href="#pillar-alerts">Advisories &amp; Alerts</a>
+                                    <a href="#pillar-safety">Safety, Crew &amp; Vessels</a>
+                                </div>
+                                <div class="mega-col">
+                                    <span class="mega-h">Your logbook</span>
+                                    <a href="#pillar-profile">Fisherman Profile</a>
+                                    <a href="#pillar-catch">Digital Catch Log</a>
+                                    <a href="#pillar-docs">Licences &amp; Documents</a>
+                                    <a href="#pillar-account">Your Account</a>
+                                </div>
+                            </div>
+                        </li>
+                        <li><a href="#access" class="nav-cta">Get Access</a></li>
                     </ul>
                     <div class="utility-bar">
                         <span class="flag-chip" title="Made for the Sultanate of Oman">
@@ -771,13 +822,21 @@
 
     <div class="menu-backdrop" id="menuBackdrop"></div>
     <aside class="mobile-menu" id="mobileMenu" aria-hidden="true">
-        <a href="#why">Why Oman</a>
-        <a href="#features">Features</a>
-        <a href="#pillar-profile">My Profile</a>
-        <a href="#pillar-live">Ocean</a>
-        <a href="#pillar-weather">Weather</a>
-        <a href="#species">Species</a>
-        <a href="#regions">Regions</a>
+        <div class="mm-group">Features</div>
+        <a href="#why" class="mm-sub">Why Oman</a>
+        <a href="#pillar-profile" class="mm-sub">Fisherman Profile</a>
+        <a href="#pillar-live" class="mm-sub">Ocean Information</a>
+        <a href="#pillar-weather" class="mm-sub">Weather</a>
+        <a href="#pillar-trip" class="mm-sub">Smart Trip Planning</a>
+        <a href="#pillar-optimizer" class="mm-sub">Trip Optimiser</a>
+        <a href="#pillar-charts" class="mm-sub">Marine Charts</a>
+        <a href="#pillar-safety" class="mm-sub">Safety, Crew &amp; Vessels</a>
+        <a href="#pillar-catch" class="mm-sub">Digital Catch Log</a>
+        <a href="#pillar-docs" class="mm-sub">Licences &amp; Documents</a>
+        <a href="#pillar-alerts" class="mm-sub">Advisories &amp; Alerts</a>
+        <a href="#pillar-account" class="mm-sub">Your Account</a>
+        <a href="#species" class="mm-sub">Species</a>
+        <a href="#regions" class="mm-sub">Regions</a>
         <a href="#" class="lang-toggle" onclick="toggleLanguage();return false;">عربي</a>
         <a href="#access" class="btn-solid">Get Early Access</a>
     </aside>
@@ -1814,7 +1873,7 @@
                 </div>
                 <div class="footer-col">
                     <h4>Product</h4>
-                    <ul><li><a href="#features">Features</a></li><li><a href="#pillar-profile">My profile</a></li><li><a href="#pillar-live">Ocean conditions</a></li><li><a href="#pillar-weather">Weather</a></li><li><a href="#species">Species</a></li><li><a href="#regions">Regions</a></li><li><a href="#why">Why Oman</a></li><li><a href="#access">Early access</a></li></ul>
+                    <ul><li><a href="#why">Why Oman</a></li><li><a href="#pillar-profile">Fisherman Profile</a></li><li><a href="#pillar-live">Ocean Information</a></li><li><a href="#pillar-weather">Weather</a></li><li><a href="#pillar-trip">Smart Trip Planning</a></li><li><a href="#pillar-charts">Marine Charts</a></li><li><a href="#pillar-safety">Safety &amp; Vessels</a></li><li><a href="#pillar-catch">Digital Catch Log</a></li><li><a href="#species">Species</a></li><li><a href="#regions">Regions</a></li><li><a href="#access">Early access</a></li></ul>
                 </div>
                 <div class="footer-col">
                     <h4>Resources</h4>
@@ -2307,9 +2366,13 @@
             ['.footer-brand .lang-note', 'وضع العربية يحمل كل عناوين هذه الصفحة ونصوصها والتسمياتِ المقروءة فيها، بما في ذلك سجلّ الملفّ ولوحة المحيط ولوحة التنبّؤ — وكلها نصوصٌ حقيقية لا رسوم. أما نماذج شاشات الهاتف فتبقى بالإنجليزية حتى تُعاد رسوماتها بالخَطّين، وتسميات الخريطة نفسها تتبع اللغة التي يقدّمها مزوّد الخرائط. أسماء الأصناف والأماكن تُحفَظ بالعربي العُماني الموثَّق، ومتى بقي الاسم قيد التحقق لدى متحدّثين عُمانيين جاء الاسم اللاتيني مكانه — في اللغتين.'],
             ['.footer-col:nth-of-type(2) h4', 'المنتج'],
             ['.footer-col a[href="#features"]', 'المزايا'],
-            ['.footer-col a[href="#pillar-profile"]', 'ملفّي'],
+            ['.footer-col a[href="#pillar-profile"]', 'ملف الصياد'],
             ['.footer-col a[href="#pillar-live"]', 'المعلومات المحيطية'],
             ['.footer-col a[href="#pillar-weather"]', 'الأحوال الجوية'],
+            ['.footer-col a[href="#pillar-trip"]', 'التخطيط الذكي للرحلات'],
+            ['.footer-col a[href="#pillar-charts"]', 'الخرائط البحرية'],
+            ['.footer-col a[href="#pillar-safety"]', 'السلامة والسفن'],
+            ['.footer-col a[href="#pillar-catch"]', 'سجلّ الصيد الرقمي'],
             ['.footer-col a[href="#species"]', 'الأسماك'],
             ['.footer-col a[href="#regions"]', 'المناطق'],
             ['.footer-col a[href="#why"]', 'لماذا عُمان'],
@@ -2326,7 +2389,44 @@
             ['#successMessage', '✓ شكراً لك! سنُبلغك عند إطلاق بحّار.'],
             ['#species .photo-note', 'صورة: ضحلات جزر الديمانيات من الأعلى'],
             ['.footer-bottom p:first-child', '© 2026 بحّار • سلطنة عُمان. جميع الحقوق محفوظة.'],
-            ['.footer-bottom .made-txt', 'صُنع للصيّادين العُمانيين']
+            ['.footer-bottom .made-txt', 'صُنع للصيّادين العُمانيين'],
+            /* ---- Navigation (desktop Features mega-menu + mobile drawer) ---- */
+            ['.nav-label', 'المزايا'],
+            ['.nav-cta', 'احجز وصولك'],
+            ['.mega-col:nth-of-type(1) .mega-h', 'الفكرة'],
+            ['.mega-col:nth-of-type(2) .mega-h', 'خطِّط للرحلة'],
+            ['.mega-col:nth-of-type(3) .mega-h', 'على الماء'],
+            ['.mega-col:nth-of-type(4) .mega-h', 'سجلّك'],
+            ['#featuresMenu a[href="#why"]', 'لماذا عُمان'],
+            ['#featuresMenu a[href="#species"]', 'الأسماك'],
+            ['#featuresMenu a[href="#regions"]', 'المناطق'],
+            ['#featuresMenu a[href="#pillar-trip"]', 'التخطيط الذكي للرحلات'],
+            ['#featuresMenu a[href="#pillar-optimizer"]', 'مُحسِّن الرحلة'],
+            ['#featuresMenu a[href="#pillar-charts"]', 'الخرائط البحرية'],
+            ['#featuresMenu a[href="#pillar-live"]', 'المعلومات المحيطية'],
+            ['#featuresMenu a[href="#pillar-weather"]', 'الأحوال الجوية'],
+            ['#featuresMenu a[href="#pillar-alerts"]', 'التنبيهات والتحذيرات'],
+            ['#featuresMenu a[href="#pillar-safety"]', 'السلامة والطاقم والسفن'],
+            ['#featuresMenu a[href="#pillar-profile"]', 'ملف الصياد'],
+            ['#featuresMenu a[href="#pillar-catch"]', 'سجلّ الصيد الرقمي'],
+            ['#featuresMenu a[href="#pillar-docs"]', 'التراخيص والوثائق'],
+            ['#featuresMenu a[href="#pillar-account"]', 'حسابك'],
+            ['#mobileMenu .mm-group', 'المزايا'],
+            ['#mobileMenu a.mm-sub[href="#why"]', 'لماذا عُمان'],
+            ['#mobileMenu a.mm-sub[href="#species"]', 'الأسماك'],
+            ['#mobileMenu a.mm-sub[href="#regions"]', 'المناطق'],
+            ['#mobileMenu a.mm-sub[href="#pillar-trip"]', 'التخطيط الذكي للرحلات'],
+            ['#mobileMenu a.mm-sub[href="#pillar-optimizer"]', 'مُحسِّن الرحلة'],
+            ['#mobileMenu a.mm-sub[href="#pillar-charts"]', 'الخرائط البحرية'],
+            ['#mobileMenu a.mm-sub[href="#pillar-live"]', 'المعلومات المحيطية'],
+            ['#mobileMenu a.mm-sub[href="#pillar-weather"]', 'الأحوال الجوية'],
+            ['#mobileMenu a.mm-sub[href="#pillar-alerts"]', 'التنبيهات والتحذيرات'],
+            ['#mobileMenu a.mm-sub[href="#pillar-safety"]', 'السلامة والطاقم والسفن'],
+            ['#mobileMenu a.mm-sub[href="#pillar-profile"]', 'ملف الصياد'],
+            ['#mobileMenu a.mm-sub[href="#pillar-catch"]', 'سجلّ الصيد الرقمي'],
+            ['#mobileMenu a.mm-sub[href="#pillar-docs"]', 'التراخيص والوثائق'],
+            ['#mobileMenu a.mm-sub[href="#pillar-account"]', 'حسابك'],
+            ['#mobileMenu a.btn-solid', 'احجز وصولاً مبكراً']
         ];
         var arOn = false, store = [];
         var LANG_KEY = 'bahhar_lang';
@@ -2351,6 +2451,25 @@
         };
         /* The choice is the visitor's, not the page's: restore it before first paint */
         try { if (localStorage.getItem(LANG_KEY) === 'ar') applyLanguage(true); } catch (err) {}
+    })();
+    </script>
+
+    <script>
+    /* Features mega-menu: hover opens on desktop; click/keyboard opens for touch
+       and a11y, closing on outside-click, Escape or after choosing a section. */
+    (function () {
+        var item = document.querySelector('.nav-item.mega');
+        if (!item) return;
+        var trigger = document.getElementById('featuresTrigger');
+        function close() { item.classList.remove('open'); if (trigger) trigger.setAttribute('aria-expanded', 'false'); }
+        function open() { item.classList.add('open'); if (trigger) trigger.setAttribute('aria-expanded', 'true'); }
+        if (trigger) trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (item.classList.contains('open')) close(); else open();
+        });
+        document.addEventListener('click', function (e) { if (!item.contains(e.target)) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+        item.querySelectorAll('.mega-panel a').forEach(function (a) { a.addEventListener('click', close); });
     })();
     </script>
 </body>
