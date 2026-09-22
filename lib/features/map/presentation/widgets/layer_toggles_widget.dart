@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:bahhar/core/theme/app_colors.dart';
 import 'package:bahhar/core/theme/glass_tokens.dart';
+import 'flow_overlay_widget.dart' show FlowMode;
 
 /// The toggleable overlay layers of the nautical chart.
 @immutable
@@ -11,28 +12,34 @@ class MapLayers {
   final bool depthContours;
   final bool myLocation;
 
+  /// Which medium the particle-flow layer is drawing (none when [FlowMode.off]).
+  final FlowMode flow;
+
   const MapLayers({
     this.hotspots = true,
     this.protectedAreas = true,
     this.depthContours = false,
     this.myLocation = true,
+    this.flow = FlowMode.off,
   });
 
   /// A layer set with nothing but location enabled.
-  static const MapLayers minimal =
-      MapLayers(hotspots: false, protectedAreas: false, depthContours: false);
+  static const MapLayers minimal = MapLayers(
+      hotspots: false, protectedAreas: false, depthContours: false);
 
   MapLayers copyWith({
     bool? hotspots,
     bool? protectedAreas,
     bool? depthContours,
     bool? myLocation,
+    FlowMode? flow,
   }) {
     return MapLayers(
       hotspots: hotspots ?? this.hotspots,
       protectedAreas: protectedAreas ?? this.protectedAreas,
       depthContours: depthContours ?? this.depthContours,
       myLocation: myLocation ?? this.myLocation,
+      flow: flow ?? this.flow,
     );
   }
 
@@ -47,6 +54,11 @@ class MapLayers {
         return copyWith(depthContours: !depthContours);
       case MapLayerKind.myLocation:
         return copyWith(myLocation: !myLocation);
+      case MapLayerKind.windFlow:
+        // The flow layer is one medium at a time; wind replaces current/off.
+        return copyWith(flow: flow == FlowMode.wind ? FlowMode.off : FlowMode.wind);
+      case MapLayerKind.currentFlow:
+        return copyWith(flow: flow == FlowMode.current ? FlowMode.off : FlowMode.current);
     }
   }
 
@@ -60,6 +72,10 @@ class MapLayers {
         return depthContours;
       case MapLayerKind.myLocation:
         return myLocation;
+      case MapLayerKind.windFlow:
+        return flow == FlowMode.wind;
+      case MapLayerKind.currentFlow:
+        return flow == FlowMode.current;
     }
   }
 
@@ -69,15 +85,23 @@ class MapLayers {
       other.hotspots == hotspots &&
       other.protectedAreas == protectedAreas &&
       other.depthContours == depthContours &&
-      other.myLocation == myLocation;
+      other.myLocation == myLocation &&
+      other.flow == flow;
 
   @override
-  int get hashCode =>
-      Object.hash(hotspots, protectedAreas, depthContours, myLocation);
+  int get hashCode => Object.hash(
+      hotspots, protectedAreas, depthContours, myLocation, flow);
 }
 
 /// The individual map layers a toggle controls.
-enum MapLayerKind { hotspots, protectedAreas, depthContours, myLocation }
+enum MapLayerKind {
+  hotspots,
+  protectedAreas,
+  depthContours,
+  myLocation,
+  windFlow,
+  currentFlow,
+}
 
 /// Floating chart layer toggles.
 ///
@@ -93,12 +117,16 @@ class LayerTogglesWidget extends StatelessWidget {
     required this.onChanged,
     this.isArabic = false,
     this.compact = false,
+    this.kinds,
   });
 
   final MapLayers layers;
   final ValueChanged<MapLayers> onChanged;
   final bool isArabic;
   final bool compact;
+
+  /// Which layers to show — hosts omit kinds their map cannot render.
+  final List<MapLayerKind>? kinds;
 
   static const List<MapLayerKind> _kinds = MapLayerKind.values;
 
@@ -112,6 +140,10 @@ class LayerTogglesWidget extends StatelessWidget {
         return Icons.waves_rounded;
       case MapLayerKind.myLocation:
         return Icons.my_location_rounded;
+      case MapLayerKind.windFlow:
+        return Icons.air;
+      case MapLayerKind.currentFlow:
+        return Icons.water_rounded;
     }
   }
 
@@ -125,6 +157,10 @@ class LayerTogglesWidget extends StatelessWidget {
         return isArabic ? 'خطوط العمق' : 'Depth contours';
       case MapLayerKind.myLocation:
         return isArabic ? 'موقعي' : 'My location';
+      case MapLayerKind.windFlow:
+        return isArabic ? 'الرياح' : 'Wind flow';
+      case MapLayerKind.currentFlow:
+        return isArabic ? 'التيارات' : 'Current flow';
     }
   }
 
@@ -148,7 +184,7 @@ class LayerTogglesWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          for (final kind in _kinds)
+          for (final kind in (kinds ?? _kinds))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: _Toggle(

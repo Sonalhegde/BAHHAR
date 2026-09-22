@@ -293,16 +293,24 @@ Cached 3 h (`WF_TTL_SECONDS`), matching the models' own refresh cadence; one fie
 upstream failure ships with a `note`, total failure is 502. Technique credit: `cambecc/earth`
 (MIT) / Esri `wind-js` (Apache 2.0) — the *algorithm*, never the live nullschool site.
 
-**Phase-2 ticket (Flutter native port, deliberately not in this pass):** render the same grid
-inside `fishing_map_screen` as a `CustomPainter` in a `Stack` above `MapLibreMap`, converting
-each particle's lat/lon through `MapLibreMapController.toScreenLocation` every frame so streaks
-stay anchored while panning/zooming; port the bilinear-interpolation + age/fade cycle to Dart
-(`flutter` canvas handles the trail via an `ImageFiltered`/opacity-clear, no JS reuse possible
-since `maplibre_gl` is the native SDK, not a WebView). Canvas-based, **not** WebGL — the
-`mapbox/webgl-wind` approach has a known broken rendering bug on Android/iOS browsers and this
-audience is mobile-first. Cap particles ≈600, gate behind the existing layer-toggle pattern and
-`reduceMotion`, and performance-test on real mid-range Android hardware, not an emulator. Ships
-as its own phase after the website layer is validated in production.
+**Phase 2 — Flutter native port (SHIPPED):** the same grid renders inside `fishing_map_screen`
+via `FlowOverlay` (`lib/features/map/presentation/widgets/flow_overlay_widget.dart`), a
+`CustomPainter` in the `Stack` above `MapLibreMap`. Particles live in *geo* space and are
+re-projected analytically every frame from a two-point Web-Mercator viewport snapshot
+(`getVisibleRegion` + two `toScreenLocation` corner calls, refreshed ≤ every 80 ms and only while
+the layer runs) — thousands of per-frame channel round-trips through
+`MapLibreMapController.toScreenLocation` would swamp the platform channel; arithmetic on two
+anchors does not. The linear projection only holds upright, so tilt/bearing from `onCameraMove`
+pause the layer. Bilinear sampling with land-null renormalisation, the age/fade envelope and the
+website's exact speed→colour ramps are ported to Dart (`maplibre_gl` is the native SDK, not a
+WebView — no JS reuse). Canvas-based, **not** WebGL: the `mapbox/webgl-wind` approach has a known
+rendering bug on Android/iOS browsers and this audience is mobile-first. 380 particles by
+cap (≈600 ceiling in the ticket), gated behind the chart layer toggles (`windFlow`/`currentFlow`
+in `LayerTogglesWidget`, wind on by default) and `MediaQuery.disableAnimations`, which swaps the
+streaks for one static speed-coloured arrow per water cell. The fetch path is
+`FlowFieldService` → `/api/v1/wind-field?fields=wind,current` with an offline last-known replay
+like `MarineService`. **Remaining:** performance-test on real mid-range Android hardware, not an
+emulator — tracked below until done.
 
 ---
 
@@ -403,8 +411,8 @@ September 2024. The email form previously validated the fields and then apologis
 Firebase Auth now.
 
 **Deferred functional gaps (by design / high effort):**
-- **Flutter native wind/current particle overlay** — the website layer (§6.7) ships first; the
-  `CustomPainter` port is specified as its own phase-2 ticket in §6.7.
+- **Flutter native particle overlay on-device performance test** — the overlay itself shipped
+  (§6.7 phase 2); the mid-range-Android hardware perf gate is still open until a device exists.
 - Phase-5 Copernicus Marine integration (chlorophyll/SST fronts) — account not yet provisioned.
   No placeholder field implies it is live.
 - `/api/v1/trip/optimize` is **rule-based**, not the trained model the original
@@ -442,8 +450,11 @@ configured, and say plainly that no severe-weather alert feed exists for Omani w
 implying an all-clear. Where the app now shows something the page under-described — the five-day
 outlook in the Weather card — the page was brought in line with the code, not the reverse.
 
-The Marine Charts pillar embeds `website/map-mockup.html`, which now carries the wind/current
-particle-flow layer (§6.7): a canvas of advected streaks over the Leaflet chart, switchable
+The Marine Charts pillar embeds `website/map-mockup.html`, which carries the wind/current
+particle-flow layer (§6.7) as ES modules — `assets/js/flow-field.js` (fetch + bilinear grid),
+`assets/js/flow-render.js` (advection, glow/core strokes, speed-tint texture, reduced-motion
+static arrows) and `assets/js/map-page.js` (page wiring) — the HTML holding markup and styles
+only. A canvas of advected streaks over the Leaflet chart, switchable
 Wind / Current / Off independently of the spots and protected-area layers, with a sidebar that
 reads wind kt + FROM compass and current kt + SETS TO under the cursor, and an honest provenance
 line that says *"Illustrative sample"* whenever the live grid is unreachable.

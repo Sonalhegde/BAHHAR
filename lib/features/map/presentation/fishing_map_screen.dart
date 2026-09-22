@@ -1,14 +1,22 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
+import '../../../core/providers/flow_provider.dart';
+import '../../../core/services/geofence_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/glass_tokens.dart';
 import '../../../core/providers/hotspots_provider.dart';
+import '../../../core/models/flow_field.dart';
 import '../../../core/models/hotspot_model.dart';
 import '../../../shared/glass/glass_container.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
+import 'widgets/flow_overlay_widget.dart';
+import 'widgets/layer_toggles_widget.dart';
+import 'widgets/species_filter_chips.dart';
 
 /// MapLibre fishing chart rendering keyless OpenFreeMap "positron" tiles
 /// (Master Build Prompt v3 §2/§3.5 — no Google Maps SDK, no API key).
@@ -39,6 +47,22 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   bool _styleLoaded = false;
   HotspotModel? _selectedHotspot;
 
+  /// Chart overlay layers, driven by the floating [LayerTogglesWidget].
+  /// Wind streaks are on by default — the layer is the chart's headline
+  /// feature; depth contours are omitted because no contour source exists.
+  MapLayers _layers = const MapLayers(flow: FlowMode.wind);
+  static const List<MapLayerKind> _screenKinds = [
+    MapLayerKind.windFlow,
+    MapLayerKind.currentFlow,
+    MapLayerKind.hotspots,
+    MapLayerKind.protectedAreas,
+    MapLayerKind.myLocation,
+  ];
+
+  /// Tilt/rotation breaks the overlay's linear geo→screen projection, so the
+  /// flow layer hides itself until the camera is upright again.
+  bool _cameraUpright = true;
+
   /// Latest filtered hotspots; (re)drawn as circles once the style is ready.
   List<HotspotModel> _current = const [];
   String _lastDrawnSignature = '';
@@ -53,6 +77,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   void _onStyleLoaded() {
     _styleLoaded = true;
     _redrawCircles();
+    _redrawReserves();
   }
 
   void _onCircleTapped(Circle circle) {
@@ -67,16 +92,18 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     final controller = _controller;
     if (controller == null || !_styleLoaded) return;
 
-    final signature = _current.map((h) => h.id).join('|');
+    final visible = _layers.hotspots ? _current : const <HotspotModel>[];
+    final signature =
+        '${_layers.hotspots ? 'h' : '-'}:${visible.map((h) => h.id).join('|')}';
     if (signature == _lastDrawnSignature) return;
     _lastDrawnSignature = signature;
 
     await controller.clearCircles();
     _byGeoKey.clear();
-    if (_current.isEmpty) return;
+    if (visible.isEmpty) return;
 
     final options = <CircleOptions>[];
-    for (final h in _current) {
+    for (final h in visible) {
       final color = h.legalStatus != LegalStatus.permitted
           ? AppColors.legalRestricted
           : AppColors.getProbabilityColor(h.probability);
@@ -100,6 +127,58 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     return '#$r$g$b';
   }
 
+  /// Protected zones from the same static geofence catalogue the safety
+  /// checklist uses, drawn as translucent reserve discs (circle geometry is
+  /// pixel-radius in this plugin, so a 48-gon in geo space stands in).
+  Future<void> _redrawReserves() async {
+    final controller = _controller;
+    if (controller == null || !_styleLoaded) return;
+    await controller.clearFills();
+    if (!_layers.protectedAreas) return;
+    for (final area in GeofenceService.omaniReserves) {
+      final ring = <LatLng>[];
+      final dLat = area.radiusKm / 111.32;
+      final dLon =
+          area.radiusKm / (111.32 * math.cos(area.centerLat * math.pi / 180));
+      for (var i = 0; i <= 48; i++) {
+        final a = 2 * math.pi * i / 48;
+        ring.add(LatLng(
+          area.centerLat + dLat * math.sin(a),
+          area.centerLon + dLon * math.cos(a),
+        ));
+      }
+      await controller.addFill(
+        FillOptions(
+          geometry: [ring],
+          fillColor: _hex(AppColors.legalRestricted),
+          fillOpacity: 0.10,
+          fillOutlineColor: _hex(AppColors.legalRestricted),
+        ),
+      );
+    }
+  }
+
+  void _onLayersChanged(MapLayers next) {
+    final flowWasOff = _layers.flow == FlowMode.off;
+    setState(() => _layers = next);
+    _scheduleRedraw();
+    _redrawReserves();
+    if (next.flow != FlowMode.off && flowWasOff) {
+      final field = ref.read(flowFieldProvider).asData?.value;
+      if (field == null || field.isStale()) ref.invalidate(flowFieldProvider);
+    }
+    final controller = _controller;
+    if (controller != null && _styleLoaded) {
+      try {
+        controller.updateMyLocationTrackingMode(next.myLocation
+            ? MyLocationTrackingMode.tracking
+            : MyLocationTrackingMode.none);
+      } catch (_) {
+        // Platform without tracking-mode support: the initial flag stands.
+      }
+    }
+  }
+
   void _scheduleRedraw() {
     WidgetsBinding.instance.addPostFrameCallback((_) => _redrawCircles());
   }
@@ -114,7 +193,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   Widget build(BuildContext context) {
     final hotspotsAsync = ref.watch(filteredHotspotsProvider);
     final selectedSpecies = ref.watch(selectedSpeciesFilterProvider);
-    final availableSpeciesAsync = ref.watch(availableSpeciesProvider);
+    final flowField = ref.watch(flowFieldProvider).asData?.value;
 
     return Scaffold(
       backgroundColor: AppColors.mapWater,
@@ -164,46 +243,46 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                     _controller = controller;
                     controller.onCircleTapped.add(_onCircleTapped);
                   },
+                  onCameraMove: (position) {
+                    final upright = position.tilt.abs() < 0.5 &&
+                        position.bearing.abs() < 0.5;
+                    if (upright != _cameraUpright) {
+                      setState(() => _cameraUpright = upright);
+                    }
+                  },
                   onMapClick: (point, coordinates) => _clearSelection(),
                 ),
               ),
 
-              // Floating Filter Controls (wired to the filter providers)
+              // Nullschool-style wind/current streaks above the tiles.
+              Positioned.fill(
+                child: FlowOverlay(
+                  key: const Key('flow_overlay'),
+                  field: flowField,
+                  mode: _layers.flow,
+                  viewport: () => maplibreViewport(_controller,
+                      upright: () => _cameraUpright),
+                ),
+              ),
+
+              // Floating chart layer toggles (flow, hotspots, reserves, GPS).
               Positioned(
+                right: 12,
+                top: 120,
+                child: LayerTogglesWidget(
+                  layers: _layers,
+                  kinds: _screenKinds,
+                  compact: true,
+                  onChanged: _onLayersChanged,
+                ),
+              ),
+
+              // Floating Filter Controls (wired to the filter providers)
+              const Positioned(
                 top: 50,
                 left: 16,
-                right: 16,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: availableSpeciesAsync.maybeWhen(
-                    data: (species) => Row(
-                      children: [
-                        _FilterChip(
-                          label: 'All Spots',
-                          isSelected: selectedSpecies == null,
-                          onTap: () => ref
-                              .read(selectedSpeciesFilterProvider.notifier)
-                              .state = null,
-                        ),
-                        const SizedBox(width: 8),
-                        ...species.map((s) {
-                          final isOn = selectedSpecies == s;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _FilterChip(
-                              label: s,
-                              isSelected: isOn,
-                              onTap: () => ref
-                                  .read(selectedSpeciesFilterProvider.notifier)
-                                  .state = isOn ? null : s,
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                    orElse: () => const SizedBox(),
-                  ),
-                ),
+                right: 68,
+                child: MapSpeciesFilterChips(),
               ),
 
               // Result count hint
@@ -223,6 +302,20 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                   ),
                 ),
               ),
+
+              // Flow speed key + provenance, under the layer toggles.
+              if (_layers.flow != FlowMode.off)
+                Positioned(
+                  right: 12,
+                  top: 330,
+                  child: GlassContainer(
+                    level: GlassLevel.standard,
+                    borderRadius: GlassTokens.radiusMedium,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 8),
+                    child: _FlowLegend(mode: _layers.flow, field: flowField),
+                  ),
+                ),
 
               // Floating Selected Hotspot Inspector Card
               if (_selectedHotspot != null)
@@ -327,44 +420,65 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+/// Speed→colour key for the active flow layer, plus the honest provenance
+/// line (live Open-Meteo grid vs. the offline replay) — the app twin of the
+/// website sidebar's scale + note, kept tiny for a phone chart.
+class _FlowLegend extends StatelessWidget {
+  const _FlowLegend({required this.mode, required this.field});
 
-  const _FilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
+  final FlowMode mode;
+  final FlowField? field;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.oceanNavy
-              : Colors.white.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(GlassTokens.radiusPill),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.cyanAccent
-                : const Color(0xFFD6E6F7),
-            width: 1.2,
+    final stops = FlowColors.stopsFor(
+        mode == FlowMode.current ? FlowMode.current : FlowMode.wind);
+    final colors = stops
+        .map((s) => FlowColors.forKt(
+            mode == FlowMode.current ? FlowMode.current : FlowMode.wind,
+            s[0].toDouble()))
+        .toList();
+    final hi = mode == FlowMode.current ? '4 kt' : '30+ kt';
+    final source = field == null
+        ? 'loading flow…'
+        : 'Open-Meteo · ${field!.cached ? 'cached' : 'live'} · '
+            '${field!.generatedAt.toLocal().formatHm()}';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 132,
+          height: 7,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.white70, width: 1),
           ),
         ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        const SizedBox(height: 3),
+        Padding(
+          padding: const EdgeInsets.only(right: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('calm',
+                  style: AppTextStyles.caption.copyWith(fontSize: 9)),
+              const SizedBox(width: 5),
+              Text(hi,
+                  style: AppTextStyles.caption.copyWith(fontSize: 9)),
+            ],
           ),
         ),
-      ),
+        Text(source,
+            style: AppTextStyles.caption
+                .copyWith(fontSize: 9, color: AppColors.textSecondary)),
+      ],
     );
   }
+}
+
+extension on DateTime {
+  String formatHm() => '${hour.toString().padLeft(2, '0')}:'
+      '${minute.toString().padLeft(2, '0')}';
 }

@@ -34,9 +34,44 @@ through a bilinearly interpolated U/V grid) is reused, from `cambecc/earth` (MIT
 - CORS middleware on the backend (env-configurable `BAHHAR_CORS_ORIGINS`) so browser clients
   can reach the API; every endpoint is a read-only public-data proxy, no cookies or tokens.
 
-**Deferred by design:** the Flutter native port (`CustomPainter` over `MapLibreMap`,
-`toScreenLocation` per frame, no WebGL) is written up as its own phase-2 ticket in
-SPECIFICATION.md §6.7 — different engineering problem, to be tackled after this ships.
+**Deferred by design (at the time):** the Flutter native port (`CustomPainter` over `MapLibreMap`,
+no WebGL) was written up as its own phase-2 ticket in SPECIFICATION.md §6.7 — it shipped in the
+app phase below.
+
+### Wind & current particle overlay — Flutter app phase (2026-09-21)
+
+SPECIFICATION.md §6.7 phase 2, port of the website layer. Technique credit as above
+(`cambecc/earth` MIT / Esri `wind-js` Apache 2.0) — in the widget's doc comment.
+
+**Added**
+- `FlowOverlay` (`lib/features/map/presentation/widgets/flow_overlay_widget.dart`): animated
+  wind/current streaks painted above the MapLibre chart. Particles advect in geo space and are
+  re-projected analytically each frame from a two-point Web-Mercator viewport snapshot
+  (`getVisibleRegion` + two `toScreenLocation` calls, refreshed ≤ 80 ms) instead of thousands of
+  per-frame platform-channel round-trips; tilt/bearing pauses the layer (the linear projection
+  holds upright only). Same bilinear land-null-renormalised sampling, life-envelope fading and
+  speed→colour ramps as the website, so both surfaces speak one visual language. 380 particles,
+  `MediaQuery.disableAnimations` → static per-cell arrows. Canvas 2D, deliberately not WebGL.
+- `FlowField`/`FlowGrid` model, `FlowFieldService` (GET `/api/v1/wind-field?fields=wind,current`,
+  offline last-known replay like `MarineService`) and a Riverpod `flowFieldProvider` that the
+  map invalidates when the layer is switched back on after the grid went stale.
+- Fishing Map integration: the previously orphaned `LayerTogglesWidget` is now the screen's chart
+  layer panel — wind/current flow (mutually exclusive), hotspot circles, protected areas (real
+  `GeofenceService.omaniReserves` drawn as translucent geo-polygon discs) and GPS tracking — and
+  the inline species chips were swapped for the shared `MapSpeciesFilterChips`. A glass legend
+  shows the colour scale and honest provenance (live/cached + time).
+- Tests: `test/unit/flow_field_test.dart` (grid contract, bilinear, land vs calm, freshness) and
+  `test/features/map/flow_overlay_test.dart` (projection math, seed/tick lifecycle, off and
+  missing-data silence, rotated-camera abstention, reduced-motion fallback, ramp continuity).
+
+### Marine Charts page — JavaScript module split + visual pass (2026-09-21)
+
+`website/map-mockup.html` no longer carries inline application JavaScript: it is markup + CSS
+with the flow layer as ES modules under `website/assets/js/` (`flow-field.js` data/grid,
+`flow-render.js` renderer, `map-page.js` page wiring). Visual pass on the particle layer —
+continuous (non-banded) speed→colour ramps, glow + core two-pass strokes, particle life-envelope
+fading, a blurred per-cell speed-tint texture under the streaks — plus glass-panel, marker-pulse
+and segmented-control polish; `prefers-reduced-motion` keeps static arrows.
 
 
 ### Firebase connection + card-free storage & auth (2026-09-21)
