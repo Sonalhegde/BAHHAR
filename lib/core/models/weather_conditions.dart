@@ -20,14 +20,14 @@ class WeatherHour {
   });
 
   factory WeatherHour.fromJson(Map<String, dynamic> json) {
-    double? num(Object? v) => v is num ? v.toDouble() : null;
+    double? asNum(Object? v) => v is num ? v.toDouble() : null;
     return WeatherHour(
       time: (json['time'] as String?) ?? '',
       tempC: json['temp_c'] is num
           ? (json['temp_c'] as num).toDouble()
           : 0,
       condition: (json['condition'] as String?) ?? '',
-      rainProbabilityPct: num(json['rain_probability_pct']),
+      rainProbabilityPct: asNum(json['rain_probability_pct']),
     );
   }
 
@@ -195,13 +195,13 @@ class WeatherConditions {
       );
 
   factory WeatherConditions.fromJson(Map<String, dynamic> json) {
-    double num(Object? v, [double fallback = 0]) {
+    double asNum(Object? v, [double fallback = 0]) {
       if (v is num) return v.toDouble();
       if (v is String) return double.tryParse(v) ?? fallback;
       return fallback;
     }
 
-    double? opt(Object? v) => v == null ? null : num(v);
+    double? opt(Object? v) => v == null ? null : asNum(v);
 
     final current = (json['current'] as Map?)?.cast<String, dynamic>() ?? {};
     final hourly = (json['hourly'] as List? ?? const [])
@@ -218,14 +218,14 @@ class WeatherConditions {
         .toList();
 
     return WeatherConditions(
-      tempC: num(current['temp_c']),
-      feelsLikeC: num(current['feels_like_c']),
+      tempC: asNum(current['temp_c']),
+      feelsLikeC: asNum(current['feels_like_c']),
       condition: (current['condition'] as String?) ?? '',
-      humidityPct: num(current['humidity_pct']),
-      windKmh: num(current['wind_kmh']),
+      humidityPct: asNum(current['humidity_pct']),
+      windKmh: asNum(current['wind_kmh']),
       windDir: current['wind_dir'] as String?,
       rainProbabilityPct: opt(current['rain_probability_pct']),
-      uvIndex: num(current['uv_index']),
+      uvIndex: asNum(current['uv_index']),
       visibilityKm: opt(current['visibility_km']),
       hourly: hourly,
       daily: daily,

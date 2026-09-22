@@ -58,7 +58,7 @@ Future<void> bahharOnBackgroundMessage(RemoteMessage message) async {
 /// Every entry point is inert when Firebase is not configured, so the demo build
 /// and `flutter test` never touch a plugin that has no platform backing.
 class NotificationService {
-  static const StreamController<BahharPush> _controller =
+  static final StreamController<BahharPush> _controller =
       StreamController<BahharPush>.broadcast();
 
   static Stream<BahharPush> get messages => _controller.stream;
@@ -70,7 +70,7 @@ class NotificationService {
   static String? _token;
 
   static bool _started = false;
-  static final List<StreamSubscription<RemoteMessage>> _subs = [];
+  static final List<StreamSubscription<dynamic>> _subs = [];
 
   /// Registers the handlers. Safe to call more than once and safe to call when
   /// Firebase is absent — it simply does nothing in that case.

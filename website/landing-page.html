@@ -362,18 +362,19 @@
             content: ''; position: absolute; inset: 0; z-index: -1;
             background: linear-gradient(180deg, rgba(var(--scrim),0.80), rgba(var(--scrim),0.66));
         }
-        .stats-band { --band-img: url('assets/images/khore-dhawas.webp'); }
+        .stats-band { --band-img: url('assets/images/khore-dhawas.webp'); padding-bottom: 158px; }
         /* The stats band is the one photograph that is sandwiched - the hero's own water above it,
-           a flat section below - and it used to end on two cut edges. One gradient now does the
-           work: dark enough at the top to meet the hero's bottom wash without a step, open across
-           the numbers where the photograph is the point, and dissolving into the next section's
-           colour before the credit line, which is why the credit is dark rather than white. */
+           a flat section below - and it used to end on two cut edges. One gradient does the work:
+           dark enough at the top to meet the hero's bottom wash without a step, open across the
+           numbers where the photograph is the point, and dissolving into the next section's colour
+           only at the very bottom. The credit line that used to sit in that lower third is gone,
+           which is why the band now runs 158px past the numbers instead of ending under them: the
+           space is photograph, and the fade has somewhere to happen. */
         .stats-band::after {
             background: linear-gradient(180deg,
-                rgba(9,22,34,0.94) 0%, rgba(9,22,34,0.58) 30%, rgba(9,22,34,0.64) 56%,
-                rgba(9,22,34,0.88) 74%, var(--bg-secondary) 88%);
+                rgba(9,22,34,0.94) 0%, rgba(9,22,34,0.58) 26%, rgba(9,22,34,0.62) 48%,
+                rgba(9,22,34,0.80) 68%, rgba(9,22,34,0.92) 83%, var(--bg-secondary) 99%);
         }
-        .stats-band .photo-note { padding: 30px 0 46px; color: var(--body); }
         .photo-note { margin-top: 34px; text-align: center; font-size: 12.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.72); }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
         .stat { text-align: center; padding: 26px 14px; border-radius: 16px; transition: transform 0.4s var(--ease); }
@@ -896,7 +897,6 @@
                 <div class="stat reveal"><div class="stat-num" data-count="24" data-suffix="/7">24/7</div><div class="stat-label">Real-time conditions</div></div>
                 <div class="stat reveal"><div class="stat-num" data-count="100" data-suffix="%">100%</div><div class="stat-label">Omani waters coverage</div></div>
             </div>
-            <p class="photo-note">Photograph: traditional boats over the shallows of Khore Dhawas, Muscat</p>
         </div>
     </section>
 
@@ -1182,6 +1182,73 @@
                 </div>
             </div>
 
+            <!-- Pillar 4b: Trip Optimiser. This is the app's result screen, not the wizard above
+                 it: POST /api/v1/trip/optimize returns recommended / alternatives / rejected, and
+                 every figure on this card is what that response carries. The scores are computed
+                 from the weights in backend/main.py (species_match 18, depth_affinity 10, distance
+                 penalty 12 x radius fraction, band penalty + 20 for an open boat under 7 m), the
+                 fuel line is round-trip x litres/nmi x 1.25 reserve at 0.239 OMR/L, and the spot
+                 names are the real seeded hotspots. It is rule-based: the copy says so rather than
+                 calling it a model, because it is not one. -->
+            <div class="pillar reveal" id="pillar-optimizer">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Trip Optimiser</div>
+                    <h3>One ranking, with the arithmetic left visible</h3>
+                    <p>Set your departure, cruising radius, fuel budget and target species. BAHHAR scores every candidate spot against the live water and hands back the winner, the runners-up, and the ones it threw out — each with the reason attached, because a number you cannot argue with is a number you cannot use.</p>
+                    <ul>
+                        <li>Recommended spot with its crossing time, fuel and cost</li>
+                        <li>Alternatives ranked on the same rules, not a second opinion</li>
+                        <li>Rejected spots named with their blocker: over the radius, over the budget</li>
+                        <li>Rule-based — the weights come back in the response, so you can disagree</li>
+                    </ul>
+                    <a class="text-link" href="#access">See how a trip is ranked <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="device">
+                        <div class="device-frame">
+                            <div class="device-island"></div>
+                            <div class="device-screen">
+                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trip optimiser ranking the candidate spots with their reasons and blockers">
+                                    <defs><linearGradient id="screenBgE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
+                                    <rect width="300" height="620" fill="url(#screenBgE)"/>
+                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="17" font-weight="700" fill="#ffffff">Trip Optimiser</text>
+                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">From Al Bustan • 20 nmi • 40 OMR • Kingfish</text>
+                                    <text x="20" y="118" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">RECOMMENDED</text>
+                                    <rect x="20" y="128" width="260" height="124" rx="12" fill="#fff"/>
+                                    <circle cx="48" cy="156" r="17" fill="#0f7a7a"/><text x="48" y="161" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">64</text>
+                                    <text x="76" y="152" font-family="Public Sans" font-size="14" font-weight="700" fill="#12263a">Daymaniyat Drop-Off</text>
+                                    <text x="76" y="170" font-family="Public Sans" font-size="10" fill="#7a8794">38 m • 15.2 nmi • 51 min • 12.7 OMR</text>
+                                    <g font-family="Public Sans" font-size="9" font-weight="700">
+                                        <rect x="36" y="186" width="112" height="18" rx="9" fill="rgba(15,122,122,0.12)"/><text x="92" y="198" text-anchor="middle" fill="#0f7a7a">+18 species match</text>
+                                        <rect x="156" y="186" width="76" height="18" rx="9" fill="rgba(15,122,122,0.12)"/><text x="194" y="198" text-anchor="middle" fill="#0f7a7a">+10 depth</text>
+                                        <rect x="36" y="210" width="104" height="18" rx="9" fill="rgba(216,185,140,0.22)"/><text x="88" y="222" text-anchor="middle" fill="#8a6a35">−9 long crossing</text>
+                                        <rect x="148" y="210" width="116" height="18" rx="9" fill="rgba(216,185,140,0.22)"/><text x="206" y="222" text-anchor="middle" fill="#8a6a35">−28 sea, open boat</text>
+                                    </g>
+                                    <text x="36" y="242" font-family="Public Sans" font-size="9.5" fill="#7a8794">Bite probability 73 • moderate sea at the departure</text>
+                                    <text x="20" y="282" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">ALTERNATIVES</text>
+                                    <g font-family="Public Sans">
+                                        <rect x="20" y="292" width="260" height="54" rx="12" fill="#fff"/>
+                                        <circle cx="44" cy="319" r="14" fill="#1f4d6b"/><text x="44" y="323" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">58</text>
+                                        <text x="68" y="313" font-size="13" font-weight="600" fill="#12263a">Fahal Island</text>
+                                        <text x="68" y="330" font-size="10" fill="#7a8794">24 m • 4.6 nmi • 15 min • 3.9 OMR</text>
+                                        <rect x="20" y="352" width="260" height="54" rx="12" fill="#fff"/>
+                                        <circle cx="44" cy="379" r="14" fill="#1f4d6b"/><text x="44" y="383" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">51</text>
+                                        <text x="68" y="373" font-size="13" font-weight="600" fill="#12263a">Bandar Khayran Coves</text>
+                                        <text x="68" y="390" font-size="10" fill="#7a8794">12 m • 11.3 nmi • 38 min • 9.4 OMR</text>
+                                    </g>
+                                    <text x="20" y="430" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">REJECTED</text>
+                                    <rect x="20" y="440" width="260" height="62" rx="12" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.18)"/>
+                                    <text x="36" y="463" font-family="Public Sans" font-size="13" fill="#cfe0ec">Masirah Island Channel</text>
+                                    <rect x="36" y="472" width="152" height="18" rx="9" fill="rgba(226,124,96,0.20)"/><text x="112" y="484" text-anchor="middle" font-family="Public Sans" font-size="9" font-weight="700" fill="#ffb4a0">outside your 20 nmi radius</text>
+                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Sail this plan →</text>
+                                </svg>
+                            </div>
+                            <div class="device-glare"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Synthesis banner (brief §5): the payoff the client asked for, printed as a rule
                  rather than a mystery number. It mirrors backend/main.py::_day_rating:
                    1. start from today's ocean band - the worst single reading among
@@ -1200,7 +1267,7 @@
             </div>
 
             <!-- Pillar 5: Marine Charts (real embedded Leaflet/OpenStreetMap chart) -->
-            <div class="pillar reveal" id="pillar-charts">
+            <div class="pillar flip reveal" id="pillar-charts">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Marine Charts</div>
                     <h3>Nautical charts that read like the sea does</h3>
@@ -1222,7 +1289,7 @@
             <!-- Pillar 7: Safety, Crew & Vessels (mirrors safety_center / crew / vessels screens).
                  The vessel line it displays - seats, name, length - is read from the same
                  fisherman_profiles/{userId} record as the pillar above, not a second copy. -->
-            <div class="pillar flip reveal" id="pillar-safety">
+            <div class="pillar reveal" id="pillar-safety">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Safety, Crew &amp; Vessels</div>
                     <h3>A pre-departure routine that fits on one screen</h3>
@@ -1276,7 +1343,7 @@
             </div>
 
             <!-- Pillar 6: Catch Log -->
-            <div class="pillar reveal" id="pillar-catch">
+            <div class="pillar flip reveal" id="pillar-catch">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Digital Catch Log</div>
                     <h3>Every fish, geo-tagged and remembered</h3>
@@ -1327,7 +1394,7 @@
 
             <!-- Pillar 8: Licences & Documents (mirrors documents_wallet_screen + licences_screen).
                  The registration number on the card is the profile's boat.registrationNumber. -->
-            <div class="pillar flip reveal" id="pillar-docs">
+            <div class="pillar reveal" id="pillar-docs">
                 <div class="pillar-body">
                     <div class="pillar-eyebrow">Licences &amp; Documents</div>
                     <h3>Every permit, in the same pocket as your rod</h3>
@@ -1376,6 +1443,128 @@
                                         <rect x="80" y="446" width="74" height="16" rx="8" fill="rgba(15,122,122,0.12)"/><text x="117" y="458" text-anchor="middle" font-size="10" font-weight="700" fill="#0f7a7a">Available</text>
                                     </g>
                                     <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">＋ Add document</text>
+                                </svg>
+                            </div>
+                            <div class="device-glare"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pillar 9: Advisories & Alerts (mirrors notifications_screen.dart).
+                 The three advisories on this screen are the app's own seed list, word for word
+                 from lib/core/providers/notifications_provider.dart - abbreviated to fit the card,
+                 never rewritten into something the app would not show. Region topics are real:
+                 NotificationService.subscribeRegion() subscribes to `region-<governorate>`, and
+                 the whole service sits behind FirebaseService.isConfigured, so the copy says
+                 delivery depends on a registered device instead of implying an all-clear. -->
+            <div class="pillar flip reveal" id="pillar-alerts">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Advisories &amp; Alerts</div>
+                    <h3>The warning that reaches you before the water does</h3>
+                    <p>BAHHAR pushes the readings that change a decision: a sea state stepping up on the coast you are fishing, a decree that closes a reef for the season, a permit two weeks from expiry. You follow regions rather than receive everything, and an unregistered device is treated as no delivery — never as an all-clear.</p>
+                    <ul>
+                        <li>Sea-state advisories for the governorates you subscribe to</li>
+                        <li>Regulatory and permit-expiry notices, not just weather</li>
+                        <li>Severity decides the card: a warning never looks like a tip</li>
+                        <li>Delivered through Firebase Cloud Messaging, on the device you sign in with</li>
+                    </ul>
+                    <a class="text-link" href="#access">Explore the alert centre <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="device">
+                        <div class="device-frame">
+                            <div class="device-island"></div>
+                            <div class="device-screen">
+                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Marine advisories and alerts list with severity and subscribed regions">
+                                    <defs><linearGradient id="screenBgF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
+                                    <rect width="300" height="620" fill="url(#screenBgF)"/>
+                                    <text x="20" y="62" font-family="Plus Jakarta Sans" font-size="16" font-weight="700" fill="#ffffff">Advisories &amp; Alerts</text>
+                                    <text x="20" y="82" font-family="Public Sans" font-size="11" fill="#a9c4d6">3 new • 2 regions followed</text>
+                                    <g font-family="Public Sans">
+                                        <rect x="20" y="104" width="260" height="100" rx="12" fill="rgba(226,124,96,0.14)" stroke="rgba(226,124,96,0.34)"/>
+                                        <rect x="36" y="122" width="30" height="30" rx="8" fill="rgba(226,124,96,0.22)"/><text x="51" y="143" text-anchor="middle" font-size="15" font-weight="700" fill="#ffb4a0">!</text>
+                                        <text x="78" y="136" font-size="12.5" font-weight="700" fill="#ffd8c9">High Swell &amp; Wave Advisory</text>
+                                        <text x="264" y="136" text-anchor="end" font-size="9.5" fill="#a9c4d6">42 min</text>
+                                        <text x="78" y="156" font-size="10" fill="#cfe0ec">2.1 m swell detected off Ras Al Hadd —</text>
+                                        <text x="78" y="171" font-size="10" fill="#cfe0ec">caution when navigating small skiffs.</text>
+                                        <rect x="78" y="180" width="58" height="15" rx="7" fill="rgba(226,124,96,0.18)"/><text x="107" y="191" text-anchor="middle" font-size="8.5" font-weight="700" fill="#ffb4a0">WARNING</text>
+
+                                        <rect x="20" y="216" width="260" height="100" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.16)"/>
+                                        <rect x="36" y="234" width="30" height="30" rx="8" fill="rgba(63,176,163,0.18)"/><text x="51" y="255" text-anchor="middle" font-size="14" font-weight="700" fill="#7fd8ce">i</text>
+                                        <text x="78" y="248" font-size="12.5" font-weight="700" fill="#ffffff">Kingfish Strike Window Open</text>
+                                        <text x="264" y="248" text-anchor="end" font-size="9.5" fill="#a9c4d6">2 h</text>
+                                        <text x="78" y="268" font-size="10" fill="#cfe0ec">Optimal morning tide and 27.2 °C water</text>
+                                        <text x="78" y="283" font-size="10" fill="#cfe0ec">at Fahal Island for the next 3 hours.</text>
+                                        <rect x="78" y="292" width="58" height="15" rx="7" fill="rgba(63,176,163,0.16)"/><text x="107" y="303" text-anchor="middle" font-size="8.5" font-weight="700" fill="#7fd8ce">INFO</text>
+
+                                        <rect x="20" y="328" width="260" height="100" rx="12" fill="rgba(214,86,86,0.16)" stroke="rgba(214,86,86,0.36)"/>
+                                        <rect x="36" y="346" width="30" height="30" rx="8" fill="rgba(214,86,86,0.22)"/><text x="51" y="367" text-anchor="middle" font-size="14" font-weight="700" fill="#ffb0b0">§</text>
+                                        <text x="78" y="360" font-size="12.5" font-weight="700" fill="#ffd6d6">Marine Conservation Decree</text>
+                                        <text x="264" y="360" text-anchor="end" font-size="9.5" fill="#a9c4d6">1 d</text>
+                                        <text x="78" y="380" font-size="10" fill="#cfe0ec">Seasonal restriction now active on the</text>
+                                        <text x="78" y="395" font-size="10" fill="#cfe0ec">Daymaniyat inner reefs — permit required.</text>
+                                    </g>
+                                    <text x="20" y="456" font-family="Public Sans" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">REGIONS YOU FOLLOW</text>
+                                    <g font-family="Public Sans" font-size="11" font-weight="600">
+                                        <rect x="20" y="466" width="84" height="30" rx="15" fill="rgba(63,176,163,0.16)"/><text x="62" y="486" text-anchor="middle" fill="#7fd8ce">Muscat ✓</text>
+                                        <rect x="112" y="466" width="124" height="30" rx="15" fill="rgba(63,176,163,0.16)"/><text x="174" y="486" text-anchor="middle" fill="#7fd8ce">Ash Sharqiyah ✓</text>
+                                        <rect x="244" y="466" width="36" height="30" rx="15" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.20)"/><text x="262" y="486" text-anchor="middle" fill="#a9c4d6">＋</text>
+                                    </g>
+                                    <rect x="20" y="530" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="559" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Open all advisories →</text>
+                                </svg>
+                            </div>
+                            <div class="device-glare"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pillar 10: Account. Mirrors login_register_screen.dart as it now stands: email and
+                 password, Google and Apple - phone/OTP was taken off the screen because Firebase
+                 Phone auth has required the Blaze billing plan since September 2024 and this project
+                 carries no card. The queued-catch line is the guest mode in catches_provider.dart,
+                 which holds catches logged before an account exists and flushes them on sign-in. -->
+            <div class="pillar reveal" id="pillar-account">
+                <div class="pillar-body">
+                    <div class="pillar-eyebrow">Your Account</div>
+                    <h3>Sign in the way you already have</h3>
+                    <p>Email and password, Google, or Sign in with Apple — no phone number and no per-message billing behind it. Open the app without an account and nothing is withheld: every catch you log stays on the device and moves to your record the moment you sign in.</p>
+                    <ul>
+                        <li>Email, Google or Apple — the three methods on the screen today</li>
+                        <li>Guest catches queue on the device and flush on sign-in</li>
+                        <li>Language, home port and units survive a restart</li>
+                        <li>Your log sits under your own uid; the rules deny every other account</li>
+                    </ul>
+                    <a class="text-link" href="#access">Start your log <span class="arrow">→</span></a>
+                </div>
+                <div class="pillar-media">
+                    <div class="device">
+                        <div class="device-frame">
+                            <div class="device-island"></div>
+                            <div class="device-screen">
+                                <svg viewBox="0 0 300 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sign-in screen offering email, Google and Apple, with a note about queued guest catches">
+                                    <defs><linearGradient id="screenBgG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#134a6e"/><stop offset="1" stop-color="#0b2740"/></linearGradient></defs>
+                                    <rect width="300" height="620" fill="url(#screenBgG)"/>
+                                    <text x="150" y="112" text-anchor="middle" font-family="Plus Jakarta Sans" font-size="26" font-weight="800" fill="#ffffff">BAHHAR</text>
+                                    <text x="150" y="136" text-anchor="middle" font-family="Public Sans" font-size="11" fill="#a9c4d6">Sign in to sync your catch log</text>
+                                    <g font-family="Public Sans">
+                                        <text x="20" y="176" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">EMAIL</text>
+                                        <rect x="20" y="184" width="260" height="46" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+                                        <text x="36" y="213" font-size="13" fill="#eaf2f8">sam@bahhar.app</text>
+                                        <text x="20" y="256" font-size="9" font-weight="700" fill="#7fd8ce" letter-spacing="1">PASSWORD</text>
+                                        <rect x="20" y="264" width="260" height="46" rx="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+                                        <text x="36" y="294" font-size="15" fill="#eaf2f8">••••••••••</text>
+                                    </g>
+                                    <rect x="20" y="326" width="260" height="46" rx="12" fill="#0f7a7a"/><text x="150" y="355" text-anchor="middle" font-family="Public Sans" font-size="14" font-weight="700" fill="#fff">Sign in</text>
+                                    <line x1="20" y1="396" x2="130" y2="396" stroke="rgba(255,255,255,0.18)"/><text x="150" y="400" text-anchor="middle" font-family="Public Sans" font-size="10" fill="#a9c4d6">or</text><line x1="170" y1="396" x2="280" y2="396" stroke="rgba(255,255,255,0.18)"/>
+                                    <g font-family="Public Sans" font-size="13" font-weight="600">
+                                        <rect x="20" y="416" width="260" height="46" rx="12" fill="#fff"/><circle cx="46" cy="439" r="10" fill="rgba(15,122,122,0.12)"/><text x="46" y="444" text-anchor="middle" font-size="13" font-weight="800" fill="#0f7a7a">G</text><text x="160" y="444" text-anchor="middle" fill="#12263a">Continue with Google</text>
+                                        <rect x="20" y="472" width="260" height="46" rx="12" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.20)"/><circle cx="46" cy="495" r="10" fill="rgba(255,255,255,0.14)"/><text x="46" y="500" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">A</text><text x="160" y="500" text-anchor="middle" fill="#eaf2f8">Continue with Apple</text>
+                                    </g>
+                                    <rect x="20" y="536" width="260" height="56" rx="12" fill="rgba(63,176,163,0.14)"/>
+                                    <text x="36" y="558" font-family="Public Sans" font-size="10.5" font-weight="700" fill="#7fd8ce">12 catches logged on this device</text>
+                                    <text x="36" y="576" font-family="Public Sans" font-size="10.5" fill="#cfe0ec">will move to your account when you sign in.</text>
                                 </svg>
                             </div>
                             <div class="device-glare"></div>
@@ -2020,6 +2209,30 @@
             ['#pillar-safety ul li:nth-child(3)', 'طول المركب وعدد المقاعد يُقرآن من ملفّك'],
             ['#pillar-safety ul li:nth-child(4)', 'أرقام خفر السواحل والطوارئ بنقرة واحدة'],
             ['#pillar-safety .text-link', 'استكشف مركز السلامة' + ARROW],
+            ['#pillar-optimizer .pillar-eyebrow', 'مُحسِّن الرحلات'],
+            ['#pillar-optimizer h3', 'ترتيبٌ واحد، والحسابُ مكشوف'],
+            ['#pillar-optimizer .pillar-body p', 'حدِّد نقطة الانطلاق ونصف قطر الإبحار وميزانية الوقود والصنف المستهدف، فيقيّم بحّار كلَّ موقعٍ مرشَّح مقابل الماء الحيّ ويعيد إليك الأفضل، ثم ما يليه، ثم ما استبعده — مع سبب كلِّ واحد، لأنَّ الرقم الذي لا تستطيع مجادلته لا يصلح أن تُبحر عليه.'],
+            ['#pillar-optimizer ul li:nth-child(1)', 'الموقع المُوصى به مع زمن العبور والوقود وتكلفته'],
+            ['#pillar-optimizer ul li:nth-child(2)', 'بدائل مرتَّبة على القواعد نفسها، لا على رأيٍ ثانٍ'],
+            ['#pillar-optimizer ul li:nth-child(3)', 'المواقع المستبعدة مسمَّاة بسببها: خارج نصف القطر، أو فوق الميزانية'],
+            ['#pillar-optimizer ul li:nth-child(4)', 'قواعدُ لا نموذج مُدرَّب — والأوزان تصلك مع الجواب لتجادلها'],
+            ['#pillar-optimizer .text-link', 'شاهد كيف تُرتَّب الرحلة' + ARROW],
+            ['#pillar-alerts .pillar-eyebrow', 'التنبيهات والتحذيرات'],
+            ['#pillar-alerts h3', 'التحذير الذي يصلك قبل أن يصلك الماء'],
+            ['#pillar-alerts .pillar-body p', 'يدفع بحّار بالقراءات التي تُغيِّر قراراً: حالة بحرٍ تشتدّ على الساحل الذي تصطاد فيه، ومرسومٍ يُغلق حاجزاً للموسم، وتصريحٍ على بُعد أسبوعين من الانتهاء. أنت تختار المناطق التي تتابعها بدل أن تستقبل كلَّ شيء، والجهاز غير المسجَّل يُعامَل بوصفه بلا وصول — لا بوصفه إنذاراً أخضر.'],
+            ['#pillar-alerts ul li:nth-child(1)', 'تحذيرات حالة البحر للمحافظات التي تشترك فيها'],
+            ['#pillar-alerts ul li:nth-child(2)', 'تنبيهات تنظيمية وانتهاء تصاريح، لا أحوال جوية فقط'],
+            ['#pillar-alerts ul li:nth-child(3)', 'الخطورة هي التي ترسم البطاقة: تحذيرٌ لا يبدو أبداً كمشورة'],
+            ['#pillar-alerts ul li:nth-child(4)', 'تصل عبر Firebase Cloud Messaging على الجهاز الذي تُسجِّل الدخول به'],
+            ['#pillar-alerts .text-link', 'استكشف مركز التنبيهات' + ARROW],
+            ['#pillar-account .pillar-eyebrow', 'حسابك'],
+            ['#pillar-account h3', 'ادخل بالطريقة التي تملكها أصلاً'],
+            ['#pillar-account .pillar-body p', 'بريدٌ وكلمة مرور، أو Google، أو الدخول عبر Apple — بلا رقم هاتف وبلا فاتورة رسالةٍ خلفه. وافتح التطبيق من دون حساب فلن يُمنع عنك شيء: كلُّ صيدٍ تسجّله يبقى على الجهاز وينتقل إلى سجلّك لحظة تسجيل الدخول.'],
+            ['#pillar-account ul li:nth-child(1)', 'بريدٌ وكلمة مرور، أو Google، أو Apple — ثلاثتها على الشاشة اليوم'],
+            ['#pillar-account ul li:nth-child(2)', 'صيدُ وضع الضيف يصطفّ على الجهاز وينتقل عند تسجيل الدخول'],
+            ['#pillar-account ul li:nth-child(3)', 'اللغة وميناء الإقامة والوحدات تبقى بعد إعادة التشغيل'],
+            ['#pillar-account ul li:nth-child(4)', 'سجلّك تحت معرِّفك أنت، وترفض قواعدُ الأمان كلَّ حسابٍ آخر'],
+            ['#pillar-account .text-link', 'ابدأ سجلّك' + ARROW],
             ['#species .eyebrow', 'ذكاء الأصناف'],
             ['#species h2', 'استهداف الأصناف الأكثر طلباً في عُمان'],
             ['#species .section-description', 'من كنعد مسندم إلى ثمد ظفار — لكلٍّ منها نموذج تنبؤ خاص وصورة الحيوان الحقيقي.'],
@@ -2111,7 +2324,6 @@
             ['.before-you-go h3', 'قبل أن تُبحر'],
             ['.before-you-go p', 'حالة البحر وأنظمة التصاريح وحدود المناطق المحمية تحددها <a href="https://gov.om/en/ministry-of-agriculture-fisheries-and-water-resources" target="_blank" rel="noopener">وزارة الزراعة والثروة السمكية وموارد المياه</a> في عُمان، وهي قابلة للتغيير. تحقق من الأحوال اللحظية قبل أن تُغادر المرسى؛ بحّار يُعينك على القرار ولا يُغني عن كلام الوزارة الحالي ولا عن قراءتك أنت للماء.'],
             ['#successMessage', '✓ شكراً لك! سنُبلغك عند إطلاق بحّار.'],
-            ['.stats-band .photo-note', 'صورة: قوارب تقليدية فوق مياه خور دروّاس الضحلة، مسقط'],
             ['#species .photo-note', 'صورة: ضحلات جزر الديمانيات من الأعلى'],
             ['.footer-bottom p:first-child', '© 2026 بحّار • سلطنة عُمان. جميع الحقوق محفوظة.'],
             ['.footer-bottom .made-txt', 'صُنع للصيّادين العُمانيين']

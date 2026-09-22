@@ -122,7 +122,9 @@ class WeatherCardWidget extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: SizedBox(
-              height: 62,
+              // 70 fits the tile's three lines (time, temp, rain) plus its padding
+              // and border with headroom for a taller text scale; 62 overflowed.
+              height: 70,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -220,7 +222,7 @@ class WeatherCardWidget extends StatelessWidget {
   Widget _hourTile(WeatherHour hour) {
     return Container(
       width: 58,
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(12),

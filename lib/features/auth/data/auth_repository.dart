@@ -18,7 +18,11 @@ import '../domain/user_model.dart';
 /// configured, and surfaces FirebaseAuthException messages verbatim so the
 /// login screen can show actionable errors (invalid code, too many attempts…).
 class AuthRepository {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Resolved lazily: touching FirebaseAuth.instance at construction throws
+  // [core/no-app] on an unconfigured platform (web demo build) before any
+  // method's _ensureConfigured guard can run. A getter defers the lookup to
+  // the call sites, which are all guarded.
+  FirebaseAuth get _auth => FirebaseAuth.instance;
   final FirestoreService _firestore = FirestoreService();
 
   /// Sends an SMS OTP to [phoneE164] (e.g. '+96891234567').
