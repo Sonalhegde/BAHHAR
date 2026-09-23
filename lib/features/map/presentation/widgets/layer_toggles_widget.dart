@@ -9,7 +9,6 @@ import 'flow_overlay_widget.dart' show FlowMode;
 class MapLayers {
   final bool hotspots;
   final bool protectedAreas;
-  final bool depthContours;
   final bool myLocation;
 
   /// Which medium the particle-flow layer is drawing (none when [FlowMode.off]).
@@ -18,26 +17,23 @@ class MapLayers {
   const MapLayers({
     this.hotspots = true,
     this.protectedAreas = true,
-    this.depthContours = false,
     this.myLocation = true,
     this.flow = FlowMode.off,
   });
 
   /// A layer set with nothing but location enabled.
   static const MapLayers minimal = MapLayers(
-      hotspots: false, protectedAreas: false, depthContours: false);
+      hotspots: false, protectedAreas: false);
 
   MapLayers copyWith({
     bool? hotspots,
     bool? protectedAreas,
-    bool? depthContours,
     bool? myLocation,
     FlowMode? flow,
   }) {
     return MapLayers(
       hotspots: hotspots ?? this.hotspots,
       protectedAreas: protectedAreas ?? this.protectedAreas,
-      depthContours: depthContours ?? this.depthContours,
       myLocation: myLocation ?? this.myLocation,
       flow: flow ?? this.flow,
     );
@@ -50,8 +46,6 @@ class MapLayers {
         return copyWith(hotspots: !hotspots);
       case MapLayerKind.protectedAreas:
         return copyWith(protectedAreas: !protectedAreas);
-      case MapLayerKind.depthContours:
-        return copyWith(depthContours: !depthContours);
       case MapLayerKind.myLocation:
         return copyWith(myLocation: !myLocation);
       case MapLayerKind.windFlow:
@@ -68,8 +62,6 @@ class MapLayers {
         return hotspots;
       case MapLayerKind.protectedAreas:
         return protectedAreas;
-      case MapLayerKind.depthContours:
-        return depthContours;
       case MapLayerKind.myLocation:
         return myLocation;
       case MapLayerKind.windFlow:
@@ -84,20 +76,18 @@ class MapLayers {
       other is MapLayers &&
       other.hotspots == hotspots &&
       other.protectedAreas == protectedAreas &&
-      other.depthContours == depthContours &&
       other.myLocation == myLocation &&
       other.flow == flow;
 
   @override
-  int get hashCode => Object.hash(
-      hotspots, protectedAreas, depthContours, myLocation, flow);
+  int get hashCode =>
+      Object.hash(hotspots, protectedAreas, myLocation, flow);
 }
 
 /// The individual map layers a toggle controls.
 enum MapLayerKind {
   hotspots,
   protectedAreas,
-  depthContours,
   myLocation,
   windFlow,
   currentFlow,
@@ -136,8 +126,6 @@ class LayerTogglesWidget extends StatelessWidget {
         return Icons.pin_drop_rounded;
       case MapLayerKind.protectedAreas:
         return Icons.shield_outlined;
-      case MapLayerKind.depthContours:
-        return Icons.waves_rounded;
       case MapLayerKind.myLocation:
         return Icons.my_location_rounded;
       case MapLayerKind.windFlow:
@@ -153,8 +141,6 @@ class LayerTogglesWidget extends StatelessWidget {
         return isArabic ? 'المواقع' : 'Hotspots';
       case MapLayerKind.protectedAreas:
         return isArabic ? 'المحميات' : 'Protected areas';
-      case MapLayerKind.depthContours:
-        return isArabic ? 'خطوط العمق' : 'Depth contours';
       case MapLayerKind.myLocation:
         return isArabic ? 'موقعي' : 'My location';
       case MapLayerKind.windFlow:

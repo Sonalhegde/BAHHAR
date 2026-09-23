@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import '../../../core/providers/flow_provider.dart';
+import '../../../core/providers/location_provider.dart';
 import '../../../core/services/geofence_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -13,6 +14,7 @@ import '../../../core/providers/hotspots_provider.dart';
 import '../../../core/models/flow_field.dart';
 import '../../../core/models/hotspot_model.dart';
 import '../../../shared/glass/glass_container.dart';
+import '../../../shared/polymorphic/soft_button.dart';
 import '../../../shared/widgets/legal_status_badge.dart';
 import 'widgets/flow_overlay_widget.dart';
 import 'widgets/layer_toggles_widget.dart';
@@ -47,6 +49,11 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   bool _styleLoaded = false;
   HotspotModel? _selectedHotspot;
 
+  /// True once the camera has been thrown to the user's resolved position this
+  /// session, so a late GPS fix recentres exactly once and never yanks a map the
+  /// fisherman has already started exploring.
+  bool _didAutoCenter = false;
+
   /// Chart overlay layers, driven by the floating [LayerTogglesWidget].
   /// Wind streaks are on by default — the layer is the chart's headline
   /// feature; depth contours are omitted because no contour source exists.
@@ -78,6 +85,32 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     _styleLoaded = true;
     _redrawCircles();
     _redrawReserves();
+    _applyUserLocationIfNeeded();
+  }
+
+  /// Moves the camera to the fisherman's resolved position once the map is ready
+  /// and a real (non-fallback) fix has arrived. The Muscat default is intentionally
+  /// NOT auto-centred: with no fix the map simply stays where it opened.
+  void _applyUserLocationIfNeeded() {
+    if (_didAutoCenter) return;
+    final controller = _controller;
+    if (controller == null || !_styleLoaded) return;
+    final loc = ref.read(locationProvider).asData?.value;
+    if (loc == null || !loc.isReal) return;
+    _didAutoCenter = true;
+    controller
+        .moveCamera(CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 9.5));
+  }
+
+  /// Recentres on the user's current position, re-resolving if permission was just
+  /// granted. Powers the "recenter on me" control.
+  Future<void> _recenterOnMe() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final loc = await ref.read(locationProvider.future);
+    controller.moveCamera(
+        CameraUpdate.newLatLngZoom(LatLng(loc.latitude, loc.longitude), 10.5));
+    _didAutoCenter = true;
   }
 
   void _onCircleTapped(Circle circle) {
@@ -194,6 +227,10 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     final hotspotsAsync = ref.watch(filteredHotspotsProvider);
     final selectedSpecies = ref.watch(selectedSpeciesFilterProvider);
     final flowField = ref.watch(flowFieldProvider).asData?.value;
+    final location = ref.watch(locationProvider);
+    final loc = location.asData?.value;
+    // A fix that lands after the tiles are already up still recentres, exactly once.
+    ref.listen(locationProvider, (_, __) => _applyUserLocationIfNeeded());
 
     return Scaffold(
       backgroundColor: AppColors.mapWater,
@@ -317,6 +354,61 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                   ),
                 ),
 
+              // Recenter-on-me control, wired to the same locationProvider the
+              // weather/marine cards and the auto-centre already use.
+              Positioned(
+                right: 12,
+                bottom: 40,
+                child: GlassContainer(
+                  level: GlassLevel.prominent,
+                  borderRadius: GlassTokens.radiusPill,
+                  padding: EdgeInsets.zero,
+                  child: IconButton(
+                    key: const Key('recenter_button'),
+                    onPressed: _recenterOnMe,
+                    tooltip: loc == null || loc.isFallback
+                        ? 'Center on my location'
+                        : 'Back to my position',
+                    icon: const Icon(Icons.my_location_rounded,
+                        color: AppColors.primaryBlue),
+                  ),
+                ),
+              ),
+
+              // Honesty chip: the app never lets the Muscat default pass for a real
+              // position. Shown only when we are actually on the fallback coordinate.
+              if (loc != null && loc.isFallback)
+                Positioned(
+                  bottom: 44,
+                  left: 16,
+                  right: 76,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: GlassContainer(
+                      level: GlassLevel.standard,
+                      borderRadius: GlassTokens.radiusPill,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.location_off_outlined,
+                              size: 15, color: AppColors.signalCaution),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'Showing Muscat — location unavailable',
+                              style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textPrimary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
               // Floating Selected Hotspot Inspector Card
               if (_selectedHotspot != null)
                 Positioned(
@@ -368,31 +460,15 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.oceanNavy,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                    GlassTokens.radiusMedium),
-                                side: BorderSide(
-                                    color: AppColors.cyanAccent
-                                        .withValues(alpha: 0.5),
-                                    width: 1.2),
-                              ),
-                            ),
-                            onPressed: () => context
-                                .push('/hotspots/${_selectedHotspot!.id}'),
-                            child: Text(
-                              'Inspect Bathymetry & Plan Trip',
-                              style: AppTextStyles.labelMedium.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
+                        // One shared CTA definition (SoftButton) replaces the
+                        // hand-tuned ElevatedButton.styleFrom block, so this button
+                        // matches every other primary action in the app.
+                        SoftButton(
+                          label: 'Inspect & Plan Trip',
+                          icon: Icons.explore_outlined,
+                          style: SoftButtonStyle.primary,
+                          onPressed: () => context
+                              .push('/hotspots/${_selectedHotspot!.id}'),
                         ),
                       ],
                     ),

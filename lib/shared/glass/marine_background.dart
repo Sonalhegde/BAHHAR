@@ -22,13 +22,16 @@ class MarineBackground extends StatefulWidget {
 
 class _MarineBackgroundState extends State<MarineBackground>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _tide =
+  // Decorative chrome only: drives the slow headland/wave drift on a fixed loop.
+  // It is NOT the live tide — real tide state/height arrives via MarineConditions.
+  // Named `_waveDrift` (not `_tide`) so nobody mistakes ambient motion for data.
+  late final AnimationController _waveDrift =
       AnimationController(vsync: this, duration: const Duration(seconds: 14))
         ..repeat();
 
   @override
   void dispose() {
-    _tide.dispose();
+    _waveDrift.dispose();
     super.dispose();
   }
 
@@ -86,9 +89,9 @@ class _MarineBackgroundState extends State<MarineBackground>
               child: animate
                   ? RepaintBoundary(
                       child: AnimatedBuilder(
-                        animation: _tide,
+                        animation: _waveDrift,
                         builder: (context, _) => CustomPaint(
-                          painter: _CoastalHeadlandsPainter(phase: _tide.value * 2 * math.pi),
+                          painter: _CoastalHeadlandsPainter(phase: _waveDrift.value * 2 * math.pi),
                         ),
                       ),
                     )

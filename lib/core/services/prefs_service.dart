@@ -76,4 +76,27 @@ class PrefsService {
     }
     await _prefs?.setStringList(keyGuestCatches, queue);
   }
+
+  // ── Last-known device position ───────────────────────────────────────────────
+
+  /// The most recent GPS fix, kept so a cold launch can centre the map and query
+  /// weather before the platform has finished warming its location stack. This is a
+  /// device-level cache of a position, not profile data, so it lives here rather than
+  /// in Firestore — the same reason language and units do.
+  static const String keyLastLat = 'location.last_lat';
+  static const String keyLastLon = 'location.last_lon';
+
+  /// Returns the stored coordinate, or null when nothing has ever been cached (or
+  /// preferences are not initialised yet, which is every `flutter test` run).
+  static ({double lat, double lon})? getLastKnownLocation() {
+    final lat = _prefs?.getDouble(keyLastLat);
+    final lon = _prefs?.getDouble(keyLastLon);
+    if (lat == null || lon == null) return null;
+    return (lat: lat, lon: lon);
+  }
+
+  static Future<void> setLastKnownLocation(double lat, double lon) async {
+    await _prefs?.setDouble(keyLastLat, lat);
+    await _prefs?.setDouble(keyLastLon, lon);
+  }
 }

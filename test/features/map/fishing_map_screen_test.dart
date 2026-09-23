@@ -135,8 +135,7 @@ void main() {
       MapLayers? updated;
       const initial = MapLayers(
         hotspots: true,
-        protectedAreas: true,
-        depthContours: false,
+        protectedAreas: false,
         myLocation: true,
       );
 
@@ -149,16 +148,16 @@ void main() {
         ),
       ));
 
-      await tester.tap(find.byKey(const Key('layer_toggle_depthContours')));
+      await tester.tap(find.byKey(const Key('layer_toggle_protectedAreas')));
       await tester.pump();
 
       expect(updated, isNotNull);
-      expect(updated!.depthContours, isTrue);
+      expect(updated!.protectedAreas, isTrue);
       // Untouched layers are preserved.
       expect(updated!.hotspots, isTrue);
       expect(updated!.myLocation, isTrue);
       // Original is unchanged (value semantics).
-      expect(initial.depthContours, isFalse);
+      expect(initial.protectedAreas, isFalse);
     });
 
     test('MapLayers.toggle + equality behave as a value type', () {
