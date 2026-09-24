@@ -21,7 +21,7 @@ import 'widgets/layer_toggles_widget.dart';
 import 'widgets/species_filter_chips.dart';
 
 /// MapLibre fishing chart rendering keyless OpenFreeMap "positron" tiles
-/// (Master Build Prompt v3 §2/§3.5 — no Google Maps SDK, no API key).
+/// (Master Build Prompt v3 Â§2/Â§3.5 â€” no Google Maps SDK, no API key).
 /// Hotspots are drawn as circles colored by
 /// AppColors.getProbabilityColor(hotspot.probability); the species chips
 /// filter them through selectedSpeciesFilterProvider. Tapping a circle opens
@@ -40,8 +40,8 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     zoom: 8.2,
   );
 
-  /// OpenFreeMap "positron" — closest keyless preset to the Premium White
-  /// direction (v3 §3.5). No API key, no billing.
+  /// OpenFreeMap "positron" â€” closest keyless preset to the Premium White
+  /// direction (v3 Â§3.5). No API key, no billing.
   static const String _openFreeMapStyleUrl =
       'https://tiles.openfreemap.org/styles/positron';
 
@@ -55,7 +55,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
   bool _didAutoCenter = false;
 
   /// Chart overlay layers, driven by the floating [LayerTogglesWidget].
-  /// Wind streaks are on by default — the layer is the chart's headline
+  /// Wind streaks are on by default â€” the layer is the chart's headline
   /// feature; depth contours are omitted because no contour source exists.
   MapLayers _layers = const MapLayers(flow: FlowMode.wind);
   static const List<MapLayerKind> _screenKinds = [
@@ -66,7 +66,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
     MapLayerKind.myLocation,
   ];
 
-  /// Tilt/rotation breaks the overlay's linear geo→screen projection, so the
+  /// Tilt/rotation breaks the overlay's linear geoâ†’screen projection, so the
   /// flow layer hides itself until the camera is upright again.
   bool _cameraUpright = true;
 
@@ -333,7 +333,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   child: Text(
                     '${hotspots.length} spots'
-                    '${selectedSpecies != null ? ' • $selectedSpecies' : ''}',
+                    '${selectedSpecies != null ? ' â€¢ $selectedSpecies' : ''}',
                     style: AppTextStyles.caption
                         .copyWith(color: AppColors.textPrimary),
                   ),
@@ -397,7 +397,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
-                              'Showing Muscat — location unavailable',
+                              'Showing Muscat â€” location unavailable',
                               style: AppTextStyles.caption.copyWith(
                                   color: AppColors.textPrimary),
                               overflow: TextOverflow.ellipsis,
@@ -434,7 +434,7 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
                                       style: AppTextStyles.cardTitle
                                           .copyWith(fontSize: 16)),
                                   Text(
-                                    '${_selectedHotspot!.nameAr} • ${_selectedHotspot!.region}',
+                                    '${_selectedHotspot!.nameAr} â€¢ ${_selectedHotspot!.region}',
                                     style: AppTextStyles.caption.copyWith(
                                         color: AppColors.textSecondary),
                                   ),
@@ -490,14 +490,14 @@ class _FishingMapScreenState extends ConsumerState<FishingMapScreen> {
         const SizedBox(height: 2),
         Text(value,
             style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w700, color: Colors.white)),
+                fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
       ],
     );
   }
 }
 
-/// Speed→colour key for the active flow layer, plus the honest provenance
-/// line (live Open-Meteo grid vs. the offline replay) — the app twin of the
+/// Speedâ†’colour key for the active flow layer, plus the honest provenance
+/// line (live Open-Meteo grid vs. the offline replay) â€” the app twin of the
 /// website sidebar's scale + note, kept tiny for a phone chart.
 class _FlowLegend extends StatelessWidget {
   const _FlowLegend({required this.mode, required this.field});
@@ -516,8 +516,8 @@ class _FlowLegend extends StatelessWidget {
         .toList();
     final hi = mode == FlowMode.current ? '4 kt' : '30+ kt';
     final source = field == null
-        ? 'loading flow…'
-        : 'Open-Meteo · ${field!.cached ? 'cached' : 'live'} · '
+        ? 'loading flowâ€¦'
+        : 'Open-Meteo Â· ${field!.cached ? 'cached' : 'live'} Â· '
             '${field!.generatedAt.toLocal().formatHm()}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,

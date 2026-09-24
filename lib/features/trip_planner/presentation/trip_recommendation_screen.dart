@@ -28,12 +28,12 @@ class TripRecommendationScreen extends ConsumerWidget {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white, size: 20),
+                  color: AppColors.textPrimary, size: 20),
               onPressed: () => context.pop(),
             ),
             title: Text('Calibrated Trip Plan',
                 style:
-                    AppTextStyles.subhead.copyWith(color: Colors.white)),
+                    AppTextStyles.subhead.copyWith(color: AppColors.textPrimary)),
           ),
           resultAsync.when(
             loading: () => const SliverToBoxAdapter(
@@ -60,7 +60,7 @@ class TripRecommendationScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Text('Could not generate a trip plan.',
                         style: AppTextStyles.bodyMedium
-                            .copyWith(color: Colors.white)),
+                            .copyWith(color: AppColors.textPrimary)),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () =>
@@ -101,7 +101,7 @@ class TripRecommendationScreen extends ConsumerWidget {
                                     style: AppTextStyles.bodyMedium.copyWith(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.white)),
+                                        color: AppColors.textPrimary)),
                                 const SizedBox(height: 3),
                                 Text(
                                   'Incoming tide with optimal SST convergence offshore',
@@ -132,7 +132,7 @@ class TripRecommendationScreen extends ConsumerWidget {
                                 GlassTokens.radiusSmall),
                           ),
                           child: Text(
-                            'Planned offline — no live sea conditions were available, '
+                            'Planned offline â€” no live sea conditions were available, '
                             'so this ranking ignores the water.',
                             style: AppTextStyles.caption.copyWith(
                                 fontSize: 10,
@@ -155,7 +155,7 @@ class TripRecommendationScreen extends ConsumerWidget {
                                 GlassTokens.radiusSmall),
                           ),
                           child: Text(
-                            'No spot fits this boat\'s limits — widen the radius, '
+                            'No spot fits this boat\'s limits â€” widen the radius, '
                             'raise the budget, or choose a closer port.',
                             style: AppTextStyles.caption.copyWith(
                                 fontSize: 10,
@@ -183,7 +183,9 @@ class TripRecommendationScreen extends ConsumerWidget {
                             style: AppTextStyles.caption.copyWith(
                                 color: AppColors.textSecondary),
                           ),
-                          const Divider(color: Colors.white10, height: 20),
+                          const Divider(
+                              color: AppColors.textPrimary,
+                              height: 20),
                           Row(
                             mainAxisAlignment:
                                 MainAxisAlignment.spaceBetween,
@@ -216,7 +218,7 @@ class TripRecommendationScreen extends ConsumerWidget {
                           for (var i = 0; i < plan.waypoints.length; i++) ...[
                             if (i > 0)
                               const Divider(
-                                  color: Colors.white10, height: 16),
+                                  color: AppColors.textPrimary, height: 16),
                             _buildWaypointRow(
                               plan.waypoints[i].time,
                               plan.waypoints[i].title,
@@ -262,7 +264,7 @@ class TripRecommendationScreen extends ConsumerWidget {
           const SizedBox(height: 2),
           Text(value,
               style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w700, color: Colors.white)),
+                  fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         ],
       ),
     );
@@ -284,7 +286,7 @@ class TripRecommendationScreen extends ConsumerWidget {
               Text(title,
                   style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.white)),
+                      color: AppColors.textPrimary)),
               const SizedBox(height: 2),
               Text(sub,
                   style: AppTextStyles.caption.copyWith(

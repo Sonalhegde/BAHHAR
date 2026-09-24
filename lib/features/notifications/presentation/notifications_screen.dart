@@ -23,10 +23,10 @@ class NotificationsScreen extends ConsumerWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
               onPressed: () => context.pop(),
             ),
-            title: Text('Marine Advisories & Alerts', style: AppTextStyles.subhead.copyWith(color: Colors.white)),
+            title: Text('Marine Advisories & Alerts', style: AppTextStyles.subhead.copyWith(color: AppColors.textPrimary)),
           ),
 
           (() {
@@ -78,7 +78,7 @@ class NotificationsScreen extends ConsumerWidget {
                                           child: Text(
                                             n.title,
                                             style: AppTextStyles.cardTitle.copyWith(
-                                              color: isSafety ? AppColors.signalAlert : Colors.white,
+                                              color: isSafety ? AppColors.signalAlert : AppColors.textPrimary,
                                             ),
                                           ),
                                         ),

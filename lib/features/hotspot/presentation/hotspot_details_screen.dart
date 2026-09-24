@@ -33,7 +33,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Colors.white, size: 20),
+                  color: AppColors.textPrimary, size: 20),
               onPressed: () => context.pop(),
             ),
           ),
@@ -55,7 +55,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Failed to load hotspot details.',
-                  style: AppTextStyles.body.copyWith(color: Colors.white)),
+                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary)),
               TextButton(
                 onPressed: () => ref.invalidate(hotspotByIdProvider(hotspotId)),
                 child: const Text('Retry'),
@@ -69,7 +69,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
           return MarineBackground(
             child: Center(
               child: Text('Hotspot not found',
-                  style: AppTextStyles.body.copyWith(color: Colors.white)),
+                  style: AppTextStyles.body.copyWith(color: AppColors.textPrimary)),
             ),
           );
         }
@@ -85,20 +85,20 @@ class HotspotDetailsScreen extends ConsumerWidget {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white, size: 20),
+                      color: AppColors.textPrimary, size: 20),
                   onPressed: () => context.pop(),
                 ),
                 title: Text(hotspot.name,
                     style: AppTextStyles.subhead
-                        .copyWith(color: Colors.white)),
+                        .copyWith(color: AppColors.textPrimary)),
                 actions: [
                   IconButton(
                       icon: const Icon(Icons.bookmark_border_rounded,
-                          color: Colors.white),
+                          color: AppColors.textPrimary),
                       onPressed: () {}),
                   IconButton(
                       icon: const Icon(Icons.share_outlined,
-                          color: Colors.white),
+                          color: AppColors.textPrimary),
                       onPressed: () {}),
                 ],
               ),
@@ -118,7 +118,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
                           children: [
                             Text(hotspot.name,
                                 style: AppTextStyles.screenTitle.copyWith(
-                                    fontSize: 20, color: Colors.white)),
+                                    fontSize: 20, color: AppColors.textPrimary)),
                             const SizedBox(height: 2),
                             Text(
                               '${hotspot.nameAr} • ${hotspot.region}',
@@ -198,7 +198,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.08),
+                                    color: AppColors.textPrimary.withValues(alpha: 0.06),
                                     borderRadius: BorderRadius.circular(
                                         GlassTokens.radiusSmall),
                                     border: Border.all(
@@ -220,11 +220,11 @@ class HotspotDetailsScreen extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: AppColors.textPrimary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(
                               GlassTokens.radiusMedium),
                           border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.12)),
+                              color: AppColors.textPrimary.withValues(alpha: 0.10)),
                         ),
                         child: Column(
                           children: [
@@ -232,17 +232,17 @@ class HotspotDetailsScreen extends ConsumerWidget {
                                 'GPS Coordinates',
                                 '${hotspot.latitude.toStringAsFixed(4)}° N, '
                                 '${hotspot.longitude.toStringAsFixed(4)}° E'),
-                            const Divider(color: Colors.white10, height: 16),
+                            const Divider(color: AppColors.textPrimary, height: 16),
                             _buildNavRow(
                                 'Contour Depth', '${hotspot.depthMeters} meters'),
-                            const Divider(color: Colors.white10, height: 16),
+                            const Divider(color: AppColors.textPrimary, height: 16),
                             _buildNavRow('Distance to Port',
                                 '${hotspot.distanceNm} nautical miles'),
-                            const Divider(color: Colors.white10, height: 16),
+                            const Divider(color: AppColors.textPrimary, height: 16),
                             _buildNavRow('Best Fishing Window',
                                 hotspot.bestWindow),
                             if (hotspot.legalNotice.isNotEmpty) ...[
-                              const Divider(color: Colors.white10, height: 16),
+                              const Divider(color: AppColors.textPrimary, height: 16),
                               _buildNavRow(
                                   'Legal Notice', hotspot.legalNotice),
                             ],
@@ -288,7 +288,7 @@ class HotspotDetailsScreen extends ConsumerWidget {
           child: Text(value,
               textAlign: TextAlign.end,
               style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600, color: Colors.white)),
+                  fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
         ),
       ],
     );

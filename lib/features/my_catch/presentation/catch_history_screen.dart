@@ -27,7 +27,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                 children: [
                   Text('Catch Log History',
                       style: AppTextStyles.subhead
-                          .copyWith(fontSize: 20, color: Colors.white)),
+                          .copyWith(fontSize: 20, color: AppColors.textPrimary)),
                   GestureDetector(
                     onTap: () => context.push('/my-catch/add'),
                     child: Container(
@@ -50,7 +50,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                               style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white)),
+                                  color: AppColors.textPrimary)),
                         ],
                       ),
                     ),
@@ -73,7 +73,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text('No catches logged yet',
                             style: AppTextStyles.bodyMedium
-                                .copyWith(color: Colors.white)),
+                                .copyWith(color: AppColors.textPrimary)),
                         const SizedBox(height: 4),
                         const Text(
                             'Log catches to calibrate personal ML predictions.',
@@ -130,7 +130,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                                                   TextOverflow.ellipsis,
                                               style: AppTextStyles.cardTitle
                                                   .copyWith(
-                                                      color: Colors.white)),
+                                                      color: AppColors.textPrimary)),
                                         ),
                                         Text(
                                             '${item.weightKg.toStringAsFixed(1)} kg',
@@ -157,7 +157,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                                                 horizontal: 6,
                                                 vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: Colors.white
+                                              color: AppColors.textPrimary
                                                   .withValues(alpha: 0.08),
                                               borderRadius:
                                                   BorderRadius.circular(4),
@@ -230,7 +230,7 @@ class CatchHistoryScreen extends ConsumerWidget {
                     const SizedBox(height: 10),
                     Text('Failed to load history',
                         style: AppTextStyles.bodyMedium
-                            .copyWith(color: Colors.white)),
+                            .copyWith(color: AppColors.textPrimary)),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => ref.invalidate(catchesProvider),

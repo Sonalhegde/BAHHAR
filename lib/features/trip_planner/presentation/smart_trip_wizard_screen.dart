@@ -74,7 +74,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white, size: 20),
+                      color: AppColors.textPrimary, size: 20),
                   onPressed: () {
                     if (_currentStep > 0) {
                       setState(() => _currentStep--);
@@ -85,7 +85,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                 ),
                 Text('Smart Trip Planner',
                     style: AppTextStyles.subhead
-                        .copyWith(color: Colors.white)),
+                        .copyWith(color: AppColors.textPrimary)),
               ],
             ),
           ),
@@ -106,7 +106,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                     decoration: BoxDecoration(
                       color: isPassed || isActive
                           ? AppColors.cyanAccent
-                          : Colors.white.withValues(alpha: 0.15),
+                          : AppColors.textPrimary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: isActive
                           ? [
@@ -194,7 +194,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
           stepLabel: 'STEP 2 OF 4',
           title: 'Starting Point',
           subtitle:
-              'Departure marina or port — used for distance, fuel and bearing calculations.',
+              'Departure marina or port â€” used for distance, fuel and bearing calculations.',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: _optionList(
@@ -247,7 +247,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                 max: 50,
                 divisions: 9,
                 activeColor: AppColors.cyanAccent,
-                inactiveColor: Colors.white.withValues(alpha: 0.15),
+                inactiveColor: AppColors.textPrimary.withValues(alpha: 0.12),
                 onChanged: (v) => ref
                     .read(tripPlanProvider.notifier)
                     .updateMaxRadius(v.round()),
@@ -270,7 +270,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                 final dt = entry.value;
                 final isSelected = entry.key == _selectedDateIndex;
                 final label = entry.key == 0
-                    ? 'Today — ${_fmtDate(dt)}'
+                    ? 'Today â€” ${_fmtDate(dt)}'
                     : _fmtDate(dt);
                 return _optionTile(
                   label,
@@ -341,7 +341,7 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
         const SizedBox(height: 4),
         Text(title,
             style: AppTextStyles.screenTitle
-                .copyWith(color: Colors.white)),
+                .copyWith(color: AppColors.textPrimary)),
         const SizedBox(height: 6),
         Text(subtitle,
             style: AppTextStyles.caption
@@ -394,8 +394,9 @@ class _SmartTripWizardScreenState extends ConsumerState<SmartTripWizardScreen> {
                 style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight:
                       isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color:
-                      isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected
+                      ? AppColors.primaryBlue
+                      : AppColors.textSecondary,
                 ),
               ),
             ),

@@ -17,7 +17,7 @@ import '../../../../shared/animations/app_animations.dart';
 
 /// Real Firebase-backed login/register screen: email/password, Google Sign-In and
 /// Sign in with Apple. Loading, error and invalid-credential states are surfaced in
-/// the UI — auth failures are never silent.
+/// the UI â€” auth failures are never silent.
 ///
 /// Phone OTP is not offered here. It has needed the Blaze (billing) plan since
 /// September 2024 and this project carries no card; the flow stays implemented in
@@ -93,7 +93,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
         SnackBar(
           content: Text(
             isArabic
-                ? 'أدخل بريداً صحيحاً وكلمة مرور من 6 أحرف على الأقل'
+                ? 'Ø£Ø¯Ø®Ù„ Ø¨Ø±ÙŠØ¯Ø§Ù‹ ØµØ­ÙŠØ­Ø§Ù‹ ÙˆÙƒÙ„Ù…Ø© Ù…Ø±ÙˆØ± Ù…Ù† 6 Ø£Ø­Ø±Ù Ø¹Ù„Ù‰ Ø§Ù„Ø£Ù‚Ù„'
                 : 'Enter a valid email and a password of at least 6 characters.',
           ),
           backgroundColor: AppColors.signalAlert,
@@ -180,7 +180,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                             color: Colors.white.withValues(alpha: 0.15)),
                       ),
                       child: Text(
-                        isArabic ? 'English' : 'عربي',
+                        isArabic ? 'English' : 'Ø¹Ø±Ø¨ÙŠ',
                         style: AppTextStyles.labelSmall
                             .copyWith(color: AppColors.cyanAccent),
                       ),
@@ -214,18 +214,18 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'BAHHAR • بَحّار',
+                        'BAHHAR â€¢ Ø¨ÙŽØ­Ù‘Ø§Ø±',
                         style: AppTextStyles.screenTitle.copyWith(
                           fontSize: 22,
                           letterSpacing: 2.0,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: AppColors.primaryBlue,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         isArabic
-                            ? 'الرفيق الذكي للصيد في عُمان'
+                            ? 'Ø§Ù„Ø±ÙÙŠÙ‚ Ø§Ù„Ø°ÙƒÙŠ Ù„Ù„ØµÙŠØ¯ ÙÙŠ Ø¹ÙÙ…Ø§Ù†'
                             : 'Oman Smart Marine & Fishing Companion',
                         style: AppTextStyles.caption
                             .copyWith(color: AppColors.textSecondary),
@@ -243,7 +243,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Firebase config warning — visible, not silent.
+                      // Firebase config warning â€” visible, not silent.
                       if (!FirebaseService.isConfigured) ...[
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -263,8 +263,8 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                               Expanded(
                                 child: Text(
                                   isArabic
-                                      ? 'Firebase غير مُعد — أضف google-services.json لتسجيل الدخول. يمكنك استكشاف التطبيق كزائر.'
-                                      : 'Firebase is not configured — add '
+                                      ? 'Firebase ØºÙŠØ± Ù…ÙØ¹Ø¯ â€” Ø£Ø¶Ù google-services.json Ù„ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„. ÙŠÙ…ÙƒÙ†Ùƒ Ø§Ø³ØªÙƒØ´Ø§Ù Ø§Ù„ØªØ·Ø¨ÙŠÙ‚ ÙƒØ²Ø§Ø¦Ø±.'
+                                      : 'Firebase is not configured â€” add '
                                           'google-services.json to enable sign-in. '
                                           'You can explore as a guest.',
                                   style: AppTextStyles.caption.copyWith(
@@ -278,7 +278,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Error banner (invalid code, network, config…)
+                      // Error banner (invalid code, network, configâ€¦)
                       if (authState.error != null) ...[
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -312,8 +312,8 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       // Mode Selector: Sign In vs Register
                       PolymorphicSegmentedBar(
                         options: [
-                          isArabic ? 'تسجيل الدخول' : 'Sign In',
-                          isArabic ? 'حساب جديد' : 'Register',
+                          isArabic ? 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„' : 'Sign In',
+                          isArabic ? 'Ø­Ø³Ø§Ø¨ Ø¬Ø¯ÙŠØ¯' : 'Register',
                         ],
                         selectedIndex: _isRegister ? 1 : 0,
                         onSelected: (idx) {
@@ -329,7 +329,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         GlassInput(
                           controller: _nameController,
                           labelText: isArabic
-                              ? 'الاسم الكامل'
+                              ? 'Ø§Ù„Ø§Ø³Ù… Ø§Ù„ÙƒØ§Ù…Ù„'
                               : 'CAPTAIN / FULL NAME',
                           hintText: 'e.g. Salim Al-Riyami',
                           prefixIcon: const Icon(Icons.person_outline_rounded,
@@ -337,7 +337,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         ),
                         const SizedBox(height: 14),
                         Text(
-                          isArabic ? 'المحافظة الساحلية' : 'HOME GOVERNORATE',
+                          isArabic ? 'Ø§Ù„Ù…Ø­Ø§ÙØ¸Ø© Ø§Ù„Ø³Ø§Ø­Ù„ÙŠØ©' : 'HOME GOVERNORATE',
                           style: AppTextStyles.sectionHeader,
                         ),
                         const SizedBox(height: 6),
@@ -381,12 +381,12 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                         const SizedBox(height: 14),
                       ],
 
-                      // Email and password — the credential sign-in this build offers.
+                      // Email and password â€” the credential sign-in this build offers.
                       // Phone OTP is not on screen: see the class doc for why.
                       GlassInput(
                         controller: _emailController,
                         labelText: isArabic
-                            ? 'البريد الإلكتروني'
+                            ? 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ'
                             : 'EMAIL ADDRESS',
                         hintText: 'captain@bahhar.om',
                         keyboardType: TextInputType.emailAddress,
@@ -398,8 +398,8 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       const SizedBox(height: 14),
                       GlassInput(
                         controller: _passwordController,
-                        labelText: isArabic ? 'كلمة المرور' : 'PASSWORD',
-                        hintText: '••••••••',
+                        labelText: isArabic ? 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' : 'PASSWORD',
+                        hintText: 'â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢',
                         obscureText: true,
                         prefixIcon: const Icon(Icons.lock_outline_rounded,
                             size: 18, color: AppColors.textSecondary),
@@ -407,9 +407,9 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       const SizedBox(height: 20),
                       SoftButton(
                         label: _isRegister
-                            ? (isArabic ? 'إنشاء حساب' : 'Create Account')
+                            ? (isArabic ? 'Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨' : 'Create Account')
                             : (isArabic
-                                ? 'تسجيل الدخول'
+                                ? 'ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø¯Ø®ÙˆÙ„'
                                 : 'Sign In with Email'),
                         isLoading: authState.isLoading,
                         onPressed: authState.isLoading
@@ -424,13 +424,12 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                           Expanded(
                               child: Container(
                                   height: 1,
-                                  color: Colors.white
-                                      .withValues(alpha: 0.1))),
+                                  color: AppColors.textPrimary.withValues(alpha: 0.10))),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10),
                             child: Text(
-                              isArabic ? 'أو' : 'OR',
+                              isArabic ? 'Ø£Ùˆ' : 'OR',
                               style: AppTextStyles.caption.copyWith(
                                   color: AppColors.textTertiary,
                                   fontSize: 10),
@@ -439,8 +438,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                           Expanded(
                               child: Container(
                                   height: 1,
-                                  color: Colors.white
-                                      .withValues(alpha: 0.1))),
+                                  color: AppColors.textPrimary.withValues(alpha: 0.10))),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -448,7 +446,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       // Social Providers
                       SoftButton(
                         label: isArabic
-                            ? 'المتابعة باستخدام Apple'
+                            ? 'Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Apple'
                             : 'Sign in with Apple',
                         icon: Icons.apple,
                         style: SoftButtonStyle.glass,
@@ -459,7 +457,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                       const SizedBox(height: 10),
                       SoftButton(
                         label: isArabic
-                            ? 'المتابعة باستخدام Google'
+                            ? 'Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø¨Ø§Ø³ØªØ®Ø¯Ø§Ù… Google'
                             : 'Sign in with Google',
                         icon: Icons.g_mobiledata_rounded,
                         style: SoftButtonStyle.secondary,
@@ -474,7 +472,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                           onPressed: _continueAsGuest,
                           child: Text(
                             isArabic
-                                ? 'الدخول كزائر / استكشاف'
+                                ? 'Ø§Ù„Ø¯Ø®ÙˆÙ„ ÙƒØ²Ø§Ø¦Ø± / Ø§Ø³ØªÙƒØ´Ø§Ù'
                                 : 'Continue as Guest (Explore)',
                             style: AppTextStyles.labelMedium
                                 .copyWith(color: AppColors.cyanAccent),
@@ -489,7 +487,7 @@ class _LoginRegisterScreenState extends ConsumerState<LoginRegisterScreen> {
                 Center(
                   child: Text(
                     isArabic
-                        ? 'بالمتابعة فإنك توافق على لوائح حماية الثروة السمكية في سلطنة عُمان'
+                        ? 'Ø¨Ø§Ù„Ù…ØªØ§Ø¨Ø¹Ø© ÙØ¥Ù†Ùƒ ØªÙˆØ§ÙÙ‚ Ø¹Ù„Ù‰ Ù„ÙˆØ§Ø¦Ø­ Ø­Ù…Ø§ÙŠØ© Ø§Ù„Ø«Ø±ÙˆØ© Ø§Ù„Ø³Ù…ÙƒÙŠØ© ÙÙŠ Ø³Ù„Ø·Ù†Ø© Ø¹ÙÙ…Ø§Ù†'
                         : 'By continuing, you agree to Oman Marine & Fishery Regulations.',
                     textAlign: TextAlign.center,
                     style: AppTextStyles.caption.copyWith(

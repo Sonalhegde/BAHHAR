@@ -54,7 +54,7 @@ class MetricGlassCard extends StatelessWidget {
             style: AppTextStyles.subhead.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: isAlert ? AppColors.signalAlert : Colors.white,
+              color: isAlert ? AppColors.signalAlert : AppColors.textPrimary,
             ),
           ),
           if (subtext != null) ...[

@@ -56,13 +56,13 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
   ];
 
   static const _speciesArabic = {
-    'Kingfish (Kanaad)': 'كنعد',
-    'Yellowfin Tuna (Thamad)': 'ثمد',
-    'Hamoor (Grouper)': 'هامور',
-    'Amberjack (Hamam)': 'حمام',
-    'Sailfish (Faras)': 'فرس',
-    'Emperor (Shaari)': 'شعري',
-    'Queenfish (Dhabsa)': 'ضبسة',
+    'Kingfish (Kanaad)': 'ÙƒÙ†Ø¹Ø¯',
+    'Yellowfin Tuna (Thamad)': 'Ø«Ù…Ø¯',
+    'Hamoor (Grouper)': 'Ù‡Ø§Ù…ÙˆØ±',
+    'Amberjack (Hamam)': 'Ø­Ù…Ø§Ù…',
+    'Sailfish (Faras)': 'ÙØ±Ø³',
+    'Emperor (Shaari)': 'Ø´Ø¹Ø±ÙŠ',
+    'Queenfish (Dhabsa)': 'Ø¶Ø¨Ø³Ø©',
   };
 
   final _gearTypes = [
@@ -140,7 +140,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
 
   /// Fills the location fields from device GPS (with permission handling).
   Future<void> _autofillLocation() async {
-    setState(() => _locationStatus = 'Locating…');
+    setState(() => _locationStatus = 'Locatingâ€¦');
     try {
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
@@ -149,7 +149,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         setState(() => _locationStatus =
-            'GPS permission denied — using default location');
+            'GPS permission denied â€” using default location');
         return;
       }
       final position = await Geolocator.getCurrentPosition(
@@ -163,7 +163,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
         _locationStatus = null;
       });
     } catch (e) {
-      setState(() => _locationStatus = 'GPS unavailable — using default location');
+      setState(() => _locationStatus = 'GPS unavailable â€” using default location');
     }
   }
 
@@ -235,12 +235,12 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
               children: [
                 IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white, size: 20),
+                      color: AppColors.textPrimary, size: 20),
                   onPressed: () => context.pop(),
                 ),
                 Text('Log New Catch',
                     style: AppTextStyles.subhead
-                        .copyWith(color: Colors.white)),
+                        .copyWith(color: AppColors.textPrimary)),
               ],
             ),
           ),
@@ -250,7 +250,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Photo capture — camera or gallery
+                  // Photo capture â€” camera or gallery
                   GestureDetector(
                     onTap: _showPhotoSourceSheet,
                     child: GlassContainer(
@@ -319,7 +319,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Location — GPS autofilled
+                  // Location â€” GPS autofilled
                   const Text('LOCATION (GPS)', style: AppTextStyles.sectionHeader),
                   const SizedBox(height: 6),
                   GlassContainer(
@@ -339,7 +339,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
                             children: [
                               Text(_locationName,
                                   style: AppTextStyles.bodyMedium
-                                      .copyWith(color: Colors.white)),
+                                      .copyWith(color: AppColors.textPrimary)),
                               if (_locationStatus != null)
                                 Text(_locationStatus!,
                                     style: AppTextStyles.caption.copyWith(
@@ -372,7 +372,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
                     children: [
                       Text('Catch & Released',
                           style: AppTextStyles.bodyMedium
-                              .copyWith(color: Colors.white)),
+                              .copyWith(color: AppColors.textPrimary)),
                       Switch(
                         value: _released,
                         activeColor: AppColors.cyanAccent,
@@ -416,7 +416,7 @@ class _AddCatchScreenState extends ConsumerState<AddCatchScreen> {
 
                   const SizedBox(height: 28),
                   SoftButton(
-                    label: _saving ? 'Saving…' : 'Save Catch Record',
+                    label: _saving ? 'Savingâ€¦' : 'Save Catch Record',
                     icon: Icons.check_circle_rounded,
                     isLoading: _saving,
                     onPressed: _saving ? null : _saveCatch,

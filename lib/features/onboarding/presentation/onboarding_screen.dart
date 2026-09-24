@@ -111,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             const SizedBox(height: 8),
                             Text(
                               slide['title'] as String,
-                              style: AppTextStyles.screenTitle.copyWith(fontSize: 22, color: Colors.white),
+                              style: AppTextStyles.screenTitle.copyWith(fontSize: 22, color: AppColors.textPrimary),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 10),
@@ -154,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   height: 4,
                   width: isActive ? 28 : 8,
                   decoration: BoxDecoration(
-                    color: isActive ? AppColors.cyanAccent : Colors.white.withValues(alpha: 0.2),
+                    color: isActive ? AppColors.cyanAccent : AppColors.textPrimary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 );
