@@ -169,6 +169,80 @@ def test_tides_endpoint_requires_key(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# Tide height curve (/api/v1/tides/curve) — the continuous line behind the
+# Rising/Falling number. Upstream monkeypatched so the suite stays offline.
+# ---------------------------------------------------------------------------
+def test_tide_state_from_heights_reads_nearest_sample():
+    now = datetime.now(UTC)
+    pts = [
+        {"dt": int((now - timedelta(hours=1)).timestamp()), "height": 1.0},
+        {"dt": int(now.timestamp()), "height": 1.5},
+        {"dt": int((now + timedelta(hours=1)).timestamp()), "height": 2.4},
+    ]
+    state, height = main._tide_state_from_heights(pts, now=now)
+    assert state == "Rising"
+    assert height == 1.5
+
+
+def test_tide_state_from_heights_falling():
+    now = datetime.now(UTC)
+    pts = [
+        {"dt": int(now.timestamp()), "height": 2.0},
+        {"dt": int((now + timedelta(hours=1)).timestamp()), "height": 0.6},
+    ]
+    state, _height = main._tide_state_from_heights(pts, now=now)
+    assert state == "Falling"
+
+
+def test_tides_curve_requires_key(monkeypatch):
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "")
+    res = client.get("/api/v1/tides/curve", params={"lat": 23.6, "lon": 58.5})
+    assert res.status_code == 503
+
+
+def test_tides_curve_proxy_and_cache(monkeypatch):
+    main._CACHE.clear()
+    now = datetime.now(UTC)
+    fake = {
+        "heights": [
+            {"dt": int((now + timedelta(minutes=30 * i)).timestamp()),
+             "height": round(0.5 + 0.2 * i, 2)}
+            for i in range(0, 8)
+        ],
+        "station": "TEST STATION",
+        "atlas": "FES2022",
+        "copyright": "test",
+    }
+
+    async def _fake(client, lat, lon, hours):
+        return fake
+
+    monkeypatch.setattr(main, "_fetch_worldtides_heights", _fake)
+    monkeypatch.setattr(main, "WORLDTIDES_API_KEY", "test-key")
+
+    res = client.get("/api/v1/tides/curve",
+                     params={"lat": 23.6, "lon": 58.5, "hours": 6})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["cached"] is False
+    assert data["station"] == "TEST STATION"
+    assert len(data["points"]) == 8
+    assert data["points"][0]["height_m"] == 0.5
+    assert data["tide_state"] in {"Rising", "Falling"}
+
+    # Second call served from the server-side TTL cache (no upstream re-hit).
+    async def _boom(client, lat, lon, hours):
+        raise AssertionError("cache miss: upstream called twice")
+
+    monkeypatch.setattr(main, "_fetch_worldtides_heights", _boom)
+    res2 = client.get("/api/v1/tides/curve",
+                      params={"lat": 23.6, "lon": 58.5, "hours": 6})
+    assert res2.status_code == 200
+    assert res2.json()["cached"] is True
+    main._CACHE.clear()
+
+
+# ---------------------------------------------------------------------------
 # Sea-state banding and the day rating — the rule the landing page prints, so a
 # threshold that drifts here has to fail a test there.
 # ---------------------------------------------------------------------------

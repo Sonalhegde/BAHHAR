@@ -17,6 +17,7 @@ import '../../../shared/widgets/fishing_score_gauge.dart';
 import '../../../shared/widgets/condition_stat_chip.dart';
 import '../../../shared/widgets/hotspot_card.dart';
 import '../../../shared/widgets/skeleton.dart';
+import '../../../shared/widgets/tide_chart_widget.dart';
 import '../../../shared/animations/app_animations.dart';
 import 'widgets/weather_card_widget.dart';
 
@@ -27,6 +28,7 @@ class HomeDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final marineAsync = ref.watch(marineConditionsProvider);
     final weatherAsync = ref.watch(weatherConditionsProvider);
+    final tideCurveAsync = ref.watch(tideCurveProvider);
     final pushed = ref.watch(pushedAlertProvider).valueOrNull;
     final hotspotsAsync = ref.watch(hotspotsProvider);
     final isOfflineDemo = ref.watch(offlineDataModeProvider);
@@ -441,6 +443,35 @@ class HomeDashboardScreen extends ConsumerWidget {
                             ],
                           ),
                         ],
+                        // Real tide curve: the rising/falling line between high and
+                        // low water, drawn from the same WorldTides station that
+                        // produces the number above (backend /api/v1/tides/curve).
+                        const SizedBox(height: 14),
+                        Text(
+                          isArabic
+                              ? 'منحنى المد والجزر (24 ساعة)'
+                              : 'TIDE CURVE (24H)',
+                          style: AppTextStyles.caption.copyWith(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryBlue,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        tideCurveAsync.when(
+                          data: (curve) => TideChart(
+                            curve: curve,
+                            isArabic: isArabic,
+                          ),
+                          loading: () => const SkeletonBox(height: 104),
+                          error: (e, _) => Text(
+                            isArabic
+                                ? 'تعذر تحميل منحنى المد'
+                                : 'Tide curve unavailable.',
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.textTertiary),
+                          ),
+                        ),
                       ],
                     ),
                     loading: () => const Row(

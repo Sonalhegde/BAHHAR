@@ -968,6 +968,120 @@ async def tides(
     return {**payload, "cached": False}
 
 
+async def _fetch_worldtides_heights(
+    client: httpx.AsyncClient, lat: float, lon: float, hours: int
+) -> Dict[str, Any]:
+    """Continuous tide-height curve for the next `hours` hours. Key stays server-side.
+
+    `/api/v1/tides` above returns only the high/low extremes; WorldTides' `heights`
+    datum is the sampled curve between them (~30 min apart), which is what the client
+    needs to draw a rising/falling line rather than a single number.
+    """
+    if not WORLDTIDES_API_KEY:
+        raise RuntimeError("WORLDTIDES_API_KEY not configured")
+    params = {
+        "key": WORLDTIDES_API_KEY,
+        "lat": lat,
+        "lon": lon,
+        "heights": "",
+        "length": hours * 3600,
+    }
+    res = await client.get(WORLDTIDES_URL, params=params)
+    res.raise_for_status()
+    data = res.json()
+    if data.get("status", 200) != 200:
+        raise RuntimeError(data.get("error", "WorldTides request failed"))
+    return data
+
+
+def _tide_state_from_heights(points: List[Dict[str, Any]], now: Optional[datetime] = None) -> Tuple[str, float]:
+    """(state, height_m) read off a height curve at `now`.
+
+    WorldTides returns heights forward from the request time, so the live reading is
+    the sample nearest the clock and the trend is the sign of the slope to the next
+    sample. Mirrors `_tide_state_from_extremes` but on the continuous curve, so the
+    chart and the number agree. Returns ('Unavailable', 0.0) on an empty curve.
+    """
+    usable = [p for p in points if isinstance(p.get("dt"), (int, float))]
+    if not usable:
+        return "Unavailable", 0.0
+    now_ts = (now or datetime.now(UTC)).timestamp()
+    idx = min(range(len(usable)), key=lambda i: abs(usable[i]["dt"] - now_ts))
+    height = _as_float(usable[idx].get("height"), 0.0)
+    nxt = usable[idx + 1] if idx + 1 < len(usable) else None
+    prv = usable[idx - 1] if idx > 0 else None
+    if nxt is not None:
+        state = "Rising" if _as_float(nxt.get("height"), height) >= height else "Falling"
+    elif prv is not None:
+        state = "Rising" if height >= _as_float(prv.get("height"), height) else "Falling"
+    else:
+        state = "Rising"
+    return state, round(height, 2)
+
+
+TIDE_CURVE_TTL_SECONDS = 3600  # the astronomical tide curve is deterministic for a station
+
+
+@app.get("/api/v1/tides/curve")
+async def tides_curve(
+    lat: float = Query(..., ge=-90, le=90),
+    lon: float = Query(..., ge=-180, le=180),
+    hours: int = Query(24, ge=6, le=48),
+):
+    """WorldTides height curve proxied server-side, for the client's tide chart.
+
+    Same key and same server-side-only rule as `/api/v1/tides`: the WorldTides key
+    never reaches a device. When no key is configured this returns 503 rather than a
+    fabricated line - the chart then shows its honest 'unavailable' state.
+    """
+    if not WORLDTIDES_API_KEY:
+        raise HTTPException(status_code=503, detail="WORLDTIDES_API_KEY not configured on server")
+    cache_key = f"tides:curve:{round(lat, 2)}:{round(lon, 2)}:{hours}"
+    cached = _cache_get(cache_key)
+    if cached:
+        return {**cached, "cached": True}
+    try:
+        async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT, follow_redirects=True) as client:
+            data = await _fetch_worldtides_heights(client, lat, lon, hours)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"WorldTides upstream error: {exc}")
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    raw_points = data.get("heights") or []
+    points: List[Dict[str, Any]] = []
+    for p in raw_points:
+        try:
+            ts = int(p["dt"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        points.append({
+            "t": ts,
+            "iso": datetime.fromtimestamp(ts, UTC).isoformat(),
+            "height_m": round(_as_float(p.get("height"), 0.0), 2),
+        })
+    if not points:
+        raise HTTPException(status_code=502, detail="WorldTides returned no tide heights")
+
+    state, height = _tide_state_from_heights(
+        [{"dt": pt["t"], "height": pt["height_m"]} for pt in points]
+    )
+    payload = {
+        "latitude": lat,
+        "longitude": lon,
+        "hours": hours,
+        "station": data.get("station"),
+        "atlas": data.get("atlas"),
+        "tide_state": state,
+        "tide_height_m": height,
+        "points": points,
+        "copyright": data.get("copyright", "© Brainware LLC / UNESCO, NOAA"),
+        "fetched_at": datetime.now(UTC).isoformat(),
+    }
+    _cache_set(cache_key, payload, TIDE_CURVE_TTL_SECONDS)
+    return {**payload, "cached": False}
+
+
 # ---------------------------------------------------------------------------
 # AccuWeather — the atmospheric half of the Ocean / Weather sections (brief §2)
 #
