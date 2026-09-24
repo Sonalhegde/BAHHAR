@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Device-local settings that must survive a restart: language, the port the
@@ -15,6 +16,7 @@ class PrefsService {
   static const String keyLanguageArabic = 'settings.language_arabic';
   static const String keyGovernorate = 'settings.governorate';
   static const String keyMetricUnits = 'settings.metric_units';
+  static const String keyThemeMode = 'settings.theme_mode';
 
   /// Muscat is the app's default view, not a guess about the user.
   static const String defaultGovernorate = 'Muscat';
@@ -48,6 +50,24 @@ class PrefsService {
 
   static Future<void> setMetricUnits(bool value) async {
     await _prefs?.setBool(keyMetricUnits, value);
+  }
+
+  /// Light / Dark / System, stored as a plain string so an unreadable or absent
+  /// value falls back to light (the palette every screen was drawn against)
+  /// rather than to some unexpected mode.
+  static ThemeMode getThemeMode() {
+    switch (_prefs?.getString(keyThemeMode)) {
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+        return ThemeMode.system;
+      default:
+        return ThemeMode.light;
+    }
+  }
+
+  static Future<void> setThemeMode(ThemeMode mode) async {
+    await _prefs?.setString(keyThemeMode, mode.name);
   }
 
   // ── Guest catch queue ───────────────────────────────────────────────────────

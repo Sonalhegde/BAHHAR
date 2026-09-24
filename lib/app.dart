@@ -11,6 +11,7 @@ class BahharApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = ref.watch(isArabicProvider);
+    final themeMode = ref.watch(preferencesProvider).themeMode;
 
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
@@ -18,7 +19,8 @@ class BahharApp extends ConsumerWidget {
         title: 'BAHHAR',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.coastalLightTheme(isArabic: isArabic),
-        themeMode: ThemeMode.light,
+        darkTheme: AppTheme.coastalDarkTheme(isArabic: isArabic),
+        themeMode: themeMode,
         locale: isArabic ? const Locale('ar', 'OM') : const Locale('en', 'OM'),
         supportedLocales: const [
           Locale('en', 'OM'),

@@ -31,6 +31,24 @@ class ProfileSettingsScreen extends ConsumerWidget {
             onChanged: (i) => ref.read(isArabicProvider.notifier).setArabic(i == 1),
           ),
 
+          // ── Appearance ─────────────────────────────────────────────────────
+          _SectionHeader(isArabic ? 'المظهر' : 'Appearance'),
+          _SegmentedChoice(
+            options: [
+              isArabic ? 'فاتح' : 'Light',
+              isArabic ? 'داكن' : 'Dark',
+              isArabic ? 'النظام' : 'System',
+            ],
+            selectedIndex: switch (prefs.themeMode) {
+              ThemeMode.light => 0,
+              ThemeMode.dark => 1,
+              _ => 2,
+            },
+            onChanged: (i) => ref
+                .read(preferencesProvider.notifier)
+                .setThemeMode(const [ThemeMode.light, ThemeMode.dark, ThemeMode.system][i]),
+          ),
+
           // ── Units ─────────────────────────────────────────────────────────
           _SectionHeader(t('settings_units')),
           _SegmentedChoice(

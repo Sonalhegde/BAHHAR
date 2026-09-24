@@ -53,13 +53,17 @@ class UserPreferences {
 class PreferencesNotifier extends StateNotifier<UserPreferences> {
   PreferencesNotifier() : super(UserPreferences(
         isMetric: PrefsService.getMetricUnits(),
+        themeMode: PrefsService.getThemeMode(),
       ));
 
   void toggleUnits() {
     state = state.copyWith(isMetric: !state.isMetric);
     _remember(PrefsService.setMetricUnits(state.isMetric));
   }
-  void setThemeMode(ThemeMode mode) => state = state.copyWith(themeMode: mode);
+  void setThemeMode(ThemeMode mode) {
+    state = state.copyWith(themeMode: mode);
+    _remember(PrefsService.setThemeMode(mode));
+  }
   void toggleWeatherAlerts(bool val) => state = state.copyWith(weatherAlerts: val);
   void toggleMarineAlerts(bool val) => state = state.copyWith(marineAlerts: val);
   void toggleTripReminders(bool val) => state = state.copyWith(tripReminders: val);

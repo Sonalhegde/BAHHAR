@@ -12,7 +12,6 @@ class AppTextStyles {
     height: 34 / 28,
     fontWeight: FontWeight.w800,
     letterSpacing: -0.7,
-    color: AppColors.textPrimary,
   );
 
   // ── Big numeric readouts (gauge scores, stats) ──
@@ -21,7 +20,6 @@ class AppTextStyles {
     height: 1.0,
     fontWeight: FontWeight.w800,
     letterSpacing: -1.2,
-    color: AppColors.textPrimary,
   );
 
   // ── Screen Title (Top Level) ──
@@ -30,7 +28,6 @@ class AppTextStyles {
     height: 26 / 20,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.4,
-    color: AppColors.textPrimary,
   );
 
   // ── Subhead / Section Title ──
@@ -39,7 +36,6 @@ class AppTextStyles {
     height: 23 / 17,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.2,
-    color: AppColors.textPrimary,
   );
 
   // ── Group Header (Upper Micro Label) ──
@@ -57,7 +53,6 @@ class AppTextStyles {
     height: 21 / 15.5,
     fontWeight: FontWeight.w700,
     letterSpacing: -0.15,
-    color: AppColors.textPrimary,
   );
 
   // ── Body & Body Medium (Primary Reading Standard) ──
@@ -66,7 +61,6 @@ class AppTextStyles {
     height: 1.5,
     fontWeight: FontWeight.w400,
     letterSpacing: 0.05,
-    color: AppColors.textPrimary,
   );
 
   static const TextStyle bodyMedium = TextStyle(
@@ -74,7 +68,6 @@ class AppTextStyles {
     height: 1.5,
     fontWeight: FontWeight.w500,
     letterSpacing: 0.05,
-    color: AppColors.textPrimary,
   );
 
   // ── Labels ──
@@ -83,7 +76,6 @@ class AppTextStyles {
     height: 18 / 13,
     fontWeight: FontWeight.w600,
     letterSpacing: 0.1,
-    color: AppColors.textPrimary,
   );
 
   static const TextStyle labelSmall = TextStyle(
