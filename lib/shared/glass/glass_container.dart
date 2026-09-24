@@ -31,8 +31,11 @@ class GlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blurSigma = GlassTokens.getBlurSigma(level);
-    final bgColor = customColor ?? GlassTokens.getBackgroundColor(level);
-    final borderGradient = GlassTokens.getBorderGradient(level);
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor =
+        customColor ?? GlassTokens.getBackgroundColor(level, dark: dark);
+    final borderGradient =
+        GlassTokens.getBorderGradient(level, dark: dark);
 
     Widget container = Container(
       width: width,

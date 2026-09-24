@@ -1,9 +1,9 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../../core/models/tide_curve.dart';
-import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_color_tokens.dart';
 import '../../core/theme/app_text_styles.dart';
 
 /// The rising/falling tide line drawn between high and low water.
@@ -35,7 +35,7 @@ class TideChart extends StatelessWidget {
         child: Center(
           child: Text(
             isArabic ? 'بيانات المد غير متوفرة' : 'Tide curve unavailable',
-            style: AppTextStyles.caption.copyWith(color: AppColors.textTertiary),
+            style: AppTextStyles.caption.copyWith(color: context.colors.textTertiary),
           ),
         ),
       );
@@ -43,15 +43,16 @@ class TideChart extends StatelessWidget {
     return SizedBox(
       height: height,
       width: double.infinity,
-      child: CustomPaint(painter: _TideCurvePainter(curve)),
+      child: CustomPaint(painter: _TideCurvePainter(curve, context.colors)),
     );
   }
 }
 
 class _TideCurvePainter extends CustomPainter {
-  _TideCurvePainter(this.curve);
+  _TideCurvePainter(this.curve, this.tokens);
 
   final TideCurve curve;
+  final AppColorTokens tokens;
 
   static const double _padY = 16;
   static const double _padX = 4;
@@ -110,8 +111,8 @@ class _TideCurvePainter extends CustomPainter {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.primaryBlue.withValues(alpha: 0.22),
-            AppColors.primaryBlue.withValues(alpha: 0.02),
+            tokens.primaryBlue.withValues(alpha: 0.22),
+            tokens.primaryBlue.withValues(alpha: 0.02),
           ],
         ).createShader(Offset.zero & size),
     );
@@ -123,7 +124,7 @@ class _TideCurvePainter extends CustomPainter {
         Offset(_padX, zeroY),
         Offset(size.width - _padX, zeroY),
         Paint()
-          ..color = AppColors.mapContour
+          ..color = tokens.mapContour
           ..strokeWidth = 1
           ..style = PaintingStyle.stroke,
       );
@@ -133,7 +134,7 @@ class _TideCurvePainter extends CustomPainter {
     canvas.drawPath(
       line,
       Paint()
-        ..color = AppColors.cyanAccent.withValues(alpha: 0.35)
+        ..color = tokens.cyanAccent.withValues(alpha: 0.35)
         ..strokeWidth = 5
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke
@@ -142,7 +143,7 @@ class _TideCurvePainter extends CustomPainter {
     canvas.drawPath(
       line,
       Paint()
-        ..color = AppColors.primaryBlue
+        ..color = tokens.primaryBlue
         ..strokeWidth = 2.2
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke,
@@ -153,7 +154,7 @@ class _TideCurvePainter extends CustomPainter {
     if (now != null) {
       final c = xy(now);
       final dash = Paint()
-        ..color = AppColors.skyBlue
+        ..color = tokens.skyBlue
         ..strokeWidth = 1.2;
       const seg = 4.0;
       for (var y = _padY * 0.5; y < size.height - _padY; y += seg * 2) {
@@ -164,7 +165,7 @@ class _TideCurvePainter extends CustomPainter {
         );
       }
       canvas.drawCircle(c, 4.5, Paint()..color = Colors.white);
-      canvas.drawCircle(c, 3.2, Paint()..color = AppColors.primaryBlue);
+      canvas.drawCircle(c, 3.2, Paint()..color = tokens.primaryBlue);
     }
   }
 

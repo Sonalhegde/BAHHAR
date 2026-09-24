@@ -29,7 +29,17 @@ class GlassTokens {
     }
   }
 
-  static Color getBackgroundColor(GlassLevel level) {
+  static Color getBackgroundColor(GlassLevel level, {bool dark = false}) {
+    if (dark) {
+      switch (level) {
+        case GlassLevel.subtle:
+          return const Color(0xB821262D); // 72% night surface
+        case GlassLevel.standard:
+          return const Color(0xE021262D); // 88% night surface
+        case GlassLevel.prominent:
+          return const Color(0xF024292E); // 94% night card
+      }
+    }
     switch (level) {
       case GlassLevel.subtle:
         return const Color(0xB8FFFFFF); // 72% white
@@ -40,7 +50,20 @@ class GlassTokens {
     }
   }
 
-  static LinearGradient getBorderGradient(GlassLevel level) {
+  static LinearGradient getBorderGradient(GlassLevel level, {bool dark = false}) {
+    // On dark glass the edge reads as a faint cool rim-light rather than the
+    // light mode's white-to-blue sheen; one treatment serves every level.
+    if (dark) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Colors.white.withValues(alpha: 0.14),
+          const Color(0xFF383E45).withValues(alpha: 0.6),
+          Colors.white.withValues(alpha: 0.05),
+        ],
+      );
+    }
     switch (level) {
       case GlassLevel.subtle:
         return LinearGradient(

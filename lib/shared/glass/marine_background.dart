@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../animations/app_animations.dart';
 
 /// Atmospheric Coastal Marine Background Wrapper
@@ -39,25 +38,36 @@ class _MarineBackgroundState extends State<MarineBackground>
   Widget build(BuildContext context) {
     final animate =
         widget.showHeadlandSilhouettes && !reduceMotionOf(context);
+    // One brightness check drives every palette swap below: the backdrop is the
+    // single largest painted surface in the app, so dark mode has to reach it or
+    // every screen reads as light regardless of the active theme.
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.bgGradientTop,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Base Soft Sky Gradient with a faint warm sun glow top-right
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFF9FBFE),
-                    Color(0xFFF2F7FD),
-                    Color(0xFFE4F0FB),
-                    Color(0xFFD6E7F8),
-                  ],
-                  stops: [0.0, 0.4, 0.75, 1.0],
+                  colors: dark
+                      ? const [
+                          Color(0xFF0B1015),
+                          Color(0xFF0F141A),
+                          Color(0xFF141B23),
+                          Color(0xFF1A2530),
+                        ]
+                      : const [
+                          Color(0xFFF9FBFE),
+                          Color(0xFFF2F7FD),
+                          Color(0xFFE4F0FB),
+                          Color(0xFFD6E7F8),
+                        ],
+                  stops: const [0.0, 0.4, 0.75, 1.0],
                 ),
               ),
             ),
@@ -69,10 +79,15 @@ class _MarineBackgroundState extends State<MarineBackground>
                   gradient: RadialGradient(
                     center: const Alignment(0.85, -0.9),
                     radius: 0.9,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.55),
-                      Colors.white.withValues(alpha: 0.0),
-                    ],
+                    colors: dark
+                        ? [
+                            const Color(0xFF2A4B6B).withValues(alpha: 0.35),
+                            const Color(0xFF2A4B6B).withValues(alpha: 0.0),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.55),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
                   ),
                 ),
               ),
@@ -91,12 +106,13 @@ class _MarineBackgroundState extends State<MarineBackground>
                       child: AnimatedBuilder(
                         animation: _waveDrift,
                         builder: (context, _) => CustomPaint(
-                          painter: _CoastalHeadlandsPainter(phase: _waveDrift.value * 2 * math.pi),
+                          painter: _CoastalHeadlandsPainter(
+                              phase: _waveDrift.value * 2 * math.pi, dark: dark),
                         ),
                       ),
                     )
                   : CustomPaint(
-                      painter: _CoastalHeadlandsPainter(phase: 0),
+                      painter: _CoastalHeadlandsPainter(phase: 0, dark: dark),
                     ),
             ),
 
@@ -115,7 +131,8 @@ class _MarineBackgroundState extends State<MarineBackground>
 
 class _CoastalHeadlandsPainter extends CustomPainter {
   final double phase;
-  _CoastalHeadlandsPainter({required this.phase});
+  final bool dark;
+  _CoastalHeadlandsPainter({required this.phase, this.dark = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -124,7 +141,9 @@ class _CoastalHeadlandsPainter extends CustomPainter {
 
     // Layer 1: Distant Misty Mountain Silhouette with Lighthouse Headland
     final mountainPaint1 = Paint()
-      ..color = const Color(0xFFD8E7F8).withValues(alpha: 0.65)
+      ..color = dark
+          ? const Color(0xFF16212C).withValues(alpha: 0.95)
+          : const Color(0xFFD8E7F8).withValues(alpha: 0.65)
       ..style = PaintingStyle.fill;
 
     final path1 = Path();
@@ -142,7 +161,9 @@ class _CoastalHeadlandsPainter extends CustomPainter {
 
     // Layer 2: Midground Coastal Range
     final mountainPaint2 = Paint()
-      ..color = const Color(0xFFC7DEF5).withValues(alpha: 0.75)
+      ..color = dark
+          ? const Color(0xFF101A24).withValues(alpha: 0.95)
+          : const Color(0xFFC7DEF5).withValues(alpha: 0.75)
       ..style = PaintingStyle.fill;
 
     final path2 = Path();
@@ -156,13 +177,17 @@ class _CoastalHeadlandsPainter extends CustomPainter {
 
     // Layer 3: Driving swell — slow full-width wave
     final wavePaintBack = Paint()
-      ..color = const Color(0xFFC3DDF7).withValues(alpha: 0.7)
+      ..color = dark
+          ? const Color(0xFF0C141C).withValues(alpha: 0.9)
+          : const Color(0xFFC3DDF7).withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
     canvas.drawPath(_wavePath(w, h, baseY: 0.84, amp: 0.018, freq: 1.6, shift: phase * 0.55), wavePaintBack);
 
     // Layer 4: Foreground Ocean Wave — opposite drift for parallax
     final wavePaintFront = Paint()
-      ..color = const Color(0xFFB8D7F5).withValues(alpha: 0.85)
+      ..color = dark
+          ? const Color(0xFF0A1017).withValues(alpha: 0.95)
+          : const Color(0xFFB8D7F5).withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
     canvas.drawPath(_wavePath(w, h, baseY: 0.90, amp: 0.014, freq: 2.4, shift: -phase * 0.85 + 1.3), wavePaintFront);
   }
